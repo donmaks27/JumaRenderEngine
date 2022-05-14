@@ -1,0 +1,174 @@
+﻿// Copyright 2022 Leonov Maksim. All Rights Reserved.
+
+#include "WindowController_Vulkan_GLFW.h"
+
+#if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_VULKAN) && defined(JUMARENDERENGINE_INCLUDE_LIB_GLFW)
+
+#include <GLFW/glfw3.h>
+
+#include "renderEngine/Vulkan/RenderEngine_Vulkan.h"
+
+namespace JumaRenderEngine
+{
+    WindowController_Vulkan_GLFW::~WindowController_Vulkan_GLFW()
+    {
+        clearGLFW();
+    }
+
+    jarray<const char*> WindowController_Vulkan_GLFW::getVulkanInstanceExtensions() const
+    {
+        uint32 extensionsCount = 0;
+        const char** extenstions = glfwGetRequiredInstanceExtensions(&extensionsCount);
+        if (extensionsCount == 0)
+        {
+            return {};
+        }
+
+        jarray<const char*> result(static_cast<int32>(extensionsCount));
+        for (int32 index = 0; index < result.getSize(); index++)
+        {
+            result[index] = extenstions[index];
+        }
+        return result;
+    }
+
+    bool WindowController_Vulkan_GLFW::initWindowController()
+    {
+        if (!Super::initWindowController())
+        {
+            return false;
+        }
+
+        if (glfwInit() == GLFW_FALSE)
+        {
+#ifndef JUTILS_LOG_DISABLED
+            const char* errorStr = nullptr;
+            glfwGetError(&errorStr);
+            JUMA_RENDER_LOG(error, jstring(JSTR("Failed to initialize GLFW lib: ")) + errorStr);
+#endif
+            return false;
+        }
+
+        glfwSetErrorCallback(WindowController_Vulkan_GLFW::GLFW_ErrorCallback);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        return true;
+    }
+    void WindowController_Vulkan_GLFW::GLFW_ErrorCallback(const int errorCode, const char* errorMessage)
+    {
+        JUMA_RENDER_LOG(error, JSTR("GLFW error. Code: ") + TO_JSTR(errorCode) + JSTR(". ") + errorMessage);
+    }
+
+    bool WindowController_Vulkan_GLFW::createWindow(const window_id windowID, const WindowProperties& properties)
+    {
+        if (windowID == window_id_INVALID)
+        {
+            JUMA_RENDER_LOG(error, JSTR("Invalid window ID"));
+            return false;
+        }
+        if (m_Windows.contains(windowID))
+        {
+            JUMA_RENDER_LOG(error, JSTR("Window ") + TO_JSTR(windowID) + JSTR(" already created"));
+            return false;
+        }
+
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+        GLFWwindow* window = glfwCreateWindow(
+            static_cast<int>(properties.size.x), static_cast<int>(properties.size.y), *properties.title, nullptr, nullptr
+        );
+        if (window == nullptr)
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to create window ") + TO_JSTR(windowID));
+            return false;
+        }
+
+        VkSurfaceKHR surface = nullptr;
+        const VkResult result = glfwCreateWindowSurface(getRenderEngine<RenderEngine_Vulkan>()->getVulkanInstance(), window, nullptr, &surface);
+        if (result != VK_SUCCESS)
+        {
+            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create surface for window ") + TO_JSTR(windowID));
+            glfwDestroyWindow(window);
+            return false;
+        }
+
+        WindowData_Vulkan_GLFW& windowData = m_Windows[windowID];
+        windowData.windowID = windowID;
+        windowData.vulkanSurface = surface;
+        windowData.windowGLFW = window;
+        windowData.windowController = this;
+        glfwSetWindowUserPointer(window, &windowData);
+        glfwSetFramebufferSizeCallback(window, WindowController_Vulkan_GLFW::GLFW_FramebufferResizeCallback);
+        return true;
+    }
+    void WindowController_Vulkan_GLFW::GLFW_FramebufferResizeCallback(GLFWwindow* windowGLFW, const int width, const int height)
+    {
+        const WindowData_Vulkan_GLFW* windowData = static_cast<WindowData_Vulkan_GLFW*>(glfwGetWindowUserPointer(windowGLFW));
+        if (windowData != nullptr)
+        {
+            windowData->windowController->onWindowResized(windowData->windowID, { math::max<uint32>(width, 0), math::max<uint32>(height, 0) });
+        }
+    }
+
+    void WindowController_Vulkan_GLFW::clearGLFW()
+    {
+        for (auto& window : m_Windows)
+        {
+            destroyWindowGLFW(window.key, window.value);
+        }
+        m_Windows.clear();
+
+        glfwTerminate();
+    }
+
+    void WindowController_Vulkan_GLFW::destroyWindow(const window_id windowID)
+    {
+        WindowData_Vulkan_GLFW* windowData = m_Windows.find(windowID);
+        if (windowData == nullptr)
+        {
+            JUMA_RENDER_LOG(warning, JSTR("Can't find window ") + TO_JSTR(windowID));
+            return;
+        }
+
+        destroyWindowGLFW(windowID, *windowData);
+        m_Windows.remove(windowID);
+    }
+    void WindowController_Vulkan_GLFW::destroyWindowGLFW(const window_id windowID, WindowData_Vulkan_GLFW& windowData)
+    {
+        destroyWindowVulkan(windowID, windowData);
+
+        glfwSetWindowUserPointer(windowData.windowGLFW, nullptr);
+        glfwDestroyWindow(windowData.windowGLFW);
+    }
+
+    jmap<window_id, const WindowData_Vulkan*> WindowController_Vulkan_GLFW::getVulkanWindowsData() const
+    {
+        jmap<window_id, const WindowData_Vulkan*> result;
+        for (const auto& window : m_Windows)
+        {
+            result.add(window.key, &window.value);
+        }
+        return result;
+    }
+    jmap<window_id, WindowData_Vulkan*> WindowController_Vulkan_GLFW::getVulkanWindowsDataPtr()
+    {
+        jmap<window_id, WindowData_Vulkan*> result;
+        for (auto& window : m_Windows)
+        {
+            result.add(window.key, &window.value);
+        }
+        return result;
+    }
+
+    bool WindowController_Vulkan_GLFW::shouldCloseWindow(const window_id windowID) const
+    {
+        const WindowData_Vulkan_GLFW* windowData = m_Windows.find(windowID);
+        if (windowData == nullptr)
+        {
+            JUMA_RENDER_LOG(warning, JSTR("Can't find window ") + TO_JSTR(windowID));
+            return false;
+        }
+        return glfwWindowShouldClose(windowData->windowGLFW) != GLFW_FALSE;
+    }
+}
+
+#endif
