@@ -10,12 +10,12 @@
 #include "material/ShaderUniform.h"
 #include "texture/TextureFormat.h"
 #include "texture/TextureSamples.h"
-#include "texture/TextureSamplerType.h"
 #include "vertex/VertexDescription.h"
 #include "window/WindowController.h"
 
 namespace JumaRenderEngine
 {
+    class RenderPipeline;
     class Texture;
     class RenderTarget;
     class Material;
@@ -48,6 +48,8 @@ namespace JumaRenderEngine
             return object;
         }
 
+        RenderPipeline* getRenderPipeline() const { return m_RenderPipeline; }
+
         VertexBuffer* createVertexBuffer(const VertexBufferData* verticesData);
         const VertexDescription* findVertexType(const jstringID& vertexName) const { return m_RegisteredVertexTypes.find(vertexName); }
 
@@ -64,20 +66,26 @@ namespace JumaRenderEngine
         virtual bool initInternal(const jmap<window_id, WindowProperties>& windows);
         virtual void clearInternal() { clearData(); }
 
+        void clearRenderAssets();
+
         virtual WindowController* createWindowController() = 0;
         virtual VertexBuffer* createVertexBufferInternal() = 0;
         virtual Texture* createTextureInternal() = 0;
         virtual Shader* createShaderInternal() = 0;
         virtual Material* createMaterialInternal() = 0;
         virtual RenderTarget* createRenderTargetInternal() = 0;
+        virtual RenderPipeline* createRenderPipelineInternal();
 
     private:
 
         bool m_Initialized = false;
 
         WindowController* m_WindowController = nullptr;
+        RenderPipeline* m_RenderPipeline = nullptr;
         jmap<jstringID, VertexDescription> m_RegisteredVertexTypes;
 
+
+        bool createRenderAssets();
 
         void clearData();
 

@@ -15,6 +15,27 @@
 
 namespace JumaRenderEngine
 {
+    RenderEngine_OpenGL::~RenderEngine_OpenGL()
+    {
+        clearOpenGL();
+    }
+
+    void RenderEngine_OpenGL::clearInternal()
+    {
+        clearOpenGL();
+        Super::clearInternal();
+    }
+    void RenderEngine_OpenGL::clearOpenGL()
+    {
+        clearRenderAssets();
+
+        for (const auto& sampler : m_SamplerObjectIndices)
+        {
+            glDeleteSamplers(1, &sampler.value);
+        }
+        m_SamplerObjectIndices.clear();
+    }
+
     WindowController* RenderEngine_OpenGL::createWindowController()
     {
         return WindowControllerInfo<RenderAPI::OpenGL>::create();

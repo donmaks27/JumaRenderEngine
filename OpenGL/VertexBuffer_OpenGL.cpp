@@ -7,8 +7,8 @@
 #include <GL/glew.h>
 
 #include "Material_OpenGL.h"
-#include "RenderOptions_OpenGL.h"
 #include "renderEngine/RenderEngine.h"
+#include "renderEngine/RenderOptions.h"
 #include "renderEngine/RenderTarget.h"
 #include "renderEngine/vertex/VertexBufferData.h"
 #include "renderEngine/window/OpenGL/WindowController_OpenGL.h"
@@ -92,7 +92,6 @@ namespace JumaRenderEngine
             return;
         }
 
-        const RenderOptions_OpenGL* optionsOpenGL = reinterpret_cast<const RenderOptions_OpenGL*>(renderOptions);
         Material_OpenGL* materialOpenGL = dynamic_cast<Material_OpenGL*>(material);
 
         const window_id windowID = renderOptions->renderTarget->getWindowID();

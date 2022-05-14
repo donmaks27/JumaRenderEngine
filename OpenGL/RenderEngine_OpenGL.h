@@ -8,21 +8,25 @@
 
 #include "renderEngine/RenderEngine.h"
 
+#include "renderEngine/texture/TextureSamplerType.h"
+
 namespace JumaRenderEngine
 {
-    class RenderEngine_OpenGL : public RenderEngine
+    class RenderEngine_OpenGL final : public RenderEngine
     {
         using Super = RenderEngine;
 
     public:
         RenderEngine_OpenGL() = default;
-        virtual ~RenderEngine_OpenGL() override = default;
+        virtual ~RenderEngine_OpenGL() override;
 
         virtual RenderAPI getRenderAPI() const override { return RenderAPI::OpenGL; }
 
         uint32 getTextureSamplerIndex(TextureSamplerType sampler);
 
     protected:
+
+        virtual void clearInternal() override;
 
         virtual WindowController* createWindowController() override;
         virtual VertexBuffer* createVertexBufferInternal() override;
@@ -34,6 +38,9 @@ namespace JumaRenderEngine
     private:
 
         jmap<TextureSamplerType, uint32> m_SamplerObjectIndices;
+
+
+        void clearOpenGL();
     };
 }
 

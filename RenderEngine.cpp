@@ -3,6 +3,7 @@
 #include "RenderEngine.h"
 
 #include "Material.h"
+#include "RenderPipeline.h"
 #include "RenderTarget.h"
 #include "Shader.h"
 #include "Texture.h"
@@ -18,6 +19,11 @@ namespace JumaRenderEngine
 
     bool RenderEngine::init(const jmap<window_id, WindowProperties>& windows)
     {
+        if (isValid())
+        {
+            JUMA_RENDER_LOG(warning, JSTR("Render engine already initialized"));
+            return false;
+        }
         if (windows.isEmpty())
         {
             JUMA_RENDER_LOG(error, JSTR("Empty list of windows, there must be at least one!"));
@@ -31,7 +37,6 @@ namespace JumaRenderEngine
             delete windowController;
             return false;
         }
-
         m_WindowController = windowController;
         if (!initInternal(windows))
         {
@@ -39,8 +44,14 @@ namespace JumaRenderEngine
             delete m_WindowController;
             return false;
         }
-
         m_Initialized = true;
+
+        if (!createRenderAssets())
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to initialize render assets"));
+            clear();
+            return false;
+        }
         return true;
     }
     bool RenderEngine::initInternal(const jmap<window_id, WindowProperties>& windows)
@@ -54,6 +65,28 @@ namespace JumaRenderEngine
             }
         }
         return true;
+    }
+
+    bool RenderEngine::createRenderAssets()
+    {
+        RenderPipeline* renderPipeline = createRenderPipelineInternal();
+        if (!renderPipeline->init())
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to init render pipeline"));
+            delete renderPipeline;
+            return false;
+        }
+        m_RenderPipeline = renderPipeline;
+
+        return true;
+    }
+    void RenderEngine::clearRenderAssets()
+    {
+        if (m_RenderPipeline != nullptr)
+        {
+            delete m_RenderPipeline;
+            m_RenderPipeline = nullptr;
+        }
     }
 
     void RenderEngine::clear()
@@ -71,6 +104,7 @@ namespace JumaRenderEngine
             delete m_WindowController;
             m_WindowController = nullptr;
         }
+        m_RegisteredVertexTypes.clear();
     }
 
     void RenderEngine::registerObjectInternal(RenderEngineContextObjectBase* object)
@@ -79,6 +113,10 @@ namespace JumaRenderEngine
         {
             object->m_RenderEngine = this;
         }
+    }
+    RenderPipeline* RenderEngine::createRenderPipelineInternal()
+    {
+        return createObject<RenderPipeline>();
     }
 
     VertexBuffer* RenderEngine::createVertexBuffer(const VertexBufferData* verticesData)

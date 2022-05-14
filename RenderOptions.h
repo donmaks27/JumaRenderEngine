@@ -6,10 +6,12 @@
 
 namespace JumaRenderEngine
 {
+    class RenderPipeline;
     class RenderTarget;
 
     struct RenderOptions
     {
+        RenderPipeline* renderPipeline = nullptr;
         RenderTarget* renderTarget = nullptr;
     };
 }
