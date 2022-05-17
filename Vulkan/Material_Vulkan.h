@@ -3,13 +3,14 @@
 #pragma once
 
 #include "renderEngine/juma_render_engine_core.h"
-#include "vulkanObjects/VulkanRenderPassDescription.h"
 
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_VULKAN)
 
 #include "renderEngine/Material.h"
 
 #include <vulkan/vulkan_core.h>
+
+#include "vulkanObjects/VulkanRenderPassDescription.h"
 
 namespace JumaRenderEngine
 {
@@ -42,7 +43,6 @@ namespace JumaRenderEngine
 
         VkDescriptorPool m_DescriptorPool = nullptr;
         VkDescriptorSet m_DescriptorSet = nullptr;
-        jmap<VulkanRenderPipelineID, VkPipeline> m_RenderPipelines;
 
         jmap<uint32, VulkanBuffer*> m_UniformBuffers;
 

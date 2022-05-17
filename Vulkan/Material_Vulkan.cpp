@@ -6,7 +6,9 @@
 
 #include "RenderEngine_Vulkan.h"
 #include "Shader_Vulkan.h"
+#include "Texture_Vulkan.h"
 #include "vulkanObjects/VulkanBuffer.h"
+#include "vulkanObjects/VulkanImage.h"
 
 namespace JumaRenderEngine
 {
@@ -24,13 +26,11 @@ namespace JumaRenderEngine
         if (!createDescriptorSet())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan descriptor set"));
-            clearVulkan();
             return false;
         }
         if (!initDescriptorSetData())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to init vulkan descriptor set"));
-            clearVulkan();
             return false;
         }
         return true;
@@ -215,7 +215,37 @@ namespace JumaRenderEngine
 
             case ShaderUniformType::Texture:
                 {
-                    // TODO: Load textures
+                    TextureBase* value = nullptr;
+                    if (!params.getValue<ShaderUniformType::Texture>(uniform.key, value))
+                    {
+                        continue;
+                    }
+
+                    VulkanImage* vulkanImage = nullptr;
+                    {
+                        Texture_Vulkan* texture = dynamic_cast<Texture_Vulkan*>(value);
+                        if (texture != nullptr)
+                        {
+                            vulkanImage = texture->getVulkanImage();
+                        }
+                        if (vulkanImage == nullptr)
+                        {
+                            continue;
+                        }
+                    }
+
+                    VkDescriptorImageInfo& imageInfo = imageInfos.addDefault();
+                    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    imageInfo.imageView = vulkanImage->getImageView();
+                    imageInfo.sampler = renderEngine->getTextureSampler(value->getSamplerType());
+                    VkWriteDescriptorSet& descriptorWrite = descriptorWrites.addDefault();
+                    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    descriptorWrite.dstSet = m_DescriptorSet;
+                    descriptorWrite.dstBinding = uniform.value.shaderLocation;
+                    descriptorWrite.dstArrayElement = 0;
+                    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    descriptorWrite.descriptorCount = 1;
+                    descriptorWrite.pImageInfo = &imageInfo;
                 }
                 break;
             default: ;
@@ -244,6 +274,11 @@ namespace JumaRenderEngine
     void Material_Vulkan::clearVulkan()
     {
         VkDevice device = getRenderEngine<RenderEngine_Vulkan>()->getDevice();
+
+        for (const auto& buffer : m_UniformBuffers)
+        {
+            delete buffer.value;
+        }
 
         if (m_DescriptorPool != nullptr)
         {

@@ -83,13 +83,11 @@ namespace JumaRenderEngine
         if (!createDescriptorSetLayout(device))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan descriptor set layout"));
-            clearVulkan();
             return false;
         }
         if (!createPipelineLayout(device))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan pipeline layout"));
-            clearVulkan();
             return false;
         }
         return true;

@@ -2,8 +2,6 @@
 
 #include "VulkanBuffer.h"
 
-#include <vma/vk_mem_alloc.h>
-
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_VULKAN)
 
 #include "VulkanCommandPool.h"
@@ -192,6 +190,7 @@ namespace JumaRenderEngine
     void VulkanBuffer::clearVulkan()
     {
         m_MappedData = nullptr;
+        m_Mapable = false;
         if (m_StagingBuffer != nullptr)
         {
             delete m_StagingBuffer;
@@ -283,7 +282,7 @@ namespace JumaRenderEngine
 
         if (m_StagingBuffer != nullptr)
         {
-            if (!m_StagingBuffer->flushMappedData() || !m_StagingBuffer->copyData(this, waitForFinish))
+            if (!m_StagingBuffer->flushMappedData(false) || !m_StagingBuffer->copyData(this, waitForFinish))
             {
                 JUMA_RENDER_LOG(error, JSTR("Failed to flush data from staging vulkan buffer"));
                 return false;
@@ -315,16 +314,16 @@ namespace JumaRenderEngine
         }
         if (m_StagingBuffer != nullptr)
         {
-            if (!m_StagingBuffer->setData(data, size, offset) || !m_StagingBuffer->copyData(this, waitForFinish))
+            if (!m_StagingBuffer->setDataInternal(data, size, offset) || !m_StagingBuffer->copyData(this, waitForFinish))
             {
                 JUMA_RENDER_LOG(error, JSTR("Failed to copy data from staging buffer"));
                 return false;
             }
             return true;
         }
-        return setData(data, size, offset);
+        return setDataInternal(data, size, offset);
     }
-    bool VulkanBuffer::setData(const void* data, const uint32 size, const uint32 offset)
+    bool VulkanBuffer::setDataInternal(const void* data, const uint32 size, const uint32 offset)
     {
         if (!m_Mapable)
         {

@@ -4,13 +4,12 @@
 
 #include "RenderEngine_Vulkan.h"
 
-#include "vulkanObjects/VulkanRenderPass.h"
-
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_VULKAN)
 
 #include "VertexBuffer_Vulkan.h"
 #include "jutils/jset.h"
 #include "vulkanObjects/VulkanCommandPool.h"
+#include "vulkanObjects/VulkanRenderPass.h"
 #include "renderEngine/window/Vulkan/WindowControllerInfo_Vulkan.h"
 
 #ifdef JDEBUG
@@ -426,6 +425,20 @@ namespace JumaRenderEngine
     }
     void RenderEngine_Vulkan::clearVulkan()
     {
+        for (const auto& sampler : m_TextureSamplers)
+        {
+            vkDestroySampler(m_Device, sampler.value, nullptr);
+        }
+        m_TextureSamplers.clear();
+
+        for (const auto& renderPass : m_RenderPasses)
+        {
+            delete renderPass.value;
+        }
+        m_RenderPasses.clear();
+        m_RenderPassTypes.clear();
+        m_RenderPassTypeIDs = juid<render_pass_type_id>();
+
         for (const auto& commandPool : m_CommandPools)
         {
             delete commandPool.value;
@@ -495,6 +508,103 @@ namespace JumaRenderEngine
             renderPass = newRenderPass;
         }
         return renderPass;
+    }
+
+    VkSampler RenderEngine_Vulkan::getTextureSampler(const TextureSamplerType samplerType)
+    {
+        const VkSampler* samplerPtr = m_TextureSamplers.find(samplerType);
+        if (samplerPtr != nullptr)
+        {
+            return *samplerPtr;
+        }
+
+        VkSamplerCreateInfo samplerInfo{};
+        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+        samplerInfo.compareEnable = VK_FALSE;
+        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+        samplerInfo.minLod = 0.0f;
+        samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
+        samplerInfo.mipLodBias = 0.0f;
+        switch (samplerType.filtering)
+        {
+        case TextureFiltering::Point: 
+            samplerInfo.minFilter = VK_FILTER_NEAREST;
+            samplerInfo.magFilter = VK_FILTER_NEAREST;
+            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            samplerInfo.anisotropyEnable = VK_FALSE;
+            break;
+        case TextureFiltering::Bilinear: 
+            samplerInfo.minFilter = VK_FILTER_LINEAR;
+            samplerInfo.magFilter = VK_FILTER_LINEAR;
+            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            samplerInfo.anisotropyEnable = VK_FALSE;
+            break;
+        case TextureFiltering::Trilinear: 
+            samplerInfo.minFilter = VK_FILTER_LINEAR;
+            samplerInfo.magFilter = VK_FILTER_LINEAR;
+            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+            samplerInfo.anisotropyEnable = VK_FALSE;
+            break;
+        case TextureFiltering::Anisotropic_2: 
+            samplerInfo.minFilter = VK_FILTER_LINEAR;
+            samplerInfo.magFilter = VK_FILTER_LINEAR;
+            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+            samplerInfo.anisotropyEnable = VK_TRUE;
+            samplerInfo.maxAnisotropy = 2.0f;
+            break;
+        case TextureFiltering::Anisotropic_4: 
+            samplerInfo.minFilter = VK_FILTER_LINEAR;
+            samplerInfo.magFilter = VK_FILTER_LINEAR;
+            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+            samplerInfo.anisotropyEnable = VK_TRUE;
+            samplerInfo.maxAnisotropy = 4.0f;
+            break;
+        case TextureFiltering::Anisotropic_8: 
+            samplerInfo.minFilter = VK_FILTER_LINEAR;
+            samplerInfo.magFilter = VK_FILTER_LINEAR;
+            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+            samplerInfo.anisotropyEnable = VK_TRUE;
+            samplerInfo.maxAnisotropy = 8.0f;
+            break;
+        case TextureFiltering::Anisotropic_16: 
+            samplerInfo.minFilter = VK_FILTER_LINEAR;
+            samplerInfo.magFilter = VK_FILTER_LINEAR;
+            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+            samplerInfo.anisotropyEnable = VK_TRUE;
+            samplerInfo.maxAnisotropy = 16.0f;
+            break;
+        default: ;
+        }
+        switch (samplerType.wrapMode)
+        {
+        case TextureWrapMode::Repeat: 
+            samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            break;
+        case TextureWrapMode::Mirror: 
+            samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+            samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+            samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+            break;
+        case TextureWrapMode::Clamp: 
+            samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            break;
+        default: ;
+        }
+        
+        VkSampler sampler;
+        const VkResult result = vkCreateSampler(getDevice(), &samplerInfo, nullptr, &sampler);
+        if (result != VK_SUCCESS)
+        {
+            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create vulkan sampler"));
+            return nullptr;
+        }
+        return m_TextureSamplers[samplerType] = sampler;
     }
 }
 

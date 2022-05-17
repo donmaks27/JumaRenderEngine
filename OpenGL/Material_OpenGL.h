@@ -16,7 +16,7 @@ namespace JumaRenderEngine
 
     public:
         Material_OpenGL() = default;
-        virtual ~Material_OpenGL() override = default;
+        virtual ~Material_OpenGL() override;
 
         bool bindMaterial();
         void unbindMaterial();
@@ -28,6 +28,9 @@ namespace JumaRenderEngine
     private:
 
         jmap<uint32, uint32> m_UniformBufferIndices;
+
+
+        void clearOpenGL();
     };
 }
 

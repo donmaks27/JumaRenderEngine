@@ -12,6 +12,11 @@
 
 namespace JumaRenderEngine
 {
+    Material_OpenGL::~Material_OpenGL()
+    {
+        clearOpenGL();
+    }
+
     bool Material_OpenGL::initInternal()
     {
         if (!Super::initInternal())
@@ -36,6 +41,15 @@ namespace JumaRenderEngine
             glBindBuffer(GL_UNIFORM_BUFFER, 0);
         }
         return true;
+    }
+
+    void Material_OpenGL::clearOpenGL()
+    {
+        for (const auto& buffer : m_UniformBufferIndices)
+        {
+            glDeleteBuffers(1, &buffer.value);
+        }
+        m_UniformBufferIndices.clear();
     }
 
     bool Material_OpenGL::bindMaterial()

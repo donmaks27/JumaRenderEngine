@@ -10,6 +10,7 @@
 
 #include <vma/vk_mem_alloc.h>
 
+#include "renderEngine/texture/TextureSamplerType.h"
 #include "vulkanObjects/VulkanRenderPassDescription.h"
 #include "vulkanObjects/VulkanQueueType.h"
 
@@ -45,6 +46,8 @@ namespace JumaRenderEngine
 
         VulkanRenderPass* getRenderPass(const VulkanRenderPassDescription& description);
 
+        VkSampler getTextureSampler(TextureSamplerType samplerType);
+
     protected:
 
         virtual bool initInternal(const jmap<window_id, WindowProperties>& windows) override;
@@ -76,6 +79,8 @@ namespace JumaRenderEngine
         juid<render_pass_type_id> m_RenderPassTypeIDs;
         jmap<VulkanRenderPassDescription, render_pass_type_id, VulkanRenderPassDescription::compatible_predicate> m_RenderPassTypes;
         jmap<VulkanRenderPassDescription, VulkanRenderPass*, VulkanRenderPassDescription::equal_predicate> m_RenderPasses;
+
+        jmap<TextureSamplerType, VkSampler> m_TextureSamplers;
 
 
         bool createVulkanInstance();

@@ -53,7 +53,7 @@ namespace JumaRenderEngine
 
         void clearVulkan();
 
-        bool setData(const void* data, uint32 size, uint32 offset);
+        bool setDataInternal(const void* data, uint32 size, uint32 offset);
         bool copyData(const VulkanBuffer* destinationBuffer, bool waitForFinish);
     };
 }
