@@ -78,11 +78,14 @@ namespace JumaRenderEngine
         if (m_IndicesBufferIndex != 0)
         {
             glDeleteBuffers(1, &m_IndicesBufferIndex);
+            m_IndicesBufferIndex = 0;
         }
         if (m_VerticesBufferIndex != 0)
         {
             glDeleteBuffers(1, &m_VerticesBufferIndex);
+            m_VerticesBufferIndex = 0;
         }
+        m_RenderElementsCount = 0;
     }
 
     void VertexBuffer_OpenGL::render(const RenderOptions* renderOptions, Material* material)

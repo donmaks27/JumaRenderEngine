@@ -39,6 +39,7 @@ namespace JumaRenderEngine
         if (m_CommandPool != nullptr)
         {
             vkDestroyCommandPool(getRenderEngine<RenderEngine_Vulkan>()->getDevice(), m_CommandPool, nullptr);
+            m_CommandPool = nullptr;
         }
     }
 

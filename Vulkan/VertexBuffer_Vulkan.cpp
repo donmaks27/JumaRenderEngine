@@ -4,8 +4,10 @@
 
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_VULKAN)
 
+#include "Material_Vulkan.h"
 #include "RenderEngine_Vulkan.h"
 #include "RenderOptions_Vulkan.h"
+#include "renderEngine/Material.h"
 #include "renderEngine/vertex/VertexBufferData.h"
 #include "vulkanObjects/VulkanBuffer.h"
 #include "vulkanObjects/VulkanCommandBuffer.h"
@@ -70,8 +72,17 @@ namespace JumaRenderEngine
 
     void VertexBuffer_Vulkan::clearVulkan()
     {
-        delete m_IndexBuffer;
-        delete m_VertexBuffer;
+        if (m_IndexBuffer != nullptr)
+        {
+            delete m_IndexBuffer;
+            m_IndexBuffer = nullptr;
+        }
+        if (m_VertexBuffer != nullptr)
+        {
+            delete m_VertexBuffer;
+            m_VertexBuffer = nullptr;
+        }
+        m_RenderElementsCount = 0;
     }
 
     void VertexBuffer_Vulkan::render(const RenderOptions* renderOptions, Material* material)
@@ -81,10 +92,14 @@ namespace JumaRenderEngine
             return;
         }
 
+        Material_Vulkan* materialVulan = dynamic_cast<Material_Vulkan*>(material);
+        if (!materialVulan->bindMaterial(renderOptions, this))
+        {
+            return;
+        }
+
         const RenderOptions_Vulkan* optionsVulkan = reinterpret_cast<const RenderOptions_Vulkan*>(renderOptions);
         VkCommandBuffer commandBuffer = optionsVulkan->commandBuffer->get();
-
-        /* TODO: Bind material */
 
         VkBuffer vertexBuffer = m_VertexBuffer->get();
         const VkDeviceSize offset = 0;
@@ -99,7 +114,7 @@ namespace JumaRenderEngine
             vkCmdDrawIndexed(commandBuffer, m_RenderElementsCount, 1, 0, 0, 0);
         }
 
-        /* TODO: Unbind material */
+        materialVulan->unbindMaterial(renderOptions, this);
     }
 }
 

@@ -54,6 +54,8 @@ namespace JumaRenderEngine
 
         bool init(VkImageUsageFlags usage, std::initializer_list<VulkanQueueType> accessedQueues, const math::uvector2& size, 
             TextureSamples sampleCount, TextureFormat format, uint32 mipLevels);
+        bool init(VkImageUsageFlags usage, std::initializer_list<VulkanQueueType> accessedQueues, const math::uvector2& size, 
+            TextureSamples sampleCount, TextureFormat format);
         bool init(VkImage existingImage, const math::uvector2& size, TextureFormat format, uint32 mipLevels);
 
         bool createImageView(VkImageAspectFlags aspectFlags);

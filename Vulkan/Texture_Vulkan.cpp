@@ -28,7 +28,7 @@ namespace JumaRenderEngine
         VulkanImage* image = renderEngine->createObject<VulkanImage>();
         const bool imageInitialized = image->init(
             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, { VulkanQueueType::Graphics, VulkanQueueType::Transfer }, 
-            size, TextureSamples::X1, format, static_cast<uint32>(std::floor(std::log2(math::min(size.x, size.y)))) + 1
+            size, TextureSamples::X1, format
         );
         if (!imageInitialized)
         {
@@ -60,7 +60,11 @@ namespace JumaRenderEngine
 
     void Texture_Vulkan::clearVulkan()
     {
-        delete m_Image;
+        if (m_Image != nullptr)
+        {
+            delete m_Image;
+            m_Image = nullptr;
+        }
     }
 }
 

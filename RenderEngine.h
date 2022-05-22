@@ -49,6 +49,8 @@ namespace JumaRenderEngine
         }
 
         RenderPipeline* getRenderPipeline() const { return m_RenderPipeline; }
+        template<typename T, TEMPLATE_ENABLE(is_base<RenderPipeline, T>)>
+        T* getRenderPipeline() const { return dynamic_cast<T*>(getRenderPipeline()); }
 
         VertexBuffer* createVertexBuffer(const VertexBufferData* verticesData);
         const VertexDescription* findVertexType(const jstringID& vertexName) const { return m_RegisteredVertexTypes.find(vertexName); }
@@ -75,6 +77,8 @@ namespace JumaRenderEngine
         virtual Material* createMaterialInternal() = 0;
         virtual RenderTarget* createRenderTargetInternal() = 0;
         virtual RenderPipeline* createRenderPipelineInternal();
+
+        virtual void onRegisteredVertexType(const jstringID& vertexName) {}
 
     private:
 

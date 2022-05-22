@@ -23,6 +23,7 @@ namespace JumaRenderEngine
         if (!initInternal())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to initizlie material"));
+            clearData();
             return false;
         }
         return true;
@@ -39,6 +40,7 @@ namespace JumaRenderEngine
     void Material::clearData()
     {
         m_MaterialParams.clear();
+        m_Shader = nullptr;
     }
 
     bool Material::checkParamType(const jstringID& name, const ShaderUniformType type) const

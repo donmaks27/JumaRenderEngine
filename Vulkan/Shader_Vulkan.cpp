@@ -83,11 +83,13 @@ namespace JumaRenderEngine
         if (!createDescriptorSetLayout(device))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan descriptor set layout"));
+            clearVulkan();
             return false;
         }
         if (!createPipelineLayout(device))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan pipeline layout"));
+            clearVulkan();
             return false;
         }
         return true;
@@ -210,13 +212,18 @@ namespace JumaRenderEngine
     {
         VkDevice device = getRenderEngine<RenderEngine_Vulkan>()->getDevice();
 
+        m_CachedPipelineStageInfos.clear();
+        m_CachedUniformBufferSizes.clear();
+
         if (m_PipelineLayout != nullptr)
         {
             vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
+            m_PipelineLayout = nullptr;
         }
         if (m_DescriptorSetLayout != nullptr)
         {
             vkDestroyDescriptorSetLayout(device, m_DescriptorSetLayout, nullptr);
+            m_DescriptorSetLayout = nullptr;
         }
         for (const auto& shaderModule : m_ShaderModules)
         {
@@ -225,6 +232,7 @@ namespace JumaRenderEngine
                 vkDestroyShaderModule(device, shaderModule.value, nullptr);
             }
         }
+        m_ShaderModules.clear();
     }
 }
 

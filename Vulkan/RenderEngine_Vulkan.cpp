@@ -439,6 +439,8 @@ namespace JumaRenderEngine
         m_RenderPassTypes.clear();
         m_RenderPassTypeIDs = juid<render_pass_type_id>();
 
+        m_RegisteredVertexTypes_Vulkan.clear();
+
         for (const auto& commandPool : m_CommandPools)
         {
             delete commandPool.value;
@@ -480,6 +482,35 @@ namespace JumaRenderEngine
     VertexBuffer* RenderEngine_Vulkan::createVertexBufferInternal()
     {
         return createObject<VertexBuffer_Vulkan>();
+    }
+
+    void RenderEngine_Vulkan::onRegisteredVertexType(const jstringID& vertexName)
+    {
+        const VertexDescription* description = findVertexType(vertexName);
+
+        VertexDescription_Vulkan& descriptionVulkan = m_RegisteredVertexTypes_Vulkan[vertexName];
+        descriptionVulkan.binding.binding = 0;
+        descriptionVulkan.binding.stride = description->size;
+        descriptionVulkan.binding.inputRate = VkVertexInputRate::VK_VERTEX_INPUT_RATE_VERTEX;
+
+        descriptionVulkan.attributes.reserve(description->components.getSize());
+        for (const auto& componentDescriprion : description->components)
+        {
+            VkVertexInputAttributeDescription attribute;
+            switch (componentDescriprion.type)
+            {
+            case VertexComponentType::Float: attribute.format = VK_FORMAT_R32_SFLOAT; break;
+            case VertexComponentType::Vec2: attribute.format = VK_FORMAT_R32G32_SFLOAT; break;
+            case VertexComponentType::Vec3: attribute.format = VK_FORMAT_R32G32B32_SFLOAT; break;
+            case VertexComponentType::Vec4: attribute.format = VK_FORMAT_R32G32B32A32_SFLOAT; break;
+            default: continue;
+            }
+            attribute.location = componentDescriprion.shaderLocation;
+            attribute.binding = descriptionVulkan.binding.binding;
+            attribute.offset = componentDescriprion.offset;
+
+            descriptionVulkan.attributes.add(attribute);
+        }
     }
 
     VulkanRenderPass* RenderEngine_Vulkan::getRenderPass(const VulkanRenderPassDescription& description)

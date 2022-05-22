@@ -21,11 +21,13 @@ namespace JumaRenderEngine
         if (!createSwapchain(nullptr))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan swapchain"));
+            clearVulkan();
             return false;
         }
         if (!createSyncObjects())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan sync objects"));
+            clearVulkan();
             return false;
         }
         return true;
@@ -127,12 +129,20 @@ namespace JumaRenderEngine
         if (m_RenderAvailableSemaphore != nullptr)
         {
             vkDestroySemaphore(device, m_RenderAvailableSemaphore, nullptr);
+            m_RenderAvailableSemaphore = nullptr;
         }
         m_SwapchainImages.clear();
         if (m_Swapchain != nullptr)
         {
             vkDestroySwapchainKHR(device, m_Swapchain, nullptr);
+            m_Swapchain = nullptr;
         }
+
+        m_WindowID = window_id_INVALID;
+        m_NeedToRecreate = false;
+        m_SwapchainImagesFormat = VK_FORMAT_UNDEFINED;
+        m_SwapchainImagesSize = { 0, 0 };
+        m_AcquiredSwapchainImageIndex = -1;
     }
 
     bool VulkanSwapchain::refreshSwapchain()

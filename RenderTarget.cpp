@@ -6,6 +6,11 @@
 
 namespace JumaRenderEngine
 {
+    RenderTarget::~RenderTarget()
+    {
+        clearData();
+    }
+
     bool RenderTarget::init(const window_id windowID, const TextureSamples samples)
     {
         if (getRenderEngine()->getWindowController()->findWindowData(windowID) == nullptr)
@@ -19,6 +24,7 @@ namespace JumaRenderEngine
         if (!initInternal())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to initialize window render target"));
+            clearData();
             return false;
         }
         return true;
@@ -37,9 +43,18 @@ namespace JumaRenderEngine
         if (!initInternal())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to initialize window render target"));
+            clearData();
             return false;
         }
         return true;
+    }
+
+    void RenderTarget::clearData()
+    {
+        m_WindowID = window_id_INVALID;
+        m_TextureSamples = TextureSamples::X1;
+        m_Size = { 0, 0 };
+        m_Format = TextureFormat::RGBA_UINT8;
     }
 
     math::uvector2 RenderTarget::getSize() const
@@ -52,14 +67,15 @@ namespace JumaRenderEngine
         return window != nullptr ? window->size : math::uvector2(0);
     }
 
-    void RenderTarget::onStartRender()
+    bool RenderTarget::onStartRender(RenderOptions* renderOptions)
     {
         if (isWindowRenderTarget())
         {
             getRenderEngine()->getWindowController()->onStartWindowRender(getWindowID());
         }
+        return true;
     }
-    void RenderTarget::onFinishRender()
+    void RenderTarget::onFinishRender(RenderOptions* renderOptions)
     {
         if (isWindowRenderTarget())
         {

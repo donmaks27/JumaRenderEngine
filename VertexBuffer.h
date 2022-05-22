@@ -19,7 +19,7 @@ namespace JumaRenderEngine
 
     public:
         VertexBuffer() = default;
-        virtual ~VertexBuffer() override = default;
+        virtual ~VertexBuffer() override;
 
         const jstringID& getVertexTypeName() const { return m_VertexTypeName; }
 
@@ -34,5 +34,8 @@ namespace JumaRenderEngine
     private:
 
         jstringID m_VertexTypeName = jstringID_NONE;
+
+
+        void clearData();
     };
 }

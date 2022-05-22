@@ -20,7 +20,7 @@ namespace JumaRenderEngine
 
         uint32 getResultTextureIndex() const { return !isWindowRenderTarget() ? (m_ResolveColorAttachment != 0 ? m_ResolveColorAttachment : m_ColorAttachment) : 0; }
 
-        virtual void onStartRender() override;
+        virtual void onStartRender(RenderOptions* renderOptions) override;
         virtual void onFinishRender() override;
 
         bool bindResultTexture(uint32 bindIndex) const;

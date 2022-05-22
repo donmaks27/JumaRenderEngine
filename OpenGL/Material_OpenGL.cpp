@@ -24,7 +24,7 @@ namespace JumaRenderEngine
             return false;
         }
 
-        const Shader_OpenGL* shader = dynamic_cast<const Shader_OpenGL*>(getShader());
+        const Shader_OpenGL* shader = getShader<Shader_OpenGL>();
         const jmap<uint32, uint32>& uniformBufferSizes = shader->getUniformBufferSizes();
         if (!uniformBufferSizes.isEmpty())
         {
@@ -54,7 +54,7 @@ namespace JumaRenderEngine
 
     bool Material_OpenGL::bindMaterial()
     {
-        const Shader_OpenGL* shader = dynamic_cast<const Shader_OpenGL*>(getShader());
+        const Shader_OpenGL* shader = getShader<Shader_OpenGL>();
         if ((shader == nullptr) || !shader->activateShader())
         {
             return false;

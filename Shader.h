@@ -17,7 +17,7 @@ namespace JumaRenderEngine
 
     public:
         Shader() = default;
-        virtual ~Shader() override = default;
+        virtual ~Shader() override;
 
         const jmap<jstringID, ShaderUniform>& getUniforms() const { return m_ShaderUniforms; }
 
@@ -30,5 +30,8 @@ namespace JumaRenderEngine
     private:
 
         jmap<jstringID, ShaderUniform> m_ShaderUniforms;
+
+
+        void clearData();
     };
 }

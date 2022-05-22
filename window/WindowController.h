@@ -33,6 +33,8 @@ namespace JumaRenderEngine
         virtual void destroyWindow(window_id windowID) = 0;
 
         virtual const WindowData* findWindowData(window_id windowID) const = 0;
+        template<typename T, TEMPLATE_ENABLE(is_base<WindowData, T>)>
+        const T* findWindowData(const window_id windowID) const { return reinterpret_cast<const T*>(findWindowData(windowID)); }
 
         virtual bool shouldCloseWindow(window_id windowID) const = 0;
 
@@ -46,6 +48,8 @@ namespace JumaRenderEngine
         virtual bool initWindowController() { return true; }
 
         virtual WindowData* findWindowDataPtr(window_id windowID) = 0;
+        template<typename T, TEMPLATE_ENABLE(is_base<WindowData, T>)>
+        T* findWindowDataPtr(const window_id windowID) { return reinterpret_cast<T*>(findWindowDataPtr(windowID)); }
 
         void onWindowResized(window_id windowID, const math::uvector2& newSize);
     };

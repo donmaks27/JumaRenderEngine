@@ -226,6 +226,7 @@ namespace JumaRenderEngine
 
     void Shader_OpenGL::clearOpenGL()
     {
+        m_CachedUniformBufferSizes.clear();
         if (m_ShaderProgramIndex != 0)
         {
             glDeleteProgram(m_ShaderProgramIndex);

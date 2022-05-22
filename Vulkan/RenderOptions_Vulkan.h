@@ -10,10 +10,12 @@
 
 namespace JumaRenderEngine
 {
+    class VulkanRenderPass;
     class VulkanCommandBuffer;
 
     struct RenderOptions_Vulkan : RenderOptions
     {
+        const VulkanRenderPass* renderPass = nullptr;
         VulkanCommandBuffer* commandBuffer = nullptr;
     };
 }

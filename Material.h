@@ -40,6 +40,9 @@ namespace JumaRenderEngine
 
         virtual bool initInternal();
 
+        template<typename T, TEMPLATE_ENABLE(is_base<Shader, T>)>
+        T* getShader() const { return dynamic_cast<T*>(getShader()); }
+
     private:
 
         Shader* m_Shader = nullptr;

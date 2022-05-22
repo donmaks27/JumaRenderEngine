@@ -113,7 +113,9 @@ namespace JumaRenderEngine
         if (m_RenderPass != nullptr)
         {
             vkDestroyRenderPass(getRenderEngine<RenderEngine_Vulkan>()->getDevice(), m_RenderPass, nullptr);
+            m_RenderPass = nullptr;
         }
+        m_RenderPassTypeID = render_pass_type_id_INVALID;
     }
 }
 

@@ -14,6 +14,9 @@
 
 namespace JumaRenderEngine
 {
+    class VulkanRenderPass;
+    struct RenderOptions;
+    class VertexBuffer_Vulkan;
     class VulkanBuffer;
 
     class Material_Vulkan : public Material
@@ -23,6 +26,9 @@ namespace JumaRenderEngine
     public:
         Material_Vulkan() = default;
         virtual ~Material_Vulkan() override;
+
+        bool bindMaterial(const RenderOptions* renderOptions, VertexBuffer_Vulkan* vertexBuffer);
+        void unbindMaterial(const RenderOptions* renderOptions, VertexBuffer_Vulkan* vertexBuffer) {}
 
     protected:
 
@@ -43,6 +49,7 @@ namespace JumaRenderEngine
 
         VkDescriptorPool m_DescriptorPool = nullptr;
         VkDescriptorSet m_DescriptorSet = nullptr;
+        jmap<VulkanRenderPipelineID, VkPipeline> m_RenderPipelines;
 
         jmap<uint32, VulkanBuffer*> m_UniformBuffers;
 
@@ -52,6 +59,11 @@ namespace JumaRenderEngine
         bool updateDescriptorSetData();
 
         void clearVulkan();
+
+        bool bindRenderPipeline(VkCommandBuffer commandBuffer, const jstringID& vertexName, const VulkanRenderPass* renderPass);
+        bool getRenderPipeline(const jstringID& vertexName, const VulkanRenderPass* renderPass, VkPipeline& outPipeline);
+
+        bool bindDescriptorSet(VkCommandBuffer commandBuffer);
     };
 }
 

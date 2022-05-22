@@ -12,13 +12,15 @@
 
 namespace JumaRenderEngine
 {
+    struct RenderOptions;
+
     class RenderTarget : public TextureBase
     {
         friend RenderEngine;
 
     public:
         RenderTarget() = default;
-        virtual ~RenderTarget() override = default;
+        virtual ~RenderTarget() override;
 
         bool isWindowRenderTarget() const { return m_WindowID != window_id_INVALID; }
         window_id getWindowID() const { return m_WindowID; }
@@ -27,8 +29,8 @@ namespace JumaRenderEngine
         math::uvector2 getSize() const;
         TextureFormat getFormat() const { return m_Format; }
 
-        virtual void onStartRender();
-        virtual void onFinishRender();
+        virtual bool onStartRender(RenderOptions* renderOptions);
+        virtual void onFinishRender(RenderOptions* renderOptions);
 
     protected:
 
@@ -46,5 +48,7 @@ namespace JumaRenderEngine
 
         bool init(window_id windowID, TextureSamples samples);
         bool init(TextureFormat format, const math::uvector2& size, TextureSamples samples);
+
+        void clearData();
     };
 }

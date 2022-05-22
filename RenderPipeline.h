@@ -40,7 +40,7 @@ namespace JumaRenderEngine
 
     public:
         RenderPipeline() = default;
-        virtual ~RenderPipeline() override = default;
+        virtual ~RenderPipeline() override;
 
         bool isPipelineQueueValid() const { return m_PipelineStagesQueueValid; }
         const jarray<RenderPipelineStageQueueEntry>& getPipelineQueue() const { return m_PipelineStagesQueue; }
@@ -61,9 +61,17 @@ namespace JumaRenderEngine
 
     protected:
 
-        virtual bool init() { return true; }
+        virtual bool initInternal() { return true; }
 
-        virtual void onStartRender();
+        virtual void renderInternal();
+        template<typename T, TEMPLATE_ENABLE(is_base<RenderOptions, T>)>
+        void callRender()
+        {
+            T renderOptions;
+            this->callRender(&renderOptions);
+        }
+
+        virtual bool onStartRender();
         virtual void onFinishRender();
 
     private:
@@ -72,5 +80,12 @@ namespace JumaRenderEngine
 
         bool m_PipelineStagesQueueValid = false;
         jarray<RenderPipelineStageQueueEntry> m_PipelineStagesQueue;
+
+
+        bool init();
+
+        void clearData();
+        
+        void callRender(RenderOptions* renderOptions);
     };
 }

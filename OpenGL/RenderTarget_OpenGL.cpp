@@ -124,9 +124,11 @@ namespace JumaRenderEngine
             getRenderEngine()->getWindowController<WindowController_OpenGL>()->setActiveWindowID(getWindowID());
 
             glDeleteFramebuffers(1, &m_Framebuffer);
+            m_Framebuffer = 0;
             if (m_ResolveFramebuffer != 0)
             {
                 glDeleteFramebuffers(1, &m_ResolveFramebuffer);
+                m_ResolveFramebuffer = 0;
             }
 
             const bool shouldResolveMultisampling = getSampleCount() != TextureSamples::X1;
@@ -138,20 +140,24 @@ namespace JumaRenderEngine
             {
                 glDeleteTextures(1, &m_ColorAttachment);
             }
+            m_ColorAttachment = 0;
+
             if (m_DepthAttachment != 0)
             {
                 glDeleteRenderbuffers(1, &m_DepthAttachment);
+                m_DepthAttachment = 0;
             }
             if (m_ResolveColorAttachment != 0)
             {
                 glDeleteTextures(1, &m_ResolveColorAttachment);
+                m_ResolveColorAttachment = 0;
             }
         }
     }
 
-    void RenderTarget_OpenGL::onStartRender()
+    void RenderTarget_OpenGL::onStartRender(RenderOptions* renderOptions)
     {
-        Super::onStartRender();
+        Super::onStartRender(renderOptions);
 
         getRenderEngine()->getWindowController<WindowController_OpenGL>()->setActiveWindowID(getWindowID());
         glBindFramebuffer(GL_FRAMEBUFFER, m_Framebuffer);

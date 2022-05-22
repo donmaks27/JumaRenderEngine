@@ -10,6 +10,29 @@
 
 namespace JumaRenderEngine
 {
+    RenderPipeline::~RenderPipeline()
+    {
+        clearData();
+    }
+
+    bool RenderPipeline::init()
+    {
+        if (!initInternal())
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to initialize render pipeline"));
+            clearData();
+            return false;
+        }
+        return true;
+    }
+
+    void RenderPipeline::clearData()
+    {
+        m_PipelineStages.clear();
+        m_PipelineStagesQueueValid = false;
+        m_PipelineStagesQueue.clear();
+    }
+
     bool RenderPipeline::buildPipelineQueue()
     {
         if (m_PipelineStagesQueueValid)
@@ -172,29 +195,43 @@ namespace JumaRenderEngine
         {
             return false;
         }
-
-        RenderOptions options;
-        options.renderPipeline = this;
-
-        onStartRender();
+        renderInternal();
+        return true;
+    }
+    void RenderPipeline::renderInternal()
+    {
+        callRender<RenderOptions>();
+    }
+    void RenderPipeline::callRender(RenderOptions* renderOptions)
+    {
+        renderOptions->renderPipeline = this;
+        if (!onStartRender())
+        {
+            return;
+        }
+        
         for (const auto& renderQueueEntry : getPipelineQueue())
         {
             const RenderPipelineStage* pipelineStage = getPipelineStage(renderQueueEntry.stage);
-            options.renderTarget = pipelineStage->renderTarget;
+            renderOptions->renderTarget = pipelineStage->renderTarget;
+            if (!pipelineStage->renderTarget->onStartRender(renderOptions))
+            {
+                continue;
+            }
 
-            pipelineStage->renderTarget->onStartRender();
             for (const auto& renderPrimitive : pipelineStage->renderPrimitives)
             {
-                renderPrimitive.vertexBuffer->render(&options, renderPrimitive.material);
+                renderPrimitive.vertexBuffer->render(renderOptions, renderPrimitive.material);
             }
-            pipelineStage->renderTarget->onFinishRender();
+            pipelineStage->renderTarget->onFinishRender(renderOptions);
         }
         onFinishRender();
-        return true;
     }
-    void RenderPipeline::onStartRender()
+
+    bool RenderPipeline::onStartRender()
     {
         getRenderEngine()->getWindowController()->onStartRender();
+        return true;
     }
     void RenderPipeline::onFinishRender()
     {

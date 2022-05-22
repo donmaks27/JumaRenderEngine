@@ -25,7 +25,8 @@ namespace JumaRenderEngine
         }
 
         RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
-        jarray<uint32> accessedQueueFamilies = { renderEngine->getQueue(VulkanQueueType::Transfer)->familyIndex };
+        jarray<uint32> accessedQueueFamilies;
+        accessedQueueFamilies.reserve(accessedQueues.size());
         for (const auto& queue : accessedQueues)
         {
             accessedQueueFamilies.addUnique(renderEngine->getQueue(queue)->familyIndex);
@@ -74,6 +75,11 @@ namespace JumaRenderEngine
         m_ImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         markAsInitialized();
         return true;
+    }
+    bool VulkanImage::init(const VkImageUsageFlags usage, const std::initializer_list<VulkanQueueType> accessedQueues, 
+        const math::uvector2& size, const TextureSamples sampleCount, const TextureFormat format)
+    {
+        return init(usage, accessedQueues, size, sampleCount, format, static_cast<uint32>(std::floor(std::log2(math::min(size.x, size.y)))) + 1);
     }
     bool VulkanImage::init(VkImage existingImage, const math::uvector2& size, const TextureFormat format, const uint32 mipLevels)
     {

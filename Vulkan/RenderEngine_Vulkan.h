@@ -26,6 +26,12 @@ namespace JumaRenderEngine
         VkQueue queue = nullptr;
     };
 
+    struct VertexDescription_Vulkan
+    {
+        VkVertexInputBindingDescription binding = VkVertexInputBindingDescription();
+        jarray<VkVertexInputAttributeDescription> attributes;
+    };
+
     class RenderEngine_Vulkan : public RenderEngine
     {
         using Super = RenderEngine;
@@ -44,6 +50,8 @@ namespace JumaRenderEngine
         const VulkanQueueDescription* getQueue(const VulkanQueueType type) const { return !m_QueueIndices.isEmpty() ? &m_Queues[m_QueueIndices[type]] : nullptr; }
         VulkanCommandPool* getCommandPool(const VulkanQueueType type) const { return !m_CommandPools.isEmpty() ? m_CommandPools[type] : nullptr; }
 
+        const VertexDescription_Vulkan* findVertexType_Vulkan(const jstringID& vertexName) const { return m_RegisteredVertexTypes_Vulkan.find(vertexName); }
+
         VulkanRenderPass* getRenderPass(const VulkanRenderPassDescription& description);
 
         VkSampler getTextureSampler(TextureSamplerType samplerType);
@@ -55,6 +63,8 @@ namespace JumaRenderEngine
 
         virtual WindowController* createWindowController() override;
         virtual VertexBuffer* createVertexBufferInternal() override;
+
+        virtual void onRegisteredVertexType(const jstringID& vertexName) override;
 
     private:
 
@@ -75,6 +85,8 @@ namespace JumaRenderEngine
         jmap<VulkanQueueType, int32> m_QueueIndices;
         jarray<VulkanQueueDescription> m_Queues;
         jmap<VulkanQueueType, VulkanCommandPool*> m_CommandPools;
+
+        jmap<jstringID, VertexDescription_Vulkan> m_RegisteredVertexTypes_Vulkan;
 
         juid<render_pass_type_id> m_RenderPassTypeIDs;
         jmap<VulkanRenderPassDescription, render_pass_type_id, VulkanRenderPassDescription::compatible_predicate> m_RenderPassTypes;

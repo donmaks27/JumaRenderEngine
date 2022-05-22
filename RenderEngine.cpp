@@ -148,7 +148,14 @@ namespace JumaRenderEngine
         }
 
         const VertexDescription* description = findVertexType(vertexName);
-        return description != nullptr ? description : &m_RegisteredVertexTypes.add(vertexName, verticesData->getVertexDescription());
+        if (description != nullptr)
+        {
+            return description;
+        }
+
+        description = &m_RegisteredVertexTypes.add(vertexName, verticesData->getVertexDescription());
+        onRegisteredVertexType(vertexName);
+        return description;
     }
 
     Texture* RenderEngine::createTexture(const math::uvector2& size, const TextureFormat format, const uint8* data)
