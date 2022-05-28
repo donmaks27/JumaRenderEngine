@@ -58,6 +58,20 @@ namespace JumaRenderEngine
         JUMA_RENDER_LOG(error, JSTR("GLFW error. Code: ") + TO_JSTR(errorCode) + JSTR(". ") + errorMessage);
     }
 
+    void WindowController_Vulkan_GLFW::clearGLFW()
+    {
+        if (!m_Windows.isEmpty())
+        {
+            for (auto& window : m_Windows)
+            {
+                destroyWindowGLFW(window.key, window.value);
+            }
+            m_Windows.clear();
+        }
+
+        glfwTerminate();
+    }
+
     bool WindowController_Vulkan_GLFW::createWindow(const window_id windowID, const WindowProperties& properties)
     {
         if (windowID == window_id_INVALID)
@@ -93,6 +107,7 @@ namespace JumaRenderEngine
 
         WindowData_Vulkan_GLFW& windowData = m_Windows[windowID];
         windowData.windowID = windowID;
+        windowData.size = properties.size;
         windowData.vulkanSurface = surface;
         windowData.windowGLFW = window;
         windowData.windowController = this;
@@ -107,17 +122,6 @@ namespace JumaRenderEngine
         {
             windowData->windowController->onWindowResized(windowData->windowID, { math::max<uint32>(width, 0), math::max<uint32>(height, 0) });
         }
-    }
-
-    void WindowController_Vulkan_GLFW::clearGLFW()
-    {
-        for (auto& window : m_Windows)
-        {
-            destroyWindowGLFW(window.key, window.value);
-        }
-        m_Windows.clear();
-
-        glfwTerminate();
     }
 
     void WindowController_Vulkan_GLFW::destroyWindow(const window_id windowID)
@@ -138,25 +142,8 @@ namespace JumaRenderEngine
 
         glfwSetWindowUserPointer(windowData.windowGLFW, nullptr);
         glfwDestroyWindow(windowData.windowGLFW);
-    }
-
-    jmap<window_id, const WindowData_Vulkan*> WindowController_Vulkan_GLFW::getVulkanWindowsData() const
-    {
-        jmap<window_id, const WindowData_Vulkan*> result;
-        for (const auto& window : m_Windows)
-        {
-            result.add(window.key, &window.value);
-        }
-        return result;
-    }
-    jmap<window_id, WindowData_Vulkan*> WindowController_Vulkan_GLFW::getVulkanWindowsDataPtr()
-    {
-        jmap<window_id, WindowData_Vulkan*> result;
-        for (auto& window : m_Windows)
-        {
-            result.add(window.key, &window.value);
-        }
-        return result;
+        windowData.windowGLFW = nullptr;
+        windowData.windowController = nullptr;
     }
 
     bool WindowController_Vulkan_GLFW::shouldCloseWindow(const window_id windowID) const
@@ -168,6 +155,26 @@ namespace JumaRenderEngine
             return false;
         }
         return glfwWindowShouldClose(windowData->windowGLFW) != GLFW_FALSE;
+    }
+
+    void WindowController_Vulkan_GLFW::onFinishRender()
+    {
+        Super::onFinishRender();
+
+        glfwPollEvents();
+    }
+
+    bool WindowController_Vulkan_GLFW::setWindowTitle(const window_id windowID, const jstring& title)
+    {
+        const WindowData_Vulkan_GLFW* windowData = m_Windows.find(windowID);
+        if (windowData == nullptr)
+        {
+            JUMA_RENDER_LOG(warning, JSTR("Can't find window ") + TO_JSTR(windowID));
+            return false;
+        }
+
+        glfwSetWindowTitle(windowData->windowGLFW, *title);
+        return true;
     }
 }
 

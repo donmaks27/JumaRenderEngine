@@ -8,8 +8,6 @@
 #include "RenderOptions_Vulkan.h"
 #include "renderEngine/window/Vulkan/WindowController_Vulkan.h"
 #include "vulkanObjects/VulkanCommandBuffer.h"
-#include "vulkanObjects/VulkanImage.h"
-#include "vulkanObjects/VulkanRenderPass.h"
 #include "vulkanObjects/VulkanSwapchain.h"
 
 namespace JumaRenderEngine
@@ -21,7 +19,7 @@ namespace JumaRenderEngine
 
     bool RenderTarget_Vulkan::initInternal()
     {
-        if (!(isWindowRenderTarget() ? createWindowFramebuffers() : createFramebuffers()))
+        if (!isWindowRenderTarget() ? !initFramebuffer() : !initWindowFramebuffer())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan framebuffers"));
             clearVulkan();
@@ -29,7 +27,7 @@ namespace JumaRenderEngine
         }
         return true;
     }
-    bool RenderTarget_Vulkan::createFramebuffers()
+    bool RenderTarget_Vulkan::initFramebuffer()
     {
         const VkFormat formatVulkan = GetVulkanFormatByTextureFormat(getFormat());
         if (formatVulkan == VK_FORMAT_UNDEFINED)
@@ -51,8 +49,8 @@ namespace JumaRenderEngine
             return false;
         }
 
-        FramebufferData framebufferData;
-        if (!createFramebuffer(renderPassDescription, nullptr, framebufferData))
+        VulkanFramebufferData framebufferData;
+        if (!m_RenderPass->createVulkanFramebuffer(getSize(), framebufferData))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan framebuffer"));
             return false;
@@ -60,7 +58,7 @@ namespace JumaRenderEngine
         m_Framebuffers = { framebufferData };
         return true;
     }
-    bool RenderTarget_Vulkan::createWindowFramebuffers()
+    bool RenderTarget_Vulkan::initWindowFramebuffer()
     {
         const RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
         const WindowData_Vulkan* windowData = renderEngine->getWindowController()->findWindowData<WindowData_Vulkan>(getWindowID());
@@ -84,11 +82,12 @@ namespace JumaRenderEngine
             return false;
         }
 
+        const math::uvector2& size = swapchain->getImagesSize();
         const jarray<VkImage>& swapchainImages = swapchain->getImages();
         m_Framebuffers.resize(swapchainImages.getSize());
         for (int32 index = 0; index < swapchainImages.getSize(); index++)
         {
-            if (!createFramebuffer(renderPassDescription, swapchainImages[index], m_Framebuffers[index]))
+            if (!m_RenderPass->createVulkanSwapchainFramebuffer(size, swapchainImages[index], m_Framebuffers[index]))
             {
                 JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan framebuffer for swapchain image ") + TO_JSTR(index));
                 return false;
@@ -97,141 +96,24 @@ namespace JumaRenderEngine
         return true;
     }
 
-    bool RenderTarget_Vulkan::createFramebuffer(const VulkanRenderPassDescription& renderPassDescription, VkImage resultImage, 
-        FramebufferData& outFramebuffer) const
-    {
-        const TextureFormat format = getFormat();
-        const TextureSamples sampleCount = getSampleCount();
-        const bool resolveEnabled = sampleCount != TextureSamples::X1;
-        const math::uvector2 size = getSize();
-
-        VulkanImage* colorImage = getRenderEngine()->createObject<VulkanImage>();
-        if (!resolveEnabled)
-        {
-            if (resultImage == nullptr)
-            {
-                colorImage->init(
-                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
-                   { VulkanQueueType::Graphics }, size, sampleCount, format
-                );
-            }
-            else
-            {
-                colorImage->init(resultImage, size, format, 1);
-            }
-        }
-        else
-        {
-            colorImage->init(
-                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, { VulkanQueueType::Graphics },
-                size, sampleCount, format, 1
-            );
-        }
-        if (!colorImage->createImageView(VK_IMAGE_ASPECT_COLOR_BIT))
-        {
-            JUMA_RENDER_LOG(error, JSTR("Failed to create color attachment image"));
-            delete colorImage;
-            return false;
-        }
-
-        VulkanImage* depthImage = nullptr;
-        if (renderPassDescription.shouldUseDepth)
-        {
-            depthImage = getRenderEngine()->createObject<VulkanImage>();
-            depthImage->init(
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, { VulkanQueueType::Graphics },
-                size, sampleCount, format, 1
-            );
-            if (!depthImage->createImageView(VK_IMAGE_ASPECT_DEPTH_BIT))
-            {
-                JUMA_RENDER_LOG(error, JSTR("Failed to create depth attachment image"));
-                delete colorImage;
-                delete depthImage;
-                return false;
-            }
-        }
-
-        VulkanImage* resolveImage = nullptr;
-        if (resolveEnabled)
-        {
-            if (resultImage == nullptr)
-            {
-                resolveImage->init(
-                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
-                    { VulkanQueueType::Graphics }, size, sampleCount, format
-                );
-            }
-            else
-            {
-                resolveImage->init(resultImage, size, format, 1);
-            }
-            if (!resolveImage->createImageView(VK_IMAGE_ASPECT_COLOR_BIT))
-            {
-                JUMA_RENDER_LOG(error, JSTR("Failed to create resolve attachment image"));
-                delete colorImage;
-                delete depthImage;
-                delete resolveImage;
-                return false;
-            }
-        }
-
-        VkImageView attachments[3];
-        uint32 attachmentCount = 1;
-        attachments[0] = colorImage->getImageView();
-        if (depthImage != nullptr)
-        {
-            attachments[attachmentCount++] = depthImage->getImageView();
-        }
-        if (resolveImage != nullptr)
-        {
-            attachments[attachmentCount++] = resolveImage->getImageView();
-        }
-
-        VkFramebuffer framebuffer;
-        VkFramebufferCreateInfo framebufferInfo{};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = m_RenderPass->get();
-        framebufferInfo.attachmentCount = attachmentCount;
-        framebufferInfo.pAttachments = attachments;
-        framebufferInfo.width = size.x;
-        framebufferInfo.height = size.y;
-        framebufferInfo.layers = 1;
-        const VkResult result = vkCreateFramebuffer(getRenderEngine<RenderEngine_Vulkan>()->getDevice(), &framebufferInfo, nullptr, &framebuffer);
-        if (result != VK_SUCCESS)
-        {
-            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create vulkan framebuffer"));
-            delete colorImage;
-            delete depthImage;
-            delete resolveImage;
-            return false;
-        }
-
-        outFramebuffer.framebuffer = framebuffer;
-        outFramebuffer.colorAttachment = colorImage;
-        outFramebuffer.depthAttachment = depthImage;
-        outFramebuffer.resolveAttachment = resolveImage;
-        return true;
-    }
-
     void RenderTarget_Vulkan::clearVulkan()
     {
-        VkDevice device = getRenderEngine<RenderEngine_Vulkan>()->getDevice();
-
         if (!m_Framebuffers.isEmpty())
         {
+            RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
+            VkDevice device = renderEngine->getDevice();
             for (const auto& framebuffer : m_Framebuffers)
             {
                 if (framebuffer.framebuffer != nullptr)
                 {
                     vkDestroyFramebuffer(device, framebuffer.framebuffer, nullptr);
                 }
-                delete framebuffer.colorAttachment;
-                delete framebuffer.depthAttachment;
-                delete framebuffer.resolveAttachment;
+                renderEngine->returnVulkanImage(framebuffer.colorAttachment);
+                renderEngine->returnVulkanImage(framebuffer.depthAttachment);
+                renderEngine->returnVulkanImage(framebuffer.resolveAttachment);
             }
             m_Framebuffers.clear();
         }
-
         m_RenderPass = nullptr;
     }
 
@@ -245,11 +127,13 @@ namespace JumaRenderEngine
         const int32 framebufferIndex = getRequiredFramebufferIndex();
         if (!m_Framebuffers.isValidIndex(framebufferIndex))
         {
+            JUMA_RENDER_LOG(error, JSTR("Failed to get vulkan framebuffer"));
             return false;
         }
 
-        const FramebufferData& framebuffer = m_Framebuffers[framebufferIndex];
-        VkCommandBuffer commandBuffer = reinterpret_cast<RenderOptions_Vulkan*>(renderOptions)->commandBuffer->get();
+        RenderOptions_Vulkan* renderOptionsVulkan = reinterpret_cast<RenderOptions_Vulkan*>(renderOptions);
+        const VulkanFramebufferData& framebuffer = m_Framebuffers[framebufferIndex];
+        VkCommandBuffer commandBuffer = renderOptionsVulkan->commandBuffer->get();
         if (!isWindowRenderTarget())
         {
             VulkanImage* resutImage = framebuffer.resolveAttachment != nullptr ? framebuffer.resolveAttachment : framebuffer.colorAttachment;
@@ -258,6 +142,7 @@ namespace JumaRenderEngine
                 VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
             );
         }
+        renderOptionsVulkan->renderPass = m_RenderPass;
 
         const math::uvector2 size = getSize();
         VkClearValue clearValues[2];
@@ -294,7 +179,7 @@ namespace JumaRenderEngine
 
         if (!isWindowRenderTarget())
         {
-            const FramebufferData& framebuffer = m_Framebuffers[getRequiredFramebufferIndex()];
+            const VulkanFramebufferData& framebuffer = m_Framebuffers[getRequiredFramebufferIndex()];
             VulkanImage* resutImage = framebuffer.resolveAttachment != nullptr ? framebuffer.resolveAttachment : framebuffer.colorAttachment;
             resutImage->changeImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,

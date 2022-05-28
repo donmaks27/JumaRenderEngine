@@ -10,9 +10,6 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include "jutils/jarray.h"
-#include "jutils/jmap.h"
-
 namespace JumaRenderEngine
 {
     class VulkanSwapchain;
@@ -25,24 +22,27 @@ namespace JumaRenderEngine
 
     class WindowController_Vulkan : public WindowController
     {
+        using Super = WindowController;
+
     public:
         WindowController_Vulkan() = default;
-        virtual ~WindowController_Vulkan() override = default;
+        virtual ~WindowController_Vulkan() override;
 
         virtual jarray<const char*> getVulkanInstanceExtensions() const = 0;
 
-        virtual jmap<window_id, const WindowData_Vulkan*> getVulkanWindowsData() const = 0;
-
         bool createWindowSwapchains();
+        void clearWindowSwapchains();
 
     protected:
-        
+
         void destroyWindowVulkan(window_id windowID, WindowData_Vulkan& windowData);
+
+    private:
+
+        void clearVulkan();
 
         bool createWindowSwapchain(window_id windowID, WindowData_Vulkan& windowData);
         void destroyWindowSwapchain(window_id windowID, WindowData_Vulkan& windowData);
-
-        virtual jmap<window_id, WindowData_Vulkan*> getVulkanWindowsDataPtr() = 0;
     };
 }
 

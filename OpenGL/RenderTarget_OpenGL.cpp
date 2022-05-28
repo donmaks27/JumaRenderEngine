@@ -155,9 +155,12 @@ namespace JumaRenderEngine
         }
     }
 
-    void RenderTarget_OpenGL::onStartRender(RenderOptions* renderOptions)
+    bool RenderTarget_OpenGL::onStartRender(RenderOptions* renderOptions)
     {
-        Super::onStartRender(renderOptions);
+        if (!Super::onStartRender(renderOptions))
+        {
+            return false;
+        }
 
         getRenderEngine()->getWindowController<WindowController_OpenGL>()->setActiveWindowID(getWindowID());
         glBindFramebuffer(GL_FRAMEBUFFER, m_Framebuffer);
@@ -173,8 +176,9 @@ namespace JumaRenderEngine
 
         const math::uvector2 size = getSize();
         glViewport(0, 0, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y));
+        return true;
     }
-    void RenderTarget_OpenGL::onFinishRender()
+    void RenderTarget_OpenGL::onFinishRender(RenderOptions* renderOptions)
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         if (getSampleCount() != TextureSamples::X1)
@@ -198,7 +202,7 @@ namespace JumaRenderEngine
             glBindTexture(GL_TEXTURE_2D, 0);
         }
 
-        Super::onFinishRender();
+        Super::onFinishRender(renderOptions);
     }
 
     bool RenderTarget_OpenGL::bindResultTexture(const uint32 bindIndex) const

@@ -6,11 +6,11 @@
 
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_VULKAN)
 
-#include "VertexBuffer_Vulkan.h"
-#include "jutils/jset.h"
-#include "vulkanObjects/VulkanCommandPool.h"
-#include "vulkanObjects/VulkanRenderPass.h"
+#include "RenderPipeline_Vulkan.h"
+#include "RenderTarget_Vulkan.h"
+#include "renderEngine/window/Vulkan/WindowController_Vulkan.h"
 #include "renderEngine/window/Vulkan/WindowControllerInfo_Vulkan.h"
+#include "vulkanObjects/VulkanCommandPool.h"
 
 #ifdef JDEBUG
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
@@ -40,6 +40,19 @@ namespace JumaRenderEngine
         clearVulkan();
     }
 
+    WindowController* RenderEngine_Vulkan::createWindowController()
+    {
+        return registerObject(WindowControllerInfo<RenderAPI::Vulkan>::create());
+    }
+    RenderTarget* RenderEngine_Vulkan::createRenderTargetInternal()
+    {
+        return createObject<RenderTarget_Vulkan>();
+    }
+    RenderPipeline* RenderEngine_Vulkan::createRenderPipelineInternal()
+    {
+        return createObject<RenderPipeline_Vulkan>();
+    }
+
     bool RenderEngine_Vulkan::initInternal(const jmap<window_id, WindowProperties>& windows)
     {
         if (!createVulkanInstance())
@@ -52,14 +65,33 @@ namespace JumaRenderEngine
             clearVulkan();
             return false;
         }
-        if (!initVulkanObjects())
+        if (!pickPhysicalDevice())
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to initialize Vulkan objects"));
+            JUMA_RENDER_LOG(error, JSTR("Failed to pick physical device"));
+            clearVulkan();
+            return false;
+        }
+        if (!createDevice())
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan device"));
+            clearVulkan();
+            return false;
+        }
+        if (!createCommandPools())
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to create command pools"));
+            clearVulkan();
+            return false;
+        }
+        if (!getWindowController<WindowController_Vulkan>()->createWindowSwapchains())
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan swapchains"));
             clearVulkan();
             return false;
         }
         return true;
     }
+
     bool RenderEngine_Vulkan::createVulkanInstance()
     {
 #ifdef JDEBUG
@@ -143,20 +175,6 @@ namespace JumaRenderEngine
 #endif
         return true;
     }
-#ifdef JDEBUG
-    VkBool32 RenderEngine_Vulkan::Vulkan_DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
-        VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
-    {
-        switch (messageSeverity)
-        {
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: JUMA_RENDER_LOG(warning, pCallbackData->pMessage); break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: JUMA_RENDER_LOG(error, pCallbackData->pMessage); break;
-    	    
-        default: ;
-        }
-        return VK_FALSE;
-    }
-#endif
     jarray<const char*> RenderEngine_Vulkan::getRequiredVulkanExtensions() const
     {
         jarray<const char*> extensions = getWindowController<WindowController_Vulkan>()->getVulkanInstanceExtensions();
@@ -165,30 +183,19 @@ namespace JumaRenderEngine
 #endif
         return extensions;
     }
-    bool RenderEngine_Vulkan::initVulkanObjects()
+#ifdef JDEBUG
+    VkBool32 RenderEngine_Vulkan::Vulkan_DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
+        VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
     {
-        if (!pickPhysicalDevice())
+        switch (messageSeverity)
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to pick physical device"));
-            return false;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: JUMA_RENDER_LOG(warning, pCallbackData->pMessage); break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: JUMA_RENDER_LOG(error, pCallbackData->pMessage); break;
+        default: ;
         }
-        if (!createDevice())
-        {
-            JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan device"));
-            return false;
-        }
-        if (!createCommandPools())
-        {
-            JUMA_RENDER_LOG(error, JSTR("Failed to create command pools"));
-            return false;
-        }
-        if (!getWindowController<WindowController_Vulkan>()->createWindowSwapchains())
-        {
-            JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan swapchains"));
-            return false;
-        }
-        return true;
+        return VK_FALSE;
     }
+#endif
 
     bool RenderEngine_Vulkan::pickPhysicalDevice()
     {
@@ -198,10 +205,17 @@ namespace JumaRenderEngine
         {
             return false;
         }
-        const jmap<window_id, const WindowData_Vulkan*> windows = getWindowController<WindowController_Vulkan>()->getVulkanWindowsData();
-        if (windows.isEmpty())
+
+        WindowController* windowController = getWindowController(); 
+        const jarray<window_id> windowIDs = windowController->getWindowIDs();
+        if (windowIDs.isEmpty())
         {
             return false;
+        }
+        jarray<VkSurfaceKHR> windowSurfaces(windowIDs.getSize());
+        for (int32 index = 0; index < windowIDs.getSize(); index++)
+        {
+            windowSurfaces[index] = windowController->findWindowData<WindowData_Vulkan>(windowIDs[index])->vulkanSurface;
         }
 
         jarray<VkPhysicalDevice> physicalDevices(static_cast<int32>(deviceCount));
@@ -253,10 +267,8 @@ namespace JumaRenderEngine
                 continue;
             }
 
-            for (const auto& window : windows)
+            for (const auto& surface : windowSurfaces)
             {
-                VkSurfaceKHR surface = window.value->vulkanSurface;
-
                 uint32 surfaceFormatCount;
                 vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatCount, nullptr);
                 if (surfaceFormatCount == 0)
@@ -280,7 +292,8 @@ namespace JumaRenderEngine
         }
         return false;
     }
-    bool RenderEngine_Vulkan::getQueueFamilyIndices(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, jmap<VulkanQueueType, int32>& outQueueIndices, jarray<VulkanQueueDescription>& outQueues)
+    bool RenderEngine_Vulkan::getQueueFamilyIndices(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, 
+        jmap<VulkanQueueType, int32>& outQueueIndices, jarray<VulkanQueueDescription>& outQueues)
     {
         uint32 queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
@@ -296,6 +309,7 @@ namespace JumaRenderEngine
                 graphicsFamilyIndex = transferFamilyIndex = queueFamilyIndex;
                 break;
             }
+
             if ((graphicsFamilyIndex == -1) && (properties.queueFlags & VK_QUEUE_GRAPHICS_BIT))
             {
                 graphicsFamilyIndex = queueFamilyIndex;
@@ -311,7 +325,7 @@ namespace JumaRenderEngine
         }
 
         constexpr uint32 graphicsQueueIndex = 0;
-        const uint32 transferQueueIndex = transferFamilyIndex != graphicsFamilyIndex ? 0 : math::min(queueFamilies[transferFamilyIndex].queueCount - 1, graphicsQueueIndex + 1);
+        const uint32 transferQueueIndex = transferFamilyIndex != graphicsFamilyIndex ? 0 : math::min(queueFamilies[graphicsQueueIndex].queueCount - 1, graphicsQueueIndex + 1);
         if ((transferFamilyIndex != graphicsFamilyIndex) || (graphicsQueueIndex != transferQueueIndex))
         {
             outQueueIndices = {
@@ -338,22 +352,23 @@ namespace JumaRenderEngine
 
     bool RenderEngine_Vulkan::createDevice()
     {
-        jset<uint32> uniqueQueueFamilies;
+        uint32 maxQueueCount = 0;
+        jmap<uint32, uint32> uniqueQueueFamilies;
         for (const auto& queue : m_Queues)
         {
-            uniqueQueueFamilies.add(queue.familyIndex);
+            maxQueueCount = math::max(maxQueueCount, ++uniqueQueueFamilies[queue.familyIndex]);
         }
 
-        constexpr float queuePriority = 1.0f;
+        const jarray<float> queuePriorities(maxQueueCount, 1.0f);
         jarray<VkDeviceQueueCreateInfo> queueInfos;
         queueInfos.reserve(uniqueQueueFamilies.getSize());
         for (const auto& queueFamilyIndex : uniqueQueueFamilies)
         {
             VkDeviceQueueCreateInfo queueInfo{};
             queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		    queueInfo.queueFamilyIndex = queueFamilyIndex;
-		    queueInfo.queueCount = 1;
-		    queueInfo.pQueuePriorities = &queuePriority;
+		    queueInfo.queueFamilyIndex = queueFamilyIndex.key;
+		    queueInfo.queueCount = queueFamilyIndex.value;
+		    queueInfo.pQueuePriorities = queuePriorities.getData();
             queueInfos.add(queueInfo);
         }
 
@@ -425,92 +440,99 @@ namespace JumaRenderEngine
     }
     void RenderEngine_Vulkan::clearVulkan()
     {
-        for (const auto& sampler : m_TextureSamplers)
+        if (m_Device != nullptr)
         {
-            vkDestroySampler(m_Device, sampler.value, nullptr);
+            vkDeviceWaitIdle(m_Device);
         }
-        m_TextureSamplers.clear();
 
-        for (const auto& renderPass : m_RenderPasses)
-        {
-            delete renderPass.value;
-        }
+        clearRenderAssets();
+
+        getWindowController<WindowController_Vulkan>()->clearWindowSwapchains();
+
         m_RenderPasses.clear();
         m_RenderPassTypes.clear();
-        m_RenderPassTypeIDs = juid<render_pass_type_id>();
+        m_RenderPassTypeIDs.reset();
 
-        m_RegisteredVertexTypes_Vulkan.clear();
+        m_UnusedVulkanImages.clear();
+        m_VulkanImages.clear();
+        m_UnusedVulkanBuffers.clear();
+        m_VulkanBuffers.clear();
 
         for (const auto& commandPool : m_CommandPools)
         {
             delete commandPool.value;
         }
         m_CommandPools.clear();
-        m_QueueIndices.clear();
         m_Queues.clear();
+        m_QueueIndices.clear();
 
-        if (m_Allocator != nullptr)
-        {
-            vmaDestroyAllocator(m_Allocator);
-            m_Allocator = nullptr;
-        }
         if (m_Device != nullptr)
         {
+            if (m_Allocator != nullptr)
+            {
+                vmaDestroyAllocator(m_Allocator);
+                m_Allocator = nullptr;
+            }
+
             vkDestroyDevice(m_Device, nullptr);
             m_Device = nullptr;
         }
         m_PhysicalDevice = nullptr;
 
-#ifdef JDEBUG
-        if (m_DebugMessenger != nullptr)
-        {
-            DestroyDebugUtilsMessengerEXT(m_VulkanInstance, m_DebugMessenger, nullptr);
-            m_DebugMessenger = nullptr;
-        }
-#endif
+        clearData();
+
         if (m_VulkanInstance != nullptr)
         {
+#ifdef JDEBUG
+            if (m_DebugMessenger != nullptr)
+            {
+                DestroyDebugUtilsMessengerEXT(m_VulkanInstance, m_DebugMessenger, nullptr);
+                m_DebugMessenger = nullptr;
+            }
+#endif
+
             vkDestroyInstance(m_VulkanInstance, nullptr);
             m_VulkanInstance = nullptr;
         }
     }
 
-    WindowController* RenderEngine_Vulkan::createWindowController()
+    VulkanBuffer* RenderEngine_Vulkan::getVulkanBuffer()
     {
-        return WindowControllerInfo<RenderAPI::Vulkan>::create();
-    }
-    VertexBuffer* RenderEngine_Vulkan::createVertexBufferInternal()
-    {
-        return createObject<VertexBuffer_Vulkan>();
-    }
-
-    void RenderEngine_Vulkan::onRegisteredVertexType(const jstringID& vertexName)
-    {
-        const VertexDescription* description = findVertexType(vertexName);
-
-        VertexDescription_Vulkan& descriptionVulkan = m_RegisteredVertexTypes_Vulkan[vertexName];
-        descriptionVulkan.binding.binding = 0;
-        descriptionVulkan.binding.stride = description->size;
-        descriptionVulkan.binding.inputRate = VkVertexInputRate::VK_VERTEX_INPUT_RATE_VERTEX;
-
-        descriptionVulkan.attributes.reserve(description->components.getSize());
-        for (const auto& componentDescriprion : description->components)
+        if (!m_UnusedVulkanBuffers.isEmpty())
         {
-            VkVertexInputAttributeDescription attribute;
-            switch (componentDescriprion.type)
-            {
-            case VertexComponentType::Float: attribute.format = VK_FORMAT_R32_SFLOAT; break;
-            case VertexComponentType::Vec2: attribute.format = VK_FORMAT_R32G32_SFLOAT; break;
-            case VertexComponentType::Vec3: attribute.format = VK_FORMAT_R32G32B32_SFLOAT; break;
-            case VertexComponentType::Vec4: attribute.format = VK_FORMAT_R32G32B32A32_SFLOAT; break;
-            default: continue;
-            }
-            attribute.location = componentDescriprion.shaderLocation;
-            attribute.binding = descriptionVulkan.binding.binding;
-            attribute.offset = componentDescriprion.offset;
-
-            descriptionVulkan.attributes.add(attribute);
+            VulkanBuffer* buffer = m_UnusedVulkanBuffers.getFirst();
+            m_UnusedVulkanBuffers.removeFirst();
+            return buffer;
         }
+        return registerObject(&m_VulkanBuffers.addDefault());
+    }
+    VulkanImage* RenderEngine_Vulkan::getVulkanImage()
+    {
+        if (!m_UnusedVulkanImages.isEmpty())
+        {
+            VulkanImage* image = m_UnusedVulkanImages.getFirst();
+            m_UnusedVulkanImages.removeFirst();
+            return image;
+        }
+        return registerObject(&m_VulkanImages.addDefault());
+    }
+    void RenderEngine_Vulkan::returnVulkanBuffer(VulkanBuffer* buffer)
+    {
+        if (buffer == nullptr)
+        {
+            return;
+        }
+        buffer->clear();
+        m_UnusedVulkanBuffers.addUnique(buffer);
+    }
+    void RenderEngine_Vulkan::returnVulkanImage(VulkanImage* image)
+    {
+        if (image == nullptr)
+        {
+            return;
+        }
+        image->clear();
+        m_UnusedVulkanImages.addUnique(image);
     }
 
     VulkanRenderPass* RenderEngine_Vulkan::getRenderPass(const VulkanRenderPassDescription& description)
@@ -526,116 +548,18 @@ namespace JumaRenderEngine
             renderPassID = &m_RenderPassTypes.add(description, m_RenderPassTypeIDs.getUID());
         }
 
-        VulkanRenderPass*& renderPass = m_RenderPasses[description];
+        VulkanRenderPass* renderPass = m_RenderPasses.find(description);
         if (renderPass == nullptr)
         {
-            VulkanRenderPass* newRenderPass = createObject<VulkanRenderPass>();
-            if (!newRenderPass->init(description, *renderPassID))
+            renderPass = registerObject(&m_RenderPasses[description]);
+            if (!renderPass->init(description, *renderPassID))
             {
                 JUMA_RENDER_LOG(error, JSTR("Failed to create new vulkan render pass"));
-                delete newRenderPass;
+                m_RenderPasses.remove(description);
                 return nullptr;
             }
-            renderPass = newRenderPass;
         }
         return renderPass;
-    }
-
-    VkSampler RenderEngine_Vulkan::getTextureSampler(const TextureSamplerType samplerType)
-    {
-        const VkSampler* samplerPtr = m_TextureSamplers.find(samplerType);
-        if (samplerPtr != nullptr)
-        {
-            return *samplerPtr;
-        }
-
-        VkSamplerCreateInfo samplerInfo{};
-        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-        samplerInfo.unnormalizedCoordinates = VK_FALSE;
-        samplerInfo.compareEnable = VK_FALSE;
-        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-        samplerInfo.minLod = 0.0f;
-        samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
-        samplerInfo.mipLodBias = 0.0f;
-        switch (samplerType.filtering)
-        {
-        case TextureFiltering::Point: 
-            samplerInfo.minFilter = VK_FILTER_NEAREST;
-            samplerInfo.magFilter = VK_FILTER_NEAREST;
-            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-            samplerInfo.anisotropyEnable = VK_FALSE;
-            break;
-        case TextureFiltering::Bilinear: 
-            samplerInfo.minFilter = VK_FILTER_LINEAR;
-            samplerInfo.magFilter = VK_FILTER_LINEAR;
-            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-            samplerInfo.anisotropyEnable = VK_FALSE;
-            break;
-        case TextureFiltering::Trilinear: 
-            samplerInfo.minFilter = VK_FILTER_LINEAR;
-            samplerInfo.magFilter = VK_FILTER_LINEAR;
-            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            samplerInfo.anisotropyEnable = VK_FALSE;
-            break;
-        case TextureFiltering::Anisotropic_2: 
-            samplerInfo.minFilter = VK_FILTER_LINEAR;
-            samplerInfo.magFilter = VK_FILTER_LINEAR;
-            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            samplerInfo.anisotropyEnable = VK_TRUE;
-            samplerInfo.maxAnisotropy = 2.0f;
-            break;
-        case TextureFiltering::Anisotropic_4: 
-            samplerInfo.minFilter = VK_FILTER_LINEAR;
-            samplerInfo.magFilter = VK_FILTER_LINEAR;
-            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            samplerInfo.anisotropyEnable = VK_TRUE;
-            samplerInfo.maxAnisotropy = 4.0f;
-            break;
-        case TextureFiltering::Anisotropic_8: 
-            samplerInfo.minFilter = VK_FILTER_LINEAR;
-            samplerInfo.magFilter = VK_FILTER_LINEAR;
-            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            samplerInfo.anisotropyEnable = VK_TRUE;
-            samplerInfo.maxAnisotropy = 8.0f;
-            break;
-        case TextureFiltering::Anisotropic_16: 
-            samplerInfo.minFilter = VK_FILTER_LINEAR;
-            samplerInfo.magFilter = VK_FILTER_LINEAR;
-            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            samplerInfo.anisotropyEnable = VK_TRUE;
-            samplerInfo.maxAnisotropy = 16.0f;
-            break;
-        default: ;
-        }
-        switch (samplerType.wrapMode)
-        {
-        case TextureWrapMode::Repeat: 
-            samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-            samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-            samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-            break;
-        case TextureWrapMode::Mirror: 
-            samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-            samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-            samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-            break;
-        case TextureWrapMode::Clamp: 
-            samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-            samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-            samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-            break;
-        default: ;
-        }
-        
-        VkSampler sampler;
-        const VkResult result = vkCreateSampler(getDevice(), &samplerInfo, nullptr, &sampler);
-        if (result != VK_SUCCESS)
-        {
-            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create vulkan sampler"));
-            return nullptr;
-        }
-        return m_TextureSamplers[samplerType] = sampler;
     }
 }
 

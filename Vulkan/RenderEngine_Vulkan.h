@@ -10,13 +10,14 @@
 
 #include <vma/vk_mem_alloc.h>
 
-#include "renderEngine/texture/TextureSamplerType.h"
-#include "vulkanObjects/VulkanRenderPassDescription.h"
+#include "jutils/jlist.h"
+#include "vulkanObjects/VulkanBuffer.h"
+#include "vulkanObjects/VulkanImage.h"
 #include "vulkanObjects/VulkanQueueType.h"
+#include "vulkanObjects/VulkanRenderPass.h"
 
 namespace JumaRenderEngine
 {
-    class VulkanRenderPass;
     class VulkanCommandPool;
 
     struct VulkanQueueDescription
@@ -24,12 +25,6 @@ namespace JumaRenderEngine
         uint32 familyIndex = 0;
         uint32 queueIndex = 0;
         VkQueue queue = nullptr;
-    };
-
-    struct VertexDescription_Vulkan
-    {
-        VkVertexInputBindingDescription binding = VkVertexInputBindingDescription();
-        jarray<VkVertexInputAttributeDescription> attributes;
     };
 
     class RenderEngine_Vulkan : public RenderEngine
@@ -50,11 +45,12 @@ namespace JumaRenderEngine
         const VulkanQueueDescription* getQueue(const VulkanQueueType type) const { return !m_QueueIndices.isEmpty() ? &m_Queues[m_QueueIndices[type]] : nullptr; }
         VulkanCommandPool* getCommandPool(const VulkanQueueType type) const { return !m_CommandPools.isEmpty() ? m_CommandPools[type] : nullptr; }
 
-        const VertexDescription_Vulkan* findVertexType_Vulkan(const jstringID& vertexName) const { return m_RegisteredVertexTypes_Vulkan.find(vertexName); }
-
+        VulkanBuffer* getVulkanBuffer();
+        VulkanImage* getVulkanImage();
+        void returnVulkanBuffer(VulkanBuffer* buffer);
+        void returnVulkanImage(VulkanImage* image);
+        
         VulkanRenderPass* getRenderPass(const VulkanRenderPassDescription& description);
-
-        VkSampler getTextureSampler(TextureSamplerType samplerType);
 
     protected:
 
@@ -62,9 +58,12 @@ namespace JumaRenderEngine
         virtual void clearInternal() override;
 
         virtual WindowController* createWindowController() override;
-        virtual VertexBuffer* createVertexBufferInternal() override;
-
-        virtual void onRegisteredVertexType(const jstringID& vertexName) override;
+        virtual VertexBuffer* createVertexBufferInternal() override { return nullptr; }
+        virtual Texture* createTextureInternal() override { return nullptr; }
+        virtual Shader* createShaderInternal() override { return nullptr; }
+        virtual Material* createMaterialInternal() override { return nullptr; }
+        virtual RenderTarget* createRenderTargetInternal() override;
+        virtual RenderPipeline* createRenderPipelineInternal() override;
 
     private:
 
@@ -86,21 +85,22 @@ namespace JumaRenderEngine
         jarray<VulkanQueueDescription> m_Queues;
         jmap<VulkanQueueType, VulkanCommandPool*> m_CommandPools;
 
-        jmap<jstringID, VertexDescription_Vulkan> m_RegisteredVertexTypes_Vulkan;
-
+        jlist<VulkanBuffer> m_VulkanBuffers;
+        jlist<VulkanImage> m_VulkanImages;
+        jarray<VulkanBuffer*> m_UnusedVulkanBuffers;
+        jarray<VulkanImage*> m_UnusedVulkanImages;
+        
         juid<render_pass_type_id> m_RenderPassTypeIDs;
         jmap<VulkanRenderPassDescription, render_pass_type_id, VulkanRenderPassDescription::compatible_predicate> m_RenderPassTypes;
-        jmap<VulkanRenderPassDescription, VulkanRenderPass*, VulkanRenderPassDescription::equal_predicate> m_RenderPasses;
-
-        jmap<TextureSamplerType, VkSampler> m_TextureSamplers;
+        jmap<VulkanRenderPassDescription, VulkanRenderPass, VulkanRenderPassDescription::equal_predicate> m_RenderPasses;
 
 
         bool createVulkanInstance();
         jarray<const char*> getRequiredVulkanExtensions() const;
-        bool initVulkanObjects();
 
         bool pickPhysicalDevice();
-        static bool getQueueFamilyIndices(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, jmap<VulkanQueueType, int32>& outQueueIndices, jarray<VulkanQueueDescription>& outQueues);
+        static bool getQueueFamilyIndices(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, 
+            jmap<VulkanQueueType, int32>& outQueueIndices, jarray<VulkanQueueDescription>& outQueues);
         bool createDevice();
         bool createCommandPools();
 

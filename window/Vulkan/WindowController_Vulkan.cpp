@@ -9,10 +9,41 @@
 
 namespace JumaRenderEngine
 {
+    WindowController_Vulkan::~WindowController_Vulkan()
+    {
+        clearVulkan();
+    }
+
     void WindowController_Vulkan::destroyWindowVulkan(const window_id windowID, WindowData_Vulkan& windowData)
     {
         destroyWindowSwapchain(windowID, windowData);
+
         vkDestroySurfaceKHR(getRenderEngine<RenderEngine_Vulkan>()->getVulkanInstance(), windowData.vulkanSurface, nullptr);
+        windowData.vulkanSurface = nullptr;
+    }
+
+    void WindowController_Vulkan::clearVulkan()
+    {
+    }
+
+    bool WindowController_Vulkan::createWindowSwapchains()
+    {
+        for (const auto& windowID : getWindowIDs())
+        {
+            if (!createWindowSwapchain(windowID, *getWindowData<WindowData_Vulkan>(windowID)))
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan swapchain"));
+                return false;
+            }
+        }
+        return true;
+    }
+    void WindowController_Vulkan::clearWindowSwapchains()
+    {
+        for (const auto& windowID : getWindowIDs())
+        {
+            destroyWindowSwapchain(windowID, *getWindowData<WindowData_Vulkan>(windowID));
+        }
     }
 
     bool WindowController_Vulkan::createWindowSwapchain(const window_id windowID, WindowData_Vulkan& windowData)
@@ -32,20 +63,11 @@ namespace JumaRenderEngine
     }
     void WindowController_Vulkan::destroyWindowSwapchain(const window_id windowID, WindowData_Vulkan& windowData)
     {
-        delete windowData.vulkanSwapchain;
-    }
-
-    bool WindowController_Vulkan::createWindowSwapchains()
-    {
-        for (const auto& window : getVulkanWindowsDataPtr())
+        if (windowData.vulkanSwapchain != nullptr)
         {
-            if (!createWindowSwapchain(window.key, *window.value))
-            {
-                JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan swapchain"));
-                return false;
-            }
+            delete windowData.vulkanSwapchain;
+            windowData.vulkanSwapchain = nullptr;
         }
-        return true;
     }
 }
 

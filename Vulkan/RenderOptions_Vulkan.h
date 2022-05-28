@@ -10,8 +10,8 @@
 
 namespace JumaRenderEngine
 {
-    class VulkanRenderPass;
     class VulkanCommandBuffer;
+    class VulkanRenderPass;
 
     struct RenderOptions_Vulkan : RenderOptions
     {

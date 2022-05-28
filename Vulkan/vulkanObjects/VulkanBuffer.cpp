@@ -102,15 +102,16 @@ namespace JumaRenderEngine
         m_BufferSize = size;
         m_Mapable = false;
 
-        VulkanBuffer* stagingBuffer = renderEngine->createObject<VulkanBuffer>();
+        VulkanBuffer* stagingBuffer = renderEngine->getVulkanBuffer();
         if (!stagingBuffer->initStaging(size) || !stagingBuffer->copyData(this, waitForFinish))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to copy data to GPU vulkan buffer"));
-            delete stagingBuffer;
+            renderEngine->returnVulkanBuffer(stagingBuffer);
             clearVulkan();
             return false;
         }
-        delete stagingBuffer;
+
+        renderEngine->returnVulkanBuffer(stagingBuffer);
         markAsInitialized();
         return true;
     }
@@ -166,11 +167,11 @@ namespace JumaRenderEngine
         vmaGetAllocationMemoryProperties(renderEngine->getAllocator(), m_Allocation, &memPropFlags);
         if (!(memPropFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))
         {
-            VulkanBuffer* stagingBuffer = renderEngine->createObject<VulkanBuffer>();
+            VulkanBuffer* stagingBuffer = renderEngine->getVulkanBuffer();
             if (!stagingBuffer->initStaging(size))
             {
                 JUMA_RENDER_LOG(error, JSTR("Failed to create staging buffer for GPU vulkan buffer"));
-                delete stagingBuffer;
+                renderEngine->returnVulkanBuffer(stagingBuffer);
                 clearVulkan();
                 return false;
             }
@@ -189,16 +190,18 @@ namespace JumaRenderEngine
 
     void VulkanBuffer::clearVulkan()
     {
+        RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
+
         m_MappedData = nullptr;
         m_Mapable = false;
         if (m_StagingBuffer != nullptr)
         {
-            delete m_StagingBuffer;
+            renderEngine->returnVulkanBuffer(m_StagingBuffer);
             m_StagingBuffer = nullptr;
         }
         if (m_Buffer != nullptr)
         {
-            vmaDestroyBuffer(getRenderEngine<RenderEngine_Vulkan>()->getAllocator(), m_Buffer, m_Allocation);
+            vmaDestroyBuffer(renderEngine->getAllocator(), m_Buffer, m_Allocation);
             m_Buffer = nullptr;
             m_Allocation = nullptr;
         }
@@ -342,6 +345,7 @@ namespace JumaRenderEngine
         vmaUnmapMemory(allocator, m_Allocation);
         return true;
     }
+
     bool VulkanBuffer::copyData(const VulkanBuffer* destinationBuffer, const bool waitForFinish)
     {
         VulkanCommandPool* commandPool = getRenderEngine<RenderEngine_Vulkan>()->getCommandPool(VulkanQueueType::Transfer);

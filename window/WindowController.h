@@ -6,6 +6,7 @@
 #include "renderEngine/RenderEngineContextObject.h"
 
 #include "window_id.h"
+#include "jutils/jarray.h"
 #include "jutils/math/vector2.h"
 
 namespace JumaRenderEngine
@@ -35,6 +36,7 @@ namespace JumaRenderEngine
         virtual const WindowData* findWindowData(window_id windowID) const = 0;
         template<typename T, TEMPLATE_ENABLE(is_base<WindowData, T>)>
         const T* findWindowData(const window_id windowID) const { return reinterpret_cast<const T*>(findWindowData(windowID)); }
+        virtual jarray<window_id> getWindowIDs() const = 0;
 
         virtual bool shouldCloseWindow(window_id windowID) const = 0;
 
@@ -43,13 +45,15 @@ namespace JumaRenderEngine
         virtual void onFinishWindowRender(window_id windowID) {}
         virtual void onFinishRender() {}
 
+        virtual bool setWindowTitle(window_id windowID, const jstring& title) = 0;
+
     protected:
 
         virtual bool initWindowController() { return true; }
 
-        virtual WindowData* findWindowDataPtr(window_id windowID) = 0;
+        virtual WindowData* getWindowData(window_id windowID) = 0;
         template<typename T, TEMPLATE_ENABLE(is_base<WindowData, T>)>
-        T* findWindowDataPtr(const window_id windowID) { return reinterpret_cast<T*>(findWindowDataPtr(windowID)); }
+        T* getWindowData(const window_id windowID) { return reinterpret_cast<T*>(getWindowData(windowID)); }
 
         void onWindowResized(window_id windowID, const math::uvector2& newSize);
     };

@@ -8,6 +8,8 @@
 
 #include "WindowController_Vulkan.h"
 
+#include "jutils/jmap.h"
+
 struct GLFWwindow;
 
 namespace JumaRenderEngine
@@ -21,7 +23,7 @@ namespace JumaRenderEngine
         WindowController_Vulkan_GLFW* windowController = nullptr;
     };
 
-    class WindowController_Vulkan_GLFW : public WindowController_Vulkan
+    class WindowController_Vulkan_GLFW final : public WindowController_Vulkan
     {
         using Super = WindowController_Vulkan;
 
@@ -35,23 +37,25 @@ namespace JumaRenderEngine
         virtual void destroyWindow(window_id windowID) override;
 
         virtual const WindowData* findWindowData(const window_id windowID) const override { return m_Windows.find(windowID); }
-        virtual jmap<window_id, const WindowData_Vulkan*> getVulkanWindowsData() const override;
+        virtual jarray<window_id> getWindowIDs() const override { return m_Windows.getKeys(); }
 
         virtual bool shouldCloseWindow(window_id windowID) const override;
+
+        virtual void onFinishRender() override;
+
+        virtual bool setWindowTitle(window_id windowID, const jstring& title) override;
 
     protected:
 
         virtual bool initWindowController() override;
-        virtual void clearWindowController() override { clearGLFW(); }
 
-        virtual jmap<window_id, WindowData_Vulkan*> getVulkanWindowsDataPtr() override;
-        virtual WindowData* findWindowDataPtr(const window_id windowID) override { return m_Windows.find(windowID); }
+        virtual WindowData* getWindowData(const window_id windowID) override { return m_Windows.find(windowID); }
 
     private:
 
         jmap<window_id, WindowData_Vulkan_GLFW> m_Windows;
 
-        
+
         static void GLFW_ErrorCallback(int errorCode, const char* errorMessage);
         static void GLFW_FramebufferResizeCallback(GLFWwindow* windowGLFW, int width, int height);
 

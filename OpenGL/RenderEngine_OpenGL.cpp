@@ -38,7 +38,7 @@ namespace JumaRenderEngine
 
     WindowController* RenderEngine_OpenGL::createWindowController()
     {
-        return WindowControllerInfo<RenderAPI::OpenGL>::create();
+        return registerObject(WindowControllerInfo<RenderAPI::OpenGL>::create());
     }
     VertexBuffer* RenderEngine_OpenGL::createVertexBufferInternal()
     {

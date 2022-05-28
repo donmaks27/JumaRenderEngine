@@ -47,8 +47,8 @@ namespace JumaRenderEngine
         uint32 m_BufferSize = 0;
 
         VulkanBuffer* m_StagingBuffer = nullptr;
-        bool m_Mapable = false;
         void* m_MappedData = nullptr;
+        bool m_Mapable = false;
 
 
         void clearVulkan();

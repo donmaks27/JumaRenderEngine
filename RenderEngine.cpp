@@ -42,6 +42,7 @@ namespace JumaRenderEngine
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to initialize render engine"));
             delete m_WindowController;
+            m_WindowController = nullptr;
             return false;
         }
         m_Initialized = true;
@@ -109,7 +110,7 @@ namespace JumaRenderEngine
 
     void RenderEngine::registerObjectInternal(RenderEngineContextObjectBase* object)
     {
-        if (isValid() && (object != nullptr))
+        if (object != nullptr)
         {
             object->m_RenderEngine = this;
         }

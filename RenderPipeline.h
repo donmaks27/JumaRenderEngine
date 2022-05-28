@@ -71,8 +71,8 @@ namespace JumaRenderEngine
             this->callRender(&renderOptions);
         }
 
-        virtual bool onStartRender();
-        virtual void onFinishRender();
+        virtual bool onStartRender(RenderOptions* renderOptions);
+        virtual void onFinishRender(RenderOptions* renderOptions);
 
     private:
 

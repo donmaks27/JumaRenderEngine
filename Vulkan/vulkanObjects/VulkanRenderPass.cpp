@@ -4,6 +4,7 @@
 
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_VULKAN)
 
+#include "VulkanImage.h"
 #include "renderEngine/Vulkan/RenderEngine_Vulkan.h"
 
 namespace JumaRenderEngine
@@ -116,6 +117,136 @@ namespace JumaRenderEngine
             m_RenderPass = nullptr;
         }
         m_RenderPassTypeID = render_pass_type_id_INVALID;
+    }
+
+    bool VulkanRenderPass::createVulkanSwapchainFramebuffer(const math::uvector2& size, VkImage swapchainImage, VulkanFramebufferData& outFramebuffer) const
+    {
+        if (!m_Description.renderToSwapchain || (swapchainImage == nullptr))
+        {
+            return false;
+        }
+        return createVulkanFramebufferInternal(size, swapchainImage, outFramebuffer);
+    }
+    bool VulkanRenderPass::createVulkanFramebuffer(const math::uvector2& size, VulkanFramebufferData& outFramebuffer) const
+    {
+        if (m_Description.renderToSwapchain)
+        {
+            return false;
+        }
+        return createVulkanFramebufferInternal(size, nullptr, outFramebuffer);
+    }
+    bool VulkanRenderPass::createVulkanFramebufferInternal(const math::uvector2& size, VkImage resultImage, VulkanFramebufferData& outFramebuffer) const
+    {
+        RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
+        const bool resolveEnabled = m_Description.sampleCount != VK_SAMPLE_COUNT_1_BIT;
+
+        VulkanImage* colorImage = renderEngine->getVulkanImage();
+        if (!resolveEnabled)
+        {
+            if (resultImage == nullptr)
+            {
+                colorImage->init(
+                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
+                   { VulkanQueueType::Graphics }, size, m_Description.sampleCount, m_Description.colorFormat
+                );
+            }
+            else
+            {
+                colorImage->init(resultImage, size, m_Description.colorFormat, 1);
+            }
+        }
+        else
+        {
+            colorImage->init(
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, { VulkanQueueType::Graphics },
+                size, m_Description.sampleCount, m_Description.colorFormat, 1
+            );
+        }
+        if (!colorImage->createImageView(VK_IMAGE_ASPECT_COLOR_BIT))
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to create color attachment image"));
+            renderEngine->returnVulkanImage(colorImage);
+            return false;
+        }
+
+        VulkanImage* depthImage = nullptr;
+        if (m_Description.shouldUseDepth)
+        {
+            depthImage = renderEngine->getVulkanImage();
+            depthImage->init(
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, { VulkanQueueType::Graphics },
+                size, m_Description.sampleCount, m_Description.depthFormat, 1
+            );
+            if (!depthImage->createImageView(VK_IMAGE_ASPECT_DEPTH_BIT))
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to create depth attachment image"));
+                renderEngine->returnVulkanImage(colorImage);
+                renderEngine->returnVulkanImage(depthImage);
+                return false;
+            }
+        }
+
+        VulkanImage* resolveImage = nullptr;
+        if (resolveEnabled)
+        {
+            resolveImage = renderEngine->getVulkanImage();
+            if (resultImage == nullptr)
+            {
+                resolveImage->init(
+                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
+                    { VulkanQueueType::Graphics }, size, VK_SAMPLE_COUNT_1_BIT, m_Description.colorFormat
+                );
+            }
+            else
+            {
+                resolveImage->init(resultImage, size, m_Description.colorFormat, 1);
+            }
+            if (!resolveImage->createImageView(VK_IMAGE_ASPECT_COLOR_BIT))
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to create resolve attachment image"));
+                renderEngine->returnVulkanImage(colorImage);
+                renderEngine->returnVulkanImage(depthImage);
+                renderEngine->returnVulkanImage(resolveImage);
+                return false;
+            }
+        }
+
+        VkImageView attachments[3];
+        uint32 attachmentCount = 1;
+        attachments[0] = colorImage->getImageView();
+        if (depthImage != nullptr)
+        {
+            attachments[attachmentCount++] = depthImage->getImageView();
+        }
+        if (resolveImage != nullptr)
+        {
+            attachments[attachmentCount++] = resolveImage->getImageView();
+        }
+
+        VkFramebuffer framebuffer;
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = m_RenderPass;
+        framebufferInfo.attachmentCount = attachmentCount;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = size.x;
+        framebufferInfo.height = size.y;
+        framebufferInfo.layers = 1;
+        const VkResult result = vkCreateFramebuffer(renderEngine->getDevice(), &framebufferInfo, nullptr, &framebuffer);
+        if (result != VK_SUCCESS)
+        {
+            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create vulkan framebuffer"));
+            renderEngine->returnVulkanImage(colorImage);
+            renderEngine->returnVulkanImage(depthImage);
+            renderEngine->returnVulkanImage(resolveImage);
+            return false;
+        }
+
+        outFramebuffer.framebuffer = framebuffer;
+        outFramebuffer.colorAttachment = colorImage;
+        outFramebuffer.depthAttachment = depthImage;
+        outFramebuffer.resolveAttachment = resolveImage;
+        return true;
     }
 }
 

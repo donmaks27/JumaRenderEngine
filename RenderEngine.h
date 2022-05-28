@@ -40,7 +40,7 @@ namespace JumaRenderEngine
         T* getWindowController() const { return dynamic_cast<T*>(this->getWindowController()); }
 
         template<typename T, TEMPLATE_ENABLE(is_base_and_not_abstract<RenderEngineContextObjectBase, T>)>
-        T* createObject() { return this->isValid() ? this->registerObject(new T()) : nullptr; }
+        T* createObject() { return this->registerObject(new T()); }
         template<typename T, TEMPLATE_ENABLE(is_base<RenderEngineContextObjectBase, T>)>
         T* registerObject(T* object)
         {
@@ -69,6 +69,7 @@ namespace JumaRenderEngine
         virtual void clearInternal() { clearData(); }
 
         void clearRenderAssets();
+        void clearData();
 
         virtual WindowController* createWindowController() = 0;
         virtual VertexBuffer* createVertexBufferInternal() = 0;
@@ -90,8 +91,6 @@ namespace JumaRenderEngine
 
 
         bool createRenderAssets();
-
-        void clearData();
 
         void registerObjectInternal(RenderEngineContextObjectBase* object);
         

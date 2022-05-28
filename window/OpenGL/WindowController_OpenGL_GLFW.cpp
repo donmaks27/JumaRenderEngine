@@ -173,6 +173,19 @@ namespace JumaRenderEngine
 
         glfwPollEvents();
     }
+
+    bool WindowController_OpenGL_GLFW::setWindowTitle(const window_id windowID, const jstring& title)
+    {
+        const WindowData_OpenGL_GLFW* windowData = m_Windows.find(windowID);
+        if (windowData == nullptr)
+        {
+            JUMA_RENDER_LOG(warning, JSTR("Can't find window ") + TO_JSTR(windowID));
+            return false;
+        }
+
+        glfwSetWindowTitle(windowData->windowGLFW, *title);
+        return true;
+    }
 }
 
 #endif

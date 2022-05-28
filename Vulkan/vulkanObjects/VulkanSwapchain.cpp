@@ -4,7 +4,6 @@
 
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_VULKAN)
 
-#include "renderEngine/RenderEngine.h"
 #include "renderEngine/Vulkan/RenderEngine_Vulkan.h"
 #include "renderEngine/window/Vulkan/WindowController_Vulkan.h"
 
@@ -24,12 +23,17 @@ namespace JumaRenderEngine
             clearVulkan();
             return false;
         }
-        if (!createSyncObjects())
+
+        VkSemaphoreCreateInfo semaphoreInfo{};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        const VkResult result = vkCreateSemaphore(getRenderEngine<RenderEngine_Vulkan>()->getDevice(), &semaphoreInfo, nullptr, &m_RenderAvailableSemaphore);
+        if (result != VK_SUCCESS)
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan sync objects"));
+            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create RenderAvailableSemaphore"));
             clearVulkan();
             return false;
         }
+
         return true;
     }
     bool VulkanSwapchain::createSwapchain(VkSwapchainKHR oldSwapchain)
@@ -38,10 +42,14 @@ namespace JumaRenderEngine
         constexpr uint8 defaultImageCount = tripleBuffering ? 3 : 2;
 
         const RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
-        const WindowData_Vulkan* windowData = reinterpret_cast<const WindowData_Vulkan*>(renderEngine->getWindowController()->findWindowData(m_WindowID));
-        VkPhysicalDevice physicalDevice = renderEngine->getPhysicalDevice();
-        VkDevice device = renderEngine->getDevice();
+        const WindowData_Vulkan* windowData = renderEngine->getWindowController()->findWindowData<WindowData_Vulkan>(m_WindowID);
+        if (windowData == nullptr)
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to get window ") + TO_JSTR(m_WindowID));
+            return false;
+        }
 
+        VkPhysicalDevice physicalDevice = renderEngine->getPhysicalDevice();
         uint32 surfaceFormatCount;
         vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, windowData->vulkanSurface, &surfaceFormatCount, nullptr);
         if (surfaceFormatCount == 0)
@@ -73,6 +81,7 @@ namespace JumaRenderEngine
             }
         }
 
+        VkDevice device = renderEngine->getDevice();
         VkSwapchainCreateInfoKHR swapchainInfo{};
         swapchainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	    swapchainInfo.surface = windowData->vulkanSurface;
@@ -109,18 +118,6 @@ namespace JumaRenderEngine
         m_SwapchainImagesSize = { swapchainSize.width, swapchainSize.height };
         return true;
     }
-    bool VulkanSwapchain::createSyncObjects()
-    {
-        VkSemaphoreCreateInfo semaphoreInfo{};
-        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        const VkResult result = vkCreateSemaphore(getRenderEngine<RenderEngine_Vulkan>()->getDevice(), &semaphoreInfo, nullptr, &m_RenderAvailableSemaphore);
-        if (result != VK_SUCCESS)
-        {
-            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create RenderAvailableSemaphore"));
-            return false;
-        }
-        return true;
-    }
 
     void VulkanSwapchain::clearVulkan()
     {
@@ -131,6 +128,7 @@ namespace JumaRenderEngine
             vkDestroySemaphore(device, m_RenderAvailableSemaphore, nullptr);
             m_RenderAvailableSemaphore = nullptr;
         }
+
         m_SwapchainImages.clear();
         if (m_Swapchain != nullptr)
         {
@@ -138,14 +136,14 @@ namespace JumaRenderEngine
             m_Swapchain = nullptr;
         }
 
-        m_WindowID = window_id_INVALID;
-        m_NeedToRecreate = false;
-        m_SwapchainImagesFormat = VK_FORMAT_UNDEFINED;
-        m_SwapchainImagesSize = { 0, 0 };
         m_AcquiredSwapchainImageIndex = -1;
+        m_SwapchainImagesSize = { 0, 0 };
+        m_SwapchainImagesFormat = VK_FORMAT_UNDEFINED;
+        m_NeedToRecreate = false;
+        m_WindowID = window_id_INVALID;
     }
 
-    bool VulkanSwapchain::refreshSwapchain()
+    bool VulkanSwapchain::updateSwapchain()
     {
         if (!m_NeedToRecreate)
         {
@@ -163,27 +161,29 @@ namespace JumaRenderEngine
 
     bool VulkanSwapchain::acquireNextImage(bool& availableForRender)
     {
-        availableForRender = false;
-        if (!m_NeedToRecreate)
+        if (m_NeedToRecreate)
         {
-            uint32 renderImageIndex = 0;
-            const VkResult result = vkAcquireNextImageKHR(getRenderEngine<RenderEngine_Vulkan>()->getDevice(), m_Swapchain, UINT64_MAX, m_RenderAvailableSemaphore, nullptr, &renderImageIndex);
-            if ((result != VK_SUCCESS) && (result != VK_SUBOPTIMAL_KHR))
-            {
-                if (result != VK_ERROR_OUT_OF_DATE_KHR)
-                {
-                    JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to acquire swapchain image"));
-                    return false;
-                }
-                
-                m_NeedToRecreate = true;
-            }
-            else
-            {
-                availableForRender = true;
-                m_AcquiredSwapchainImageIndex = static_cast<int8>(renderImageIndex);
-            }
+            availableForRender = false;
+            return true;
         }
+
+        uint32 renderImageIndex = 0;
+        const VkResult result = vkAcquireNextImageKHR(getRenderEngine<RenderEngine_Vulkan>()->getDevice(), m_Swapchain, UINT64_MAX, m_RenderAvailableSemaphore, nullptr, &renderImageIndex);
+        if ((result != VK_SUCCESS) && (result != VK_SUBOPTIMAL_KHR))
+        {
+            availableForRender = false;
+            if (result != VK_ERROR_OUT_OF_DATE_KHR)
+            {
+                JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to acquire swapchain image"));
+                return false;
+            }
+            
+            m_NeedToRecreate = true;
+            return true;
+        }
+        
+        m_AcquiredSwapchainImageIndex = static_cast<int8>(renderImageIndex);
+        availableForRender = true;
         return true;
     }
 }

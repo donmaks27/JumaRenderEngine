@@ -6,8 +6,6 @@
 
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_VULKAN)
 
-#include "renderEngine/RenderEngineContextObject.h"
-
 #include <vulkan/vulkan_core.h>
 
 namespace JumaRenderEngine

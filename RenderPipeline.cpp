@@ -205,7 +205,7 @@ namespace JumaRenderEngine
     void RenderPipeline::callRender(RenderOptions* renderOptions)
     {
         renderOptions->renderPipeline = this;
-        if (!onStartRender())
+        if (!onStartRender(renderOptions))
         {
             return;
         }
@@ -225,15 +225,15 @@ namespace JumaRenderEngine
             }
             pipelineStage->renderTarget->onFinishRender(renderOptions);
         }
-        onFinishRender();
+        onFinishRender(renderOptions);
     }
 
-    bool RenderPipeline::onStartRender()
+    bool RenderPipeline::onStartRender(RenderOptions* renderOptions)
     {
         getRenderEngine()->getWindowController()->onStartRender();
         return true;
     }
-    void RenderPipeline::onFinishRender()
+    void RenderPipeline::onFinishRender(RenderOptions* renderOptions)
     {
         getRenderEngine()->getWindowController()->onFinishRender();
     }

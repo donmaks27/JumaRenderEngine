@@ -23,7 +23,7 @@ namespace JumaRenderEngine
         WindowController_OpenGL_GLFW* windowController = nullptr;
     };
 
-    class WindowController_OpenGL_GLFW : public WindowController_OpenGL
+    class WindowController_OpenGL_GLFW final : public WindowController_OpenGL
     {
         using Super = WindowController_OpenGL;
 
@@ -33,18 +33,22 @@ namespace JumaRenderEngine
 
         virtual bool createWindow(window_id windowID, const WindowProperties& properties) override;
         virtual void destroyWindow(window_id windowID) override;
+
         virtual const WindowData* findWindowData(const window_id windowID) const override { return m_Windows.find(windowID); }
+        virtual jarray<window_id> getWindowIDs() const override { return m_Windows.getKeys(); }
 
         virtual bool shouldCloseWindow(window_id windowID) const override;
 
         virtual void onFinishWindowRender(window_id windowID) override;
         virtual void onFinishRender() override;
 
+        virtual bool setWindowTitle(window_id windowID, const jstring& title) override;
+
     protected:
 
         virtual bool initWindowController() override;
         
-        virtual WindowData* findWindowDataPtr(const window_id windowID) override { return m_Windows.find(windowID); }
+        virtual WindowData* getWindowData(const window_id windowID) override { return m_Windows.find(windowID); }
 
         virtual bool setActiveWindowInternal(window_id windowID) override;
 

@@ -8,7 +8,6 @@ namespace JumaRenderEngine
 {
     enum class TextureFormat : uint8
     {
-        RGB_UINT8,
         RGBA_UINT8,
         BGRA_UINT8,
         DEPTH_FLOAT32,
@@ -20,9 +19,6 @@ namespace JumaRenderEngine
     {
         switch (format)
         {
-        case TextureFormat::RGB_UINT8:
-            return 3;
-
         case TextureFormat::RGBA_UINT8:
         case TextureFormat::BGRA_UINT8:
         case TextureFormat::DEPTH_FLOAT32:

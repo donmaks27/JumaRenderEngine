@@ -21,7 +21,6 @@ namespace JumaRenderEngine
     {
         switch (format)
         {
-        case TextureFormat::RGB_UINT8: return VK_FORMAT_R8G8B8_UINT;
         case TextureFormat::RGBA_UINT8: return VK_FORMAT_R8G8B8A8_UINT;
         case TextureFormat::BGRA_UINT8: return VK_FORMAT_B8G8R8A8_UINT;
         case TextureFormat::DEPTH_FLOAT32: return VK_FORMAT_D32_SFLOAT;
@@ -53,10 +52,10 @@ namespace JumaRenderEngine
         virtual ~VulkanImage() override;
 
         bool init(VkImageUsageFlags usage, std::initializer_list<VulkanQueueType> accessedQueues, const math::uvector2& size, 
-            TextureSamples sampleCount, TextureFormat format, uint32 mipLevels);
+            VkSampleCountFlagBits sampleCount, VkFormat format, uint32 mipLevels);
         bool init(VkImageUsageFlags usage, std::initializer_list<VulkanQueueType> accessedQueues, const math::uvector2& size, 
-            TextureSamples sampleCount, TextureFormat format);
-        bool init(VkImage existingImage, const math::uvector2& size, TextureFormat format, uint32 mipLevels);
+            VkSampleCountFlagBits sampleCount, VkFormat format);
+        bool init(VkImage existingImage, const math::uvector2& size, VkFormat format, uint32 mipLevels);
 
         bool createImageView(VkImageAspectFlags aspectFlags);
 
@@ -67,11 +66,6 @@ namespace JumaRenderEngine
             VkAccessFlags srcAccess, VkPipelineStageFlags srcStage, 
             VkAccessFlags dstAccess, VkPipelineStageFlags dstStage);
         bool changeImageLayout(VkCommandBuffer commandBuffer, VkImageLayout newLayout);
-
-        bool generateMipmaps(VkCommandBuffer commandBuffer, VkImageLayout finalLayout);
-        bool generateMipmaps(VkCommandBuffer commandBuffer) { return generateMipmaps(commandBuffer, m_ImageLayout); }
-
-        bool setImageData(VkCommandBuffer commandBuffer, const uint8* data);
 
     protected:
 
@@ -84,7 +78,7 @@ namespace JumaRenderEngine
         VkImageView m_ImageView = nullptr;
 
         math::uvector2 m_Size = { 0, 0 };
-        TextureFormat m_Format = TextureFormat::RGBA_UINT8;
+        VkFormat m_Format = VK_FORMAT_UNDEFINED;
         uint32 m_MipLevels = 0;
         VkImageLayout m_ImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 

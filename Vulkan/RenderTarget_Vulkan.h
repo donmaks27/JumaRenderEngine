@@ -8,14 +8,11 @@
 
 #include "renderEngine/RenderTarget.h"
 
-#include <vulkan/vulkan_core.h>
-
 #include "jutils/jarray.h"
-#include "vulkanObjects/VulkanRenderPassDescription.h"
+#include "vulkanObjects/VulkanFramebufferData.h"
 
 namespace JumaRenderEngine
 {
-    class VulkanImage;
     class VulkanRenderPass;
 
     class RenderTarget_Vulkan : public RenderTarget
@@ -30,27 +27,17 @@ namespace JumaRenderEngine
         virtual void onFinishRender(RenderOptions* renderOptions) override;
 
     protected:
-        
+
         virtual bool initInternal() override;
 
     private:
 
-        struct FramebufferData
-        {
-            VkFramebuffer framebuffer = nullptr;
-            VulkanImage* colorAttachment = nullptr;
-            VulkanImage* depthAttachment = nullptr;
-            VulkanImage* resolveAttachment = nullptr;
-        };
-
         VulkanRenderPass* m_RenderPass = nullptr;
-        jarray<FramebufferData> m_Framebuffers;
+        jarray<VulkanFramebufferData> m_Framebuffers;
 
 
-        bool createFramebuffers();
-        bool createWindowFramebuffers();
-
-        bool createFramebuffer(const VulkanRenderPassDescription& renderPassDescription, VkImage resultImage, FramebufferData& outFramebuffer) const;
+        bool initFramebuffer();
+        bool initWindowFramebuffer();
 
         void clearVulkan();
 

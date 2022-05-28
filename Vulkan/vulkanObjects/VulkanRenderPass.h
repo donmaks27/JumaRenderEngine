@@ -8,7 +8,9 @@
 
 #include "renderEngine/RenderEngineContextObject.h"
 
+#include "VulkanFramebufferData.h"
 #include "VulkanRenderPassDescription.h"
+#include "jutils/math/vector2.h"
 
 namespace JumaRenderEngine
 {
@@ -27,6 +29,9 @@ namespace JumaRenderEngine
         const VulkanRenderPassDescription& getDescription() const { return m_Description; }
         render_pass_type_id getTypeID() const { return m_RenderPassTypeID; }
 
+        bool createVulkanSwapchainFramebuffer(const math::uvector2& size, VkImage swapchainImage, VulkanFramebufferData& outFramebuffer) const;
+        bool createVulkanFramebuffer(const math::uvector2& size, VulkanFramebufferData& outFramebuffer) const;
+
     private:
 
         VkRenderPass m_RenderPass = nullptr;
@@ -38,6 +43,8 @@ namespace JumaRenderEngine
         bool init(const VulkanRenderPassDescription& description, render_pass_type_id renderPassTypeID);
 
         void clearVulkan();
+
+        bool createVulkanFramebufferInternal(const math::uvector2& size, VkImage resultImage, VulkanFramebufferData& outFramebuffer) const;
     };
 }
 

@@ -6,6 +6,6 @@ namespace JumaRenderEngine
 {
     void WindowController::onWindowResized(const window_id windowID, const math::uvector2& newSize)
     {
-        findWindowDataPtr(windowID)->size = newSize;
+        getWindowData(windowID)->size = newSize;
     }
 }

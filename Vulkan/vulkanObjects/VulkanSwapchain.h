@@ -36,7 +36,8 @@ namespace JumaRenderEngine
         VkSemaphore getRenderAvailableSemaphore() const { return m_RenderAvailableSemaphore; }
         int8 getAcquiredImageIndex() const { return m_AcquiredSwapchainImageIndex; }
 
-        bool refreshSwapchain();
+        void markAsNeedToRecreate() { m_NeedToRecreate = true; }
+        bool updateSwapchain();
 
         bool acquireNextImage(bool& availableForRender);
 
@@ -57,7 +58,6 @@ namespace JumaRenderEngine
 
         bool init(window_id windowID);
         bool createSwapchain(VkSwapchainKHR oldSwapchain);
-        bool createSyncObjects();
 
         void clearVulkan();
     };
