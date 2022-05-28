@@ -86,18 +86,11 @@ namespace JumaRenderEngine
             return false;
         }
 
-        RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
-        const WindowController* windowController = renderEngine->getWindowController();
-
         // Wait for prev render frame finished
-        if (m_RenderCommandBuffer != nullptr)
-        {
-            vkWaitForFences(renderEngine->getDevice(), 1, &m_RenderFinishedFence, VK_TRUE, UINT64_MAX);
-            m_RenderCommandBuffer->returnToCommandPool();
-            m_RenderCommandBuffer = nullptr;
-        }
+        waitForPreviousRenderFinish();
 
         // Acquire next swapchain images
+        const WindowController* windowController = getRenderEngine()->getWindowController();
         m_Swapchains.clear();
         m_SwapchainImageReadySemaphores.clear();
         for (const auto& pipelineStage : getPipelineStages())
@@ -132,7 +125,20 @@ namespace JumaRenderEngine
         finishRecordingRenderCommandBuffer(renderOptions);
         Super::onFinishRender(renderOptions);
     }
+    void RenderPipeline_Vulkan::waitForRenderFinished()
+    {
+        waitForPreviousRenderFinish();
+    }
 
+    void RenderPipeline_Vulkan::waitForPreviousRenderFinish()
+    {
+        if (m_RenderCommandBuffer != nullptr)
+        {
+            vkWaitForFences(getRenderEngine<RenderEngine_Vulkan>()->getDevice(), 1, &m_RenderFinishedFence, VK_TRUE, UINT64_MAX);
+            m_RenderCommandBuffer->returnToCommandPool();
+            m_RenderCommandBuffer = nullptr;
+        }
+    }
     bool RenderPipeline_Vulkan::startRecordingRenderCommandBuffer(RenderOptions* renderOptions)
     {
         VulkanCommandBuffer* commandBuffer = getRenderEngine<RenderEngine_Vulkan>()->getCommandPool(VulkanQueueType::Graphics)->getCommandBuffer();

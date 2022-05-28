@@ -23,6 +23,8 @@ namespace JumaRenderEngine
         RenderPipeline_Vulkan() = default;
         virtual ~RenderPipeline_Vulkan() override;
 
+        virtual void waitForRenderFinished() override;
+
     protected:
 
         virtual bool initInternal() override;
@@ -44,6 +46,7 @@ namespace JumaRenderEngine
 
         void clearVulkan();
 
+        void waitForPreviousRenderFinish();
         bool startRecordingRenderCommandBuffer(RenderOptions* renderOptions);
         bool finishRecordingRenderCommandBuffer(RenderOptions* renderOptions);
     };

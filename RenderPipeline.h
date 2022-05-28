@@ -58,6 +58,7 @@ namespace JumaRenderEngine
         void clearRenderPrimitives();
 
         bool render();
+        virtual void waitForRenderFinished() {}
 
     protected:
 
