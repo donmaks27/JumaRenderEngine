@@ -11,6 +11,7 @@
 #include <vma/vk_mem_alloc.h>
 
 #include "jutils/jlist.h"
+#include "renderEngine/texture/TextureSamplerType.h"
 #include "vulkanObjects/VulkanBuffer.h"
 #include "vulkanObjects/VulkanImage.h"
 #include "vulkanObjects/VulkanQueueType.h"
@@ -60,6 +61,8 @@ namespace JumaRenderEngine
 
         const VertexDescription_Vulkan* findVertexType_Vulkan(const jstringID& vertexName) const { return m_RegisteredVertexTypes_Vulkan.find(vertexName); }
 
+        VkSampler getTextureSampler(TextureSamplerType samplerType);
+
     protected:
 
         virtual bool initInternal(const jmap<window_id, WindowProperties>& windows) override;
@@ -67,7 +70,7 @@ namespace JumaRenderEngine
 
         virtual WindowController* createWindowController() override;
         virtual VertexBuffer* createVertexBufferInternal() override;
-        virtual Texture* createTextureInternal() override { return nullptr; }
+        virtual Texture* createTextureInternal() override;
         virtual Shader* createShaderInternal() override;
         virtual Material* createMaterialInternal() override;
         virtual RenderTarget* createRenderTargetInternal() override;
@@ -105,6 +108,8 @@ namespace JumaRenderEngine
         jmap<VulkanRenderPassDescription, VulkanRenderPass, VulkanRenderPassDescription::equal_predicate> m_RenderPasses;
 
         jmap<jstringID, VertexDescription_Vulkan> m_RegisteredVertexTypes_Vulkan;
+
+        jmap<TextureSamplerType, VkSampler> m_TextureSamplers;
 
 
         bool createVulkanInstance();

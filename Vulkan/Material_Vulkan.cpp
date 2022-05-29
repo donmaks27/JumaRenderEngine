@@ -7,6 +7,7 @@
 #include "RenderEngine_Vulkan.h"
 #include "RenderOptions_Vulkan.h"
 #include "Shader_Vulkan.h"
+#include "Texture_Vulkan.h"
 #include "VertexBuffer_Vulkan.h"
 #include "vulkanObjects/VulkanCommandBuffer.h"
 #include "vulkanObjects/VulkanRenderPass.h"
@@ -161,6 +162,10 @@ namespace JumaRenderEngine
         const jmap<jstringID, ShaderUniform>& uniforms = getShader()->getUniforms();
         const MaterialParamsStorage& params = getMaterialParams();
 
+        jarray<VkDescriptorImageInfo> imageInfos;
+        jarray<VkWriteDescriptorSet> descriptorWrites;
+        imageInfos.reserve(uniforms.getSize());
+        descriptorWrites.reserve(uniforms.getSize());
         for (const auto& uniform : uniforms)
         {
             switch (uniform.value.type)
@@ -202,10 +207,52 @@ namespace JumaRenderEngine
                 }
                 break;
 
+            case ShaderUniformType::Texture:
+                {
+                    TextureBase* value = nullptr;
+                    if (!params.getValue<ShaderUniformType::Texture>(uniform.key, value))
+                    {
+                        continue;
+                    }
+                    VulkanImage* vulkanImage = nullptr;
+                    {
+                        Texture_Vulkan* texture = dynamic_cast<Texture_Vulkan*>(value);
+                        if (texture != nullptr)
+                        {
+                            vulkanImage = texture->getVulkanImage();
+                        }
+                        if (vulkanImage == nullptr)
+                        {
+                            continue;
+                        }
+                    }
+
+                    VkDescriptorImageInfo& imageInfo = imageInfos.addDefault();
+                    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    imageInfo.imageView = vulkanImage->getImageView();
+                    imageInfo.sampler = renderEngine->getTextureSampler(value->getSamplerType());
+                    VkWriteDescriptorSet& descriptorWrite = descriptorWrites.addDefault();
+                    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    descriptorWrite.dstSet = m_DescriptorSet;
+                    descriptorWrite.dstBinding = uniform.value.shaderLocation;
+                    descriptorWrite.dstArrayElement = 0;
+                    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    descriptorWrite.descriptorCount = 1;
+                    descriptorWrite.pImageInfo = &imageInfo;
+                }
+                break;
+
             default: ;
             }
         }
 
+        if (!descriptorWrites.isEmpty())
+        {
+            vkUpdateDescriptorSets(renderEngine->getDevice(), 
+               static_cast<uint32>(descriptorWrites.getSize()), descriptorWrites.getData(),
+               0, nullptr
+            );
+        }
         if (!m_UniformBuffers.isEmpty())
         {
             for (const auto& buffer : m_UniformBuffers)

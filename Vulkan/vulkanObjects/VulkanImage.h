@@ -21,8 +21,8 @@ namespace JumaRenderEngine
     {
         switch (format)
         {
-        case TextureFormat::RGBA_UINT8: return VK_FORMAT_R8G8B8A8_UINT;
-        case TextureFormat::BGRA_UINT8: return VK_FORMAT_B8G8R8A8_UINT;
+        case TextureFormat::RGBA_UINT8: return VK_FORMAT_R8G8B8A8_SRGB;
+        case TextureFormat::BGRA_UINT8: return VK_FORMAT_B8G8R8A8_SRGB;
         case TextureFormat::DEPTH_FLOAT32: return VK_FORMAT_D32_SFLOAT;
         case TextureFormat::DEPTH_FLOAT32_STENCIL_UINT8: return VK_FORMAT_D32_SFLOAT_S8_UINT;
         case TextureFormat::DEPTH_UNORM24_STENCIL_UINT8: return VK_FORMAT_D24_UNORM_S8_UINT;
@@ -66,6 +66,9 @@ namespace JumaRenderEngine
             VkAccessFlags srcAccess, VkPipelineStageFlags srcStage, 
             VkAccessFlags dstAccess, VkPipelineStageFlags dstStage);
         bool changeImageLayout(VkCommandBuffer commandBuffer, VkImageLayout newLayout);
+        
+        bool setImageData(const uint8* data, VkImageLayout finalLayout);
+        bool setImageData(const uint8* data) { return setImageData(data, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL); }
 
     protected:
 

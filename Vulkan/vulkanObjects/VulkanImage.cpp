@@ -4,10 +4,25 @@
 
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_VULKAN)
 
+#include "VulkanCommandPool.h"
 #include "renderEngine/Vulkan/RenderEngine_Vulkan.h"
 
 namespace JumaRenderEngine
 {
+    constexpr uint32 GetTextureFormatSizeByVulkanFormat(const VkFormat format)
+    {
+        switch (format)
+        {
+        case VK_FORMAT_R8G8B8A8_SRGB: return GetTextureFormatSize(TextureFormat::RGBA_UINT8);
+        case VK_FORMAT_B8G8R8A8_SRGB: return GetTextureFormatSize(TextureFormat::BGRA_UINT8);
+        case VK_FORMAT_D32_SFLOAT: return GetTextureFormatSize(TextureFormat::DEPTH_FLOAT32);
+        case VK_FORMAT_D32_SFLOAT_S8_UINT: return GetTextureFormatSize(TextureFormat::DEPTH_FLOAT32_STENCIL_UINT8);
+        case VK_FORMAT_D24_UNORM_S8_UINT: return GetTextureFormatSize(TextureFormat::DEPTH_UNORM24_STENCIL_UINT8);
+        default: ;
+        }
+        return 0;
+    }
+
     VulkanImage::~VulkanImage()
     {
         clearVulkan();
@@ -213,6 +228,89 @@ namespace JumaRenderEngine
 
         JUMA_RENDER_LOG(warning, JSTR("Vulkan image transition not implemented"));
         return false;
+    }
+
+    bool VulkanImage::setImageData(const uint8* data, const VkImageLayout finalLayout)
+    {
+        if (!isValid())
+        {
+            JUMA_RENDER_LOG(error, JSTR("Vulkan image not initialized"));
+            return false;
+        }
+        if (data == nullptr)
+        {
+            JUMA_RENDER_LOG(error, JSTR("Invalid input params"));
+            return false;
+        }
+
+        RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
+        VulkanCommandBuffer* commandBuffer = renderEngine->getCommandPool(VulkanQueueType::Graphics)->getCommandBuffer();
+        if (commandBuffer == nullptr)
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to get vulkan command buffer"));
+            return false;
+        }
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        vkBeginCommandBuffer(commandBuffer->get(), &beginInfo);
+
+        if (m_ImageLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            if (!changeImageLayout(commandBuffer->get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL))
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to change vulkan image layout"));
+                commandBuffer->returnToCommandPool();
+                return false;
+            }
+        }
+
+        const uint32 imageSize = m_Size.x * m_Size.y * GetTextureFormatSizeByVulkanFormat(m_Format);
+        VulkanBuffer* stagingBuffer = renderEngine->getVulkanBuffer();
+        if (!stagingBuffer->initStaging(imageSize) || !stagingBuffer->setData(data, imageSize, 0, true))
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to create staging buffer"));
+            commandBuffer->returnToCommandPool();
+            renderEngine->returnVulkanBuffer(stagingBuffer);
+            return false;
+        }
+
+        VkBufferImageCopy imageCopy{};
+        imageCopy.bufferOffset = 0;
+        imageCopy.bufferRowLength = 0;
+        imageCopy.bufferImageHeight = 0;
+        imageCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageCopy.imageSubresource.mipLevel = 0;
+        imageCopy.imageSubresource.baseArrayLayer = 0;
+        imageCopy.imageSubresource.layerCount = 1;
+        imageCopy.imageOffset = { 0, 0, 0 };
+        imageCopy.imageExtent = { m_Size.x, m_Size.y, 1 };
+        vkCmdCopyBufferToImage(commandBuffer->get(), stagingBuffer->get(), m_Image, m_ImageLayout, 1, &imageCopy);
+
+        if (m_ImageLayout != finalLayout)
+        {
+            if (!changeImageLayout(commandBuffer->get(), finalLayout))
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to change vulkan image layout"));
+                commandBuffer->returnToCommandPool();
+                renderEngine->returnVulkanBuffer(stagingBuffer);
+                return false;
+            }
+        }
+
+        vkEndCommandBuffer(commandBuffer->get());
+        if (!commandBuffer->submit(true))
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to submit render command buffer"));
+            commandBuffer->returnToCommandPool();
+            renderEngine->returnVulkanBuffer(stagingBuffer);
+            return false;
+        }
+
+        commandBuffer->returnToCommandPool();
+        renderEngine->returnVulkanBuffer(stagingBuffer);
+        return true;
     }
 }
 
