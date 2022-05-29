@@ -69,6 +69,11 @@ namespace JumaRenderEngine
         
         bool setImageData(const uint8* data, VkImageLayout finalLayout);
         bool setImageData(const uint8* data) { return setImageData(data, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL); }
+        
+        bool generateMipmaps(VkCommandBuffer commandBuffer, VkImageLayout finalLayout);
+        bool generateMipmaps(VkCommandBuffer commandBuffer) { return generateMipmaps(commandBuffer, m_ImageLayout); }
+        bool generateMipmaps(VkImageLayout finalLayout);
+        bool generateMipmaps() { return generateMipmaps(m_ImageLayout); }
 
     protected:
 

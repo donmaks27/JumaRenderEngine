@@ -112,8 +112,7 @@ namespace JumaRenderEngine
     bool VulkanImage::init(const VkImageUsageFlags usage, const std::initializer_list<VulkanQueueType> accessedQueues,
         const math::uvector2& size, const VkSampleCountFlagBits sampleCount, const VkFormat format)
     {
-        //return init(usage, accessedQueues, size, sampleCount, format, static_cast<uint32>(std::floor(std::log2(math::min(size.x, size.y)))) + 1);
-        return init(usage, accessedQueues, size, sampleCount, format, 1);
+        return init(usage, accessedQueues, size, sampleCount, format, static_cast<uint32>(std::floor(std::log2(math::min(size.x, size.y)))) + 1);
     }
     bool VulkanImage::init(VkImage existingImage, const math::uvector2& size, const VkFormat format, const uint32 mipLevels)
     {
@@ -310,6 +309,133 @@ namespace JumaRenderEngine
 
         commandBuffer->returnToCommandPool();
         renderEngine->returnVulkanBuffer(stagingBuffer);
+        return true;
+    }
+
+    bool VulkanImage::generateMipmaps(VkCommandBuffer commandBuffer, const VkImageLayout finalLayout)
+    {
+        if (!isValid())
+        {
+            JUMA_RENDER_LOG(error, JSTR("Vulkan image not initialized"));
+            return false;
+        }
+        if (m_MipLevels <= 1)
+        {
+            return (m_ImageLayout == finalLayout) || changeImageLayout(commandBuffer, finalLayout);
+        }
+        if (commandBuffer == nullptr)
+        {
+            JUMA_RENDER_LOG(error, JSTR("Invalid vulkan command buffer"));
+            return false;
+        }
+
+        math::ivector2 mipmapSize = m_Size;
+        VkImageMemoryBarrier imageBarrier{};
+        imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        imageBarrier.image = m_Image;
+        imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageBarrier.subresourceRange.baseArrayLayer = 0;
+        imageBarrier.subresourceRange.layerCount = 1;
+        imageBarrier.subresourceRange.levelCount = 1;
+        for (uint32 mipLevel = 1; mipLevel < m_MipLevels; mipLevel++)
+        {
+            imageBarrier.subresourceRange.baseMipLevel = mipLevel - 1;
+            imageBarrier.oldLayout = m_ImageLayout;
+            imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            vkCmdPipelineBarrier(commandBuffer,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                0, nullptr, 0, nullptr, 1, &imageBarrier
+            );
+
+            VkImageBlit imageBlit{};
+            imageBlit.srcOffsets[0] = { 0, 0, 0 };
+            imageBlit.srcOffsets[1] = { mipmapSize.x, mipmapSize.y, 1 };
+            imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBlit.srcSubresource.mipLevel = mipLevel - 1;
+            imageBlit.srcSubresource.baseArrayLayer = 0;
+            imageBlit.srcSubresource.layerCount = 1;
+            imageBlit.dstOffsets[0] = { 0, 0, 0 };
+            imageBlit.dstOffsets[1] = { mipmapSize.x > 1 ? mipmapSize.x / 2 : 1, mipmapSize.y > 1 ? mipmapSize.y / 2 : 1, 1 };
+            imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBlit.dstSubresource.mipLevel = mipLevel;
+            imageBlit.dstSubresource.baseArrayLayer = 0;
+            imageBlit.dstSubresource.layerCount = 1;
+            vkCmdBlitImage(commandBuffer,
+                m_Image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                m_Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1, &imageBlit, VK_FILTER_LINEAR
+            );
+
+            imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            imageBarrier.newLayout = finalLayout;
+            imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            vkCmdPipelineBarrier(commandBuffer,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                0, nullptr, 0, nullptr, 1, &imageBarrier
+            );
+
+            if (mipmapSize.x > 1)
+            {
+                mipmapSize.x /= 2;
+            }
+            if (mipmapSize.y > 1)
+            {
+                mipmapSize.y /= 2;
+            }
+        }
+
+        imageBarrier.subresourceRange.baseMipLevel = m_MipLevels - 1;
+        imageBarrier.oldLayout = m_ImageLayout;
+        imageBarrier.newLayout = finalLayout;
+        imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        imageBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        vkCmdPipelineBarrier(commandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+            0, nullptr,
+            0, nullptr,
+            1, &imageBarrier
+        );
+
+        m_ImageLayout = finalLayout;
+        return true;
+    }
+    bool VulkanImage::generateMipmaps(const VkImageLayout finalLayout)
+    {
+        if (!isValid())
+        {
+            JUMA_RENDER_LOG(error, JSTR("Vulkan image not initialized"));
+            return false;
+        }
+        if ((m_MipLevels <= 1) && (m_ImageLayout == finalLayout))
+        {
+            return true;
+        }
+
+        VulkanCommandBuffer* commandBuffer = getRenderEngine<RenderEngine_Vulkan>()->getCommandPool(VulkanQueueType::Graphics)->getCommandBuffer();
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = 0;
+        beginInfo.pInheritanceInfo = nullptr;
+        vkBeginCommandBuffer(commandBuffer->get(), &beginInfo);
+        if (!generateMipmaps(commandBuffer->get(), finalLayout))
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to generate mipmaps for vulkan image"));
+            commandBuffer->returnToCommandPool();
+            return false;
+        }
+        vkEndCommandBuffer(commandBuffer->get());
+        if (!commandBuffer->submit(true))
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to submit vulkan command buffer"));
+            commandBuffer->returnToCommandPool();
+            return false;
+        }
+        commandBuffer->returnToCommandPool();
         return true;
     }
 }
