@@ -26,6 +26,12 @@ namespace JumaRenderEngine
         uint32 queueIndex = 0;
         VkQueue queue = nullptr;
     };
+    
+    struct VertexDescription_Vulkan
+    {
+        VkVertexInputBindingDescription binding = VkVertexInputBindingDescription();
+        jarray<VkVertexInputAttributeDescription> attributes;
+    };
 
     class RenderEngine_Vulkan : public RenderEngine
     {
@@ -52,18 +58,22 @@ namespace JumaRenderEngine
         
         VulkanRenderPass* getRenderPass(const VulkanRenderPassDescription& description);
 
+        const VertexDescription_Vulkan* findVertexType_Vulkan(const jstringID& vertexName) const { return m_RegisteredVertexTypes_Vulkan.find(vertexName); }
+
     protected:
 
         virtual bool initInternal(const jmap<window_id, WindowProperties>& windows) override;
         virtual void clearInternal() override;
 
         virtual WindowController* createWindowController() override;
-        virtual VertexBuffer* createVertexBufferInternal() override { return nullptr; }
+        virtual VertexBuffer* createVertexBufferInternal() override;
         virtual Texture* createTextureInternal() override { return nullptr; }
-        virtual Shader* createShaderInternal() override { return nullptr; }
-        virtual Material* createMaterialInternal() override { return nullptr; }
+        virtual Shader* createShaderInternal() override;
+        virtual Material* createMaterialInternal() override;
         virtual RenderTarget* createRenderTargetInternal() override;
         virtual RenderPipeline* createRenderPipelineInternal() override;
+
+        virtual void onRegisteredVertexType(const jstringID& vertexName) override;
 
     private:
 
@@ -93,6 +103,8 @@ namespace JumaRenderEngine
         juid<render_pass_type_id> m_RenderPassTypeIDs;
         jmap<VulkanRenderPassDescription, render_pass_type_id, VulkanRenderPassDescription::compatible_predicate> m_RenderPassTypes;
         jmap<VulkanRenderPassDescription, VulkanRenderPass, VulkanRenderPassDescription::equal_predicate> m_RenderPasses;
+
+        jmap<jstringID, VertexDescription_Vulkan> m_RegisteredVertexTypes_Vulkan;
 
 
         bool createVulkanInstance();

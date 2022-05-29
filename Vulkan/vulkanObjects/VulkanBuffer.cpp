@@ -51,8 +51,8 @@ namespace JumaRenderEngine
         markAsInitialized();
         return true;
     }
-    bool VulkanBuffer::initGPU(const VkBufferUsageFlags usage, const std::initializer_list<VulkanQueueType> accessedQueues, 
-        const uint32 size, const void* data, const bool waitForFinish)
+    bool VulkanBuffer::initGPU(const VkBufferUsageFlags usage, const std::initializer_list<VulkanQueueType> accessedQueues, const uint32 size, 
+        const void* data)
     {
         if (isValid())
         {
@@ -103,7 +103,7 @@ namespace JumaRenderEngine
         m_Mapable = false;
 
         VulkanBuffer* stagingBuffer = renderEngine->getVulkanBuffer();
-        if (!stagingBuffer->initStaging(size) || !stagingBuffer->copyData(this, waitForFinish))
+        if (!stagingBuffer->initStaging(size) || !stagingBuffer->setData(data, size, 0, true) || !stagingBuffer->copyData(this, true))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to copy data to GPU vulkan buffer"));
             renderEngine->returnVulkanBuffer(stagingBuffer);

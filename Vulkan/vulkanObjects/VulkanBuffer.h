@@ -23,7 +23,7 @@ namespace JumaRenderEngine
         // Temp buffer for passing data to GPU
         bool initStaging(uint32 size);
         // Only on GPU, not updated at all
-        bool initGPU(VkBufferUsageFlags usage, std::initializer_list<VulkanQueueType> accessedQueues, uint32 size, const void* data, bool waitForFinish);
+        bool initGPU(VkBufferUsageFlags usage, std::initializer_list<VulkanQueueType> accessedQueues, uint32 size, const void* data);
         // GPU buffer, frequently writing from CPU directly. If not possible - it will be GPU with staging buffer
         bool initAccessedGPU(VkBufferUsageFlags usage, std::initializer_list<VulkanQueueType> accessedQueues, uint32 size);
 
