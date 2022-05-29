@@ -230,8 +230,7 @@ namespace JumaRenderEngine
 
     bool RenderPipeline::onStartRender(RenderOptions* renderOptions)
     {
-        getRenderEngine()->getWindowController()->onStartRender();
-        return true;
+        return getRenderEngine()->getWindowController()->onStartRender();
     }
     void RenderPipeline::onFinishRender(RenderOptions* renderOptions)
     {

@@ -23,6 +23,8 @@ namespace JumaRenderEngine
         RenderTarget_Vulkan() = default;
         virtual ~RenderTarget_Vulkan() override;
 
+        VulkanImage* getResultImage() const;
+
         virtual bool onStartRender(RenderOptions* renderOptions) override;
         virtual void onFinishRender(RenderOptions* renderOptions) override;
 
@@ -34,6 +36,7 @@ namespace JumaRenderEngine
 
         VulkanRenderPass* m_RenderPass = nullptr;
         jarray<VulkanFramebufferData> m_Framebuffers;
+        bool m_FramebuffersValidForRender = false;
 
 
         bool initFramebuffer();

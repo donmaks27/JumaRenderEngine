@@ -71,7 +71,7 @@ namespace JumaRenderEngine
     {
         if (isWindowRenderTarget())
         {
-            getRenderEngine()->getWindowController()->onStartWindowRender(getWindowID());
+            return getRenderEngine()->getWindowController()->onStartWindowRender(getWindowID());
         }
         return true;
     }

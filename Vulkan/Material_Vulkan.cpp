@@ -5,6 +5,7 @@
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_VULKAN)
 
 #include "RenderEngine_Vulkan.h"
+#include "RenderTarget_Vulkan.h"
 #include "RenderOptions_Vulkan.h"
 #include "Shader_Vulkan.h"
 #include "Texture_Vulkan.h"
@@ -220,6 +221,14 @@ namespace JumaRenderEngine
                         if (texture != nullptr)
                         {
                             vulkanImage = texture->getVulkanImage();
+                        }
+                        else
+                        {
+                            RenderTarget_Vulkan* renderTarget = dynamic_cast<RenderTarget_Vulkan*>(value);
+                            if (renderTarget != nullptr)
+                            {
+                                vulkanImage = renderTarget->getResultImage();
+                            }
                         }
                         if (vulkanImage == nullptr)
                         {

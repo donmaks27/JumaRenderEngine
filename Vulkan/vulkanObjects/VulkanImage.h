@@ -62,18 +62,17 @@ namespace JumaRenderEngine
         VkImage get() const { return m_Image; }
         VkImageView getImageView() const { return m_ImageView; }
 
-        bool changeImageLayout(VkCommandBuffer commandBuffer, VkImageLayout newLayout, 
-            VkAccessFlags srcAccess, VkPipelineStageFlags srcStage, 
-            VkAccessFlags dstAccess, VkPipelineStageFlags dstStage);
-        bool changeImageLayout(VkCommandBuffer commandBuffer, VkImageLayout newLayout);
-        
-        bool setImageData(const uint8* data, VkImageLayout finalLayout);
-        bool setImageData(const uint8* data) { return setImageData(data, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL); }
-        
-        bool generateMipmaps(VkCommandBuffer commandBuffer, VkImageLayout finalLayout);
-        bool generateMipmaps(VkCommandBuffer commandBuffer) { return generateMipmaps(commandBuffer, m_ImageLayout); }
-        bool generateMipmaps(VkImageLayout finalLayout);
-        bool generateMipmaps() { return generateMipmaps(m_ImageLayout); }
+        void changeImageLayout(VkCommandBuffer commandBuffer,
+            VkImageLayout oldLayout, VkAccessFlags srcAccess, VkPipelineStageFlags srcStage,
+            VkImageLayout newLayout, VkAccessFlags dstAccess, VkPipelineStageFlags dstStage);
+        void copyImage(VkCommandBuffer commandBuffer, 
+            const VulkanImage* srcImage, uint32 srcMipLevel, uint32 dstMipLevel,
+            VkImageLayout newLayout, VkAccessFlags dstAccess, VkPipelineStageFlags dstStage);
+        void generateMipmaps(VkCommandBuffer commandBuffer, VkImageLayout newLayout, VkAccessFlags dstAccess, VkPipelineStageFlags dstStage);
+
+        bool setImageData(const uint8* data, 
+            VkImageLayout oldLayout, VkAccessFlags srcAccess, VkPipelineStageFlags srcStage,
+            VkImageLayout newLayout, VkAccessFlags dstAccess, VkPipelineStageFlags dstStage);
 
     protected:
 
@@ -88,7 +87,6 @@ namespace JumaRenderEngine
         math::uvector2 m_Size = { 0, 0 };
         VkFormat m_Format = VK_FORMAT_UNDEFINED;
         uint32 m_MipLevels = 0;
-        VkImageLayout m_ImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 
         void clearVulkan();

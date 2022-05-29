@@ -40,8 +40,8 @@ namespace JumaRenderEngine
 
         virtual bool shouldCloseWindow(window_id windowID) const = 0;
 
-        virtual void onStartRender() {}
-        virtual void onStartWindowRender(window_id windowID) {}
+        virtual bool onStartRender() { return true; }
+        virtual bool onStartWindowRender(window_id windowID) { return true; }
         virtual void onFinishWindowRender(window_id windowID) {}
         virtual void onFinishRender() {}
 

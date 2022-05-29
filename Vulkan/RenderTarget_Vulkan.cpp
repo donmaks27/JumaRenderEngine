@@ -111,10 +111,21 @@ namespace JumaRenderEngine
                 renderEngine->returnVulkanImage(framebuffer.colorAttachment);
                 renderEngine->returnVulkanImage(framebuffer.depthAttachment);
                 renderEngine->returnVulkanImage(framebuffer.resolveAttachment);
+                renderEngine->returnVulkanImage(framebuffer.resultImage);
             }
             m_Framebuffers.clear();
         }
         m_RenderPass = nullptr;
+        m_FramebuffersValidForRender = false;
+    }
+
+    VulkanImage* RenderTarget_Vulkan::getResultImage() const
+    {
+        if (!isWindowRenderTarget() && !m_Framebuffers.isEmpty())
+        {
+            return m_Framebuffers[0].resultImage;
+        }
+        return nullptr;
     }
 
     bool RenderTarget_Vulkan::onStartRender(RenderOptions* renderOptions)
@@ -132,17 +143,24 @@ namespace JumaRenderEngine
         }
 
         RenderOptions_Vulkan* renderOptionsVulkan = reinterpret_cast<RenderOptions_Vulkan*>(renderOptions);
+        renderOptionsVulkan->renderPass = m_RenderPass;
+
         const VulkanFramebufferData& framebuffer = m_Framebuffers[framebufferIndex];
         VkCommandBuffer commandBuffer = renderOptionsVulkan->commandBuffer->get();
-        if (!isWindowRenderTarget())
+        if (!m_FramebuffersValidForRender)
         {
-            VulkanImage* resutImage = framebuffer.resolveAttachment != nullptr ? framebuffer.resolveAttachment : framebuffer.colorAttachment;
-            resutImage->changeImageLayout(commandBuffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                0, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 
-                VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-            );
+            if (!isWindowRenderTarget())
+            {
+                VulkanImage* resutAttachmentImage = framebuffer.resolveAttachment != nullptr ? framebuffer.resolveAttachment : framebuffer.colorAttachment;
+                resutAttachmentImage->changeImageLayout(commandBuffer,
+                    VK_IMAGE_LAYOUT_UNDEFINED, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+                framebuffer.resultImage->changeImageLayout(commandBuffer, 
+                    VK_IMAGE_LAYOUT_UNDEFINED, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+            }
+            m_FramebuffersValidForRender = true;
         }
-        renderOptionsVulkan->renderPass = m_RenderPass;
 
         const math::uvector2 size = getSize();
         VkClearValue clearValues[2];
@@ -179,11 +197,22 @@ namespace JumaRenderEngine
 
         if (!isWindowRenderTarget())
         {
-            const VulkanFramebufferData& framebuffer = m_Framebuffers[getRequiredFramebufferIndex()];
-            VulkanImage* resutImage = framebuffer.resolveAttachment != nullptr ? framebuffer.resolveAttachment : framebuffer.colorAttachment;
-            resutImage->changeImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+            const VulkanFramebufferData& framebuffer = m_Framebuffers[0];
+            VulkanImage* resultAttachment = framebuffer.resolveAttachment != nullptr ? framebuffer.resolveAttachment : framebuffer.colorAttachment;
+
+            resultAttachment->changeImageLayout(commandBuffer,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
+            );
+            framebuffer.resultImage->changeImageLayout(commandBuffer,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
+            );
+            framebuffer.resultImage->copyImage(commandBuffer, resultAttachment, 0, 0,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+            resultAttachment->changeImageLayout(commandBuffer,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
             );
         }
 

@@ -15,9 +15,12 @@ namespace JumaRenderEngine
     struct VulkanFramebufferData
     {
         VkFramebuffer framebuffer = nullptr;
+
         VulkanImage* colorAttachment = nullptr;
         VulkanImage* depthAttachment = nullptr;
         VulkanImage* resolveAttachment = nullptr;
+
+        VulkanImage* resultImage = nullptr;
     };
 }
 

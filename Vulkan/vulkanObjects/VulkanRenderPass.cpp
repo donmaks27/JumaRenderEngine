@@ -135,24 +135,25 @@ namespace JumaRenderEngine
         }
         return createVulkanFramebufferInternal(size, nullptr, outFramebuffer);
     }
-    bool VulkanRenderPass::createVulkanFramebufferInternal(const math::uvector2& size, VkImage resultImage, VulkanFramebufferData& outFramebuffer) const
+    bool VulkanRenderPass::createVulkanFramebufferInternal(const math::uvector2& size, VkImage resultVulkanImage, VulkanFramebufferData& outFramebuffer) const
     {
         RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
         const bool resolveEnabled = m_Description.sampleCount != VK_SAMPLE_COUNT_1_BIT;
+        const bool isWindowFramebuffer = m_Description.renderToSwapchain;
 
         VulkanImage* colorImage = renderEngine->getVulkanImage();
         if (!resolveEnabled)
         {
-            if (resultImage == nullptr)
+            if (resultVulkanImage == nullptr)
             {
                 colorImage->init(
-                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
-                   { VulkanQueueType::Graphics }, size, m_Description.sampleCount, m_Description.colorFormat
+                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 
+                   { VulkanQueueType::Graphics }, size, m_Description.sampleCount, m_Description.colorFormat, 1
                 );
             }
             else
             {
-                colorImage->init(resultImage, size, m_Description.colorFormat, 1);
+                colorImage->init(resultVulkanImage, size, m_Description.colorFormat, 1);
             }
         }
         else
@@ -190,16 +191,16 @@ namespace JumaRenderEngine
         if (resolveEnabled)
         {
             resolveImage = renderEngine->getVulkanImage();
-            if (resultImage == nullptr)
+            if (resultVulkanImage == nullptr)
             {
                 resolveImage->init(
-                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
-                    { VulkanQueueType::Graphics }, size, VK_SAMPLE_COUNT_1_BIT, m_Description.colorFormat
+                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 
+                    { VulkanQueueType::Graphics }, size, VK_SAMPLE_COUNT_1_BIT, m_Description.colorFormat, 1
                 );
             }
             else
             {
-                resolveImage->init(resultImage, size, m_Description.colorFormat, 1);
+                resolveImage->init(resultVulkanImage, size, m_Description.colorFormat, 1);
             }
             if (!resolveImage->createImageView(VK_IMAGE_ASPECT_COLOR_BIT))
             {
@@ -207,6 +208,25 @@ namespace JumaRenderEngine
                 renderEngine->returnVulkanImage(colorImage);
                 renderEngine->returnVulkanImage(depthImage);
                 renderEngine->returnVulkanImage(resolveImage);
+                return false;
+            }
+        }
+
+        VulkanImage* resultImage = nullptr;
+        if (!isWindowFramebuffer)
+        {
+            resultImage = renderEngine->getVulkanImage();
+            resultImage->init(
+                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                { VulkanQueueType::Graphics }, size, VK_SAMPLE_COUNT_1_BIT, m_Description.colorFormat
+            );
+            if (!resultImage->createImageView(VK_IMAGE_ASPECT_COLOR_BIT))
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to create result image"));
+                renderEngine->returnVulkanImage(colorImage);
+                renderEngine->returnVulkanImage(depthImage);
+                renderEngine->returnVulkanImage(resolveImage);
+                renderEngine->returnVulkanImage(resultImage);
                 return false;
             }
         }
@@ -239,6 +259,7 @@ namespace JumaRenderEngine
             renderEngine->returnVulkanImage(colorImage);
             renderEngine->returnVulkanImage(depthImage);
             renderEngine->returnVulkanImage(resolveImage);
+            renderEngine->returnVulkanImage(resultImage);
             return false;
         }
 
@@ -246,6 +267,7 @@ namespace JumaRenderEngine
         outFramebuffer.colorAttachment = colorImage;
         outFramebuffer.depthAttachment = depthImage;
         outFramebuffer.resolveAttachment = resolveImage;
+        outFramebuffer.resultImage = resultImage;
         return true;
     }
 }

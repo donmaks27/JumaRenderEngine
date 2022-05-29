@@ -44,7 +44,7 @@ namespace JumaRenderEngine
 
         void clearVulkan();
 
-        bool createVulkanFramebufferInternal(const math::uvector2& size, VkImage resultImage, VulkanFramebufferData& outFramebuffer) const;
+        bool createVulkanFramebufferInternal(const math::uvector2& size, VkImage resultVulkanImage, VulkanFramebufferData& outFramebuffer) const;
     };
 }
 

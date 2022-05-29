@@ -30,21 +30,18 @@ namespace JumaRenderEngine
             return false;
         }
 
-        if (!image->createImageView(VK_IMAGE_ASPECT_COLOR_BIT))
-        {
-            JUMA_RENDER_LOG(error, JSTR("Failed to create vukan image view"));
-            renderEngine->returnVulkanImage(image);
-            return false;
-        }
-        if (!image->setImageData(data/*, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL*/))
+        const bool setImageDataSuccess = image->setImageData(data, 
+            VK_IMAGE_LAYOUT_UNDEFINED, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        if (!setImageDataSuccess)
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to load data to vulkan image"));
             renderEngine->returnVulkanImage(image);
             return false;
         }
-        if (!image->generateMipmaps(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL))
+        if (!image->createImageView(VK_IMAGE_ASPECT_COLOR_BIT))
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to generate mipmaps for vulkan image"));
+            JUMA_RENDER_LOG(error, JSTR("Failed to create vukan image view"));
             renderEngine->returnVulkanImage(image);
             return false;
         }
