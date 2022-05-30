@@ -10,7 +10,7 @@
 
 namespace JumaRenderEngine
 {
-    class Shader_OpenGL : public Shader
+    class Shader_OpenGL final : public Shader
     {
         using Super = Shader;
 

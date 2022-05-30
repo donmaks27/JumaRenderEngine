@@ -15,7 +15,7 @@ namespace JumaRenderEngine
     class VulkanCommandBuffer;
     class VulkanSwapchain;
 
-    class RenderPipeline_Vulkan : public RenderPipeline
+    class RenderPipeline_Vulkan final : public RenderPipeline
     {
         using Super = RenderPipeline;
 

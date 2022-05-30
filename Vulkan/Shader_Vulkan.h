@@ -12,7 +12,7 @@
 
 namespace JumaRenderEngine
 {
-    class Shader_Vulkan : public Shader
+    class Shader_Vulkan final : public Shader
     {
     public:
         Shader_Vulkan() = default;

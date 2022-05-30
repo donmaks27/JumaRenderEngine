@@ -9,6 +9,7 @@ namespace JumaRenderEngine
     enum class RenderAPI : uint8
     {
         Vulkan,
-        OpenGL
+        OpenGL,
+        DirectX11
     };
 }

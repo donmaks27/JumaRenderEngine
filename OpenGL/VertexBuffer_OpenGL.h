@@ -13,7 +13,7 @@
 
 namespace JumaRenderEngine
 {
-    class VertexBuffer_OpenGL : public VertexBuffer
+    class VertexBuffer_OpenGL final : public VertexBuffer
     {
         using Super = VertexBuffer;
 

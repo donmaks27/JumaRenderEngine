@@ -26,7 +26,7 @@ namespace JumaRenderEngine
         return 0;
     }
 
-    class Texture_OpenGL : public Texture
+    class Texture_OpenGL final : public Texture
     {
         using Super = Texture;
 

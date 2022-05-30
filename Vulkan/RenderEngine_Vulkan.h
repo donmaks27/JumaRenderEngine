@@ -34,7 +34,7 @@ namespace JumaRenderEngine
         jarray<VkVertexInputAttributeDescription> attributes;
     };
 
-    class RenderEngine_Vulkan : public RenderEngine
+    class RenderEngine_Vulkan final : public RenderEngine
     {
         using Super = RenderEngine;
 

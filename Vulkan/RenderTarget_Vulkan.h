@@ -15,7 +15,7 @@ namespace JumaRenderEngine
 {
     class VulkanRenderPass;
 
-    class RenderTarget_Vulkan : public RenderTarget
+    class RenderTarget_Vulkan final : public RenderTarget
     {
         using Super = RenderTarget;
 

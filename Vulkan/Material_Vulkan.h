@@ -17,7 +17,7 @@ namespace JumaRenderEngine
     struct RenderOptions;
     class VulkanRenderPass;
 
-    class Material_Vulkan : public Material
+    class Material_Vulkan final : public Material
     {
         using Super = Material;
 

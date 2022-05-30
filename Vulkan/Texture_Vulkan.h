@@ -12,7 +12,7 @@ namespace JumaRenderEngine
 {
     class VulkanImage;
 
-    class Texture_Vulkan : public Texture
+    class Texture_Vulkan final : public Texture
     {
     public:
         Texture_Vulkan() = default;

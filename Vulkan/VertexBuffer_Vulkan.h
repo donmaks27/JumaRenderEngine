@@ -12,7 +12,7 @@ namespace JumaRenderEngine
 {
     class VulkanBuffer;
 
-    class VertexBuffer_Vulkan : public VertexBuffer
+    class VertexBuffer_Vulkan final : public VertexBuffer
     {
     public:
         VertexBuffer_Vulkan() = default;

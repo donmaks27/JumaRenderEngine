@@ -10,7 +10,7 @@
 
 namespace JumaRenderEngine
 {
-    class Material_OpenGL : public Material
+    class Material_OpenGL final : public Material
     {
         using Super = Material;
 

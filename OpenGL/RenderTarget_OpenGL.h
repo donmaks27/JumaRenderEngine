@@ -10,7 +10,7 @@
 
 namespace JumaRenderEngine
 {
-    class RenderTarget_OpenGL : public RenderTarget
+    class RenderTarget_OpenGL final : public RenderTarget
     {
         using Super = RenderTarget;
 
