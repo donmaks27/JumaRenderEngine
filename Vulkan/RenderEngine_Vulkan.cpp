@@ -82,31 +82,26 @@ namespace JumaRenderEngine
         }
         if (!Super::initInternal(windows))
         {
-            clearVulkan();
             return false;
         }
         if (!pickPhysicalDevice())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to pick physical device"));
-            clearVulkan();
             return false;
         }
         if (!createDevice())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan device"));
-            clearVulkan();
             return false;
         }
         if (!createCommandPools())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create command pools"));
-            clearVulkan();
             return false;
         }
         if (!getWindowController<WindowController_Vulkan>()->createWindowSwapchains())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan swapchains"));
-            clearVulkan();
             return false;
         }
         return true;

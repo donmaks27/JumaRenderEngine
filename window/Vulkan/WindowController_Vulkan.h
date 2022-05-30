@@ -37,11 +37,12 @@ namespace JumaRenderEngine
 
         void destroyWindowVulkan(window_id windowID, WindowData_Vulkan& windowData);
 
+        bool createWindowSwapchain(window_id windowID, WindowData_Vulkan& windowData);
+
     private:
 
         void clearVulkan();
 
-        bool createWindowSwapchain(window_id windowID, WindowData_Vulkan& windowData);
         void destroyWindowSwapchain(window_id windowID, WindowData_Vulkan& windowData);
     };
 }

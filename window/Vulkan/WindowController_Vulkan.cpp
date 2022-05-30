@@ -50,6 +50,13 @@ namespace JumaRenderEngine
     {
         if (windowData.vulkanSwapchain == nullptr)
         {
+            VkDevice device = getRenderEngine<RenderEngine_Vulkan>()->getDevice();
+            if (device == nullptr)
+            {
+                // Vulkan device is not created yet
+                return true;
+            }
+
             VulkanSwapchain* swapchain = getRenderEngine()->createObject<VulkanSwapchain>();
             if (!swapchain->init(windowID))
             {

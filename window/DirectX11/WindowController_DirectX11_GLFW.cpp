@@ -4,7 +4,9 @@
 
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_DIRECTX11) && defined(JUMARENDERENGINE_INCLUDE_LIB_GLFW)
 
+#define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 
 namespace JumaRenderEngine
 {
@@ -80,11 +82,13 @@ namespace JumaRenderEngine
         WindowData_DirectX11_GLFW& windowData = m_Windows[windowID];
         windowData.windowID = windowID;
         windowData.size = properties.size;
+        windowData.windowHandler = glfwGetWin32Window(window);
         windowData.windowGLFW = window;
         windowData.windowController = this;
         glfwSetWindowUserPointer(window, &windowData);
         glfwSetFramebufferSizeCallback(window, WindowController_DirectX11_GLFW::GLFW_FramebufferResizeCallback);
-        return true;
+
+        return createWindowSwapchain(windowID, windowData);
     }
     void WindowController_DirectX11_GLFW::GLFW_FramebufferResizeCallback(GLFWwindow* windowGLFW, const int width, const int height)
     {
@@ -109,6 +113,8 @@ namespace JumaRenderEngine
     }
     void WindowController_DirectX11_GLFW::destroyWindowGLFW(const window_id windowID, WindowData_DirectX11_GLFW& windowData)
     {
+        destroyWindowDirectX11(windowID, windowData);
+
         glfwSetWindowUserPointer(windowData.windowGLFW, nullptr);
         glfwDestroyWindow(windowData.windowGLFW);
         windowData.windowGLFW = nullptr;

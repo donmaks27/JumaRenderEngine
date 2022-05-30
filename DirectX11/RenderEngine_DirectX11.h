@@ -8,6 +8,9 @@
 
 #include "renderEngine/RenderEngine.h"
 
+struct ID3D11Device;
+struct ID3D11DeviceContext;
+
 namespace JumaRenderEngine
 {
     class RenderEngine_DirectX11 final : public RenderEngine
@@ -20,8 +23,12 @@ namespace JumaRenderEngine
 
         virtual RenderAPI getRenderAPI() const override { return RenderAPI::DirectX11; }
 
+        ID3D11Device* getDevice() const { return m_Device; }
+        ID3D11DeviceContext* getDeviceContext() const { return m_DeviceContext; }
+
     protected:
 
+        virtual bool initInternal(const jmap<window_id, WindowProperties>& windows) override;
         virtual void clearInternal() override;
 
         virtual WindowController* createWindowController() override;
@@ -32,6 +39,12 @@ namespace JumaRenderEngine
         virtual RenderTarget* createRenderTargetInternal() override;
 
     private:
+
+        ID3D11Device* m_Device = nullptr;
+        ID3D11DeviceContext* m_DeviceContext = nullptr;
+
+
+        bool createDirectXDevice();
 
         void clearDirectX();
     };

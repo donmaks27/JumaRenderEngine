@@ -113,7 +113,8 @@ namespace JumaRenderEngine
         windowData.windowController = this;
         glfwSetWindowUserPointer(window, &windowData);
         glfwSetFramebufferSizeCallback(window, WindowController_Vulkan_GLFW::GLFW_FramebufferResizeCallback);
-        return true;
+
+        return createWindowSwapchain(windowID, windowData);
     }
     void WindowController_Vulkan_GLFW::GLFW_FramebufferResizeCallback(GLFWwindow* windowGLFW, const int width, const int height)
     {

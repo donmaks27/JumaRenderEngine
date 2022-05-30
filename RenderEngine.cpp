@@ -41,8 +41,7 @@ namespace JumaRenderEngine
         if (!initInternal(windows))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to initialize render engine"));
-            delete m_WindowController;
-            m_WindowController = nullptr;
+            clearInternal();
             return false;
         }
         m_Initialized = true;

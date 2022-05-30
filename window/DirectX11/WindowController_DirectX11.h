@@ -8,11 +8,16 @@
 
 #include "renderEngine/window/WindowController.h"
 
+#include <Windows.h>
+
+struct IDXGISwapChain;
+
 namespace JumaRenderEngine
 {
     struct WindowData_DirectX11 : WindowData
     {
-        
+        HWND windowHandler = nullptr;
+        IDXGISwapChain* swapchain = nullptr;
     };
 
     class WindowController_DirectX11 : public WindowController
@@ -23,9 +28,20 @@ namespace JumaRenderEngine
         WindowController_DirectX11() = default;
         virtual ~WindowController_DirectX11() override;
 
+        bool createWindowSwapchains();
+        void clearWindowSwapchains();
+
+    protected:
+
+        void destroyWindowDirectX11(window_id windowID, WindowData_DirectX11& windowData);
+
+        bool createWindowSwapchain(window_id windowID, WindowData_DirectX11& windowData);
+
     private:
 
         void clearDirectX11();
+
+        void destroyWindowSwapchain(window_id windowID, WindowData_DirectX11& windowData);
     };
 }
 
