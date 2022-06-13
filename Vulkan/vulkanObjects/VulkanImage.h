@@ -24,7 +24,6 @@ namespace JumaRenderEngine
         case TextureFormat::RGBA_UINT8: return VK_FORMAT_R8G8B8A8_SRGB;
         case TextureFormat::BGRA_UINT8: return VK_FORMAT_B8G8R8A8_SRGB;
         case TextureFormat::DEPTH_FLOAT32: return VK_FORMAT_D32_SFLOAT;
-        case TextureFormat::DEPTH_FLOAT32_STENCIL_UINT8: return VK_FORMAT_D32_SFLOAT_S8_UINT;
         case TextureFormat::DEPTH_UNORM24_STENCIL_UINT8: return VK_FORMAT_D24_UNORM_S8_UINT;
         default: ;
         }

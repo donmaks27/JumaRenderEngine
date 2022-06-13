@@ -5,6 +5,7 @@
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_VULKAN)
 
 #include "VulkanCommandPool.h"
+#include "renderEngine/TextureBase.h"
 #include "renderEngine/Vulkan/RenderEngine_Vulkan.h"
 
 namespace JumaRenderEngine
@@ -16,7 +17,6 @@ namespace JumaRenderEngine
         case VK_FORMAT_R8G8B8A8_SRGB: return GetTextureFormatSize(TextureFormat::RGBA_UINT8);
         case VK_FORMAT_B8G8R8A8_SRGB: return GetTextureFormatSize(TextureFormat::BGRA_UINT8);
         case VK_FORMAT_D32_SFLOAT: return GetTextureFormatSize(TextureFormat::DEPTH_FLOAT32);
-        case VK_FORMAT_D32_SFLOAT_S8_UINT: return GetTextureFormatSize(TextureFormat::DEPTH_FLOAT32_STENCIL_UINT8);
         case VK_FORMAT_D24_UNORM_S8_UINT: return GetTextureFormatSize(TextureFormat::DEPTH_UNORM24_STENCIL_UINT8);
         default: ;
         }
@@ -111,7 +111,7 @@ namespace JumaRenderEngine
     bool VulkanImage::init(const VkImageUsageFlags usage, const std::initializer_list<VulkanQueueType> accessedQueues,
         const math::uvector2& size, const VkSampleCountFlagBits sampleCount, const VkFormat format)
     {
-        return init(usage, accessedQueues, size, sampleCount, format, static_cast<uint32>(std::floor(std::log2(math::min(size.x, size.y)))) + 1);
+        return init(usage, accessedQueues, size, sampleCount, format, GetMipLevelCountByTextureSize(size));
     }
     bool VulkanImage::init(VkImage existingImage, const math::uvector2& size, const VkFormat format, const uint32 mipLevels)
     {

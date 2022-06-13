@@ -5,7 +5,6 @@
 #include "renderEngine/juma_render_engine_core.h"
 #include "TextureBase.h"
 
-#include "jutils/math/vector2.h"
 #include "texture/TextureFormat.h"
 
 namespace JumaRenderEngine

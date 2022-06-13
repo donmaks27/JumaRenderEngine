@@ -11,7 +11,7 @@ namespace JumaRenderEngine
         X1, X2, X4, X8, X16, X32, X64
     };
 
-    inline uint8 GetTextureSamplesNumber(const TextureSamples samples)
+    constexpr uint8 GetTextureSamplesNumber(const TextureSamples samples)
     {
         switch (samples)
         {
@@ -24,7 +24,6 @@ namespace JumaRenderEngine
         case TextureSamples::X64: return 64;
         default: ;
         }
-        JUMA_RENDER_LOG(error, JSTR("Unsupported sample count"));
         return 0;
     }
 }

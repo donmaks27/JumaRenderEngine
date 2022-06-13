@@ -31,6 +31,8 @@ namespace JumaRenderEngine
         bool createWindowSwapchains();
         void clearWindowSwapchains();
 
+        virtual void onFinishWindowRender(window_id windowID) override;
+
     protected:
 
         void destroyWindowDirectX11(window_id windowID, WindowData_DirectX11& windowData);

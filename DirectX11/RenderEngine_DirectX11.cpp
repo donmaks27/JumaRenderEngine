@@ -6,6 +6,7 @@
 
 #include <d3d11.h>
 
+#include "RenderTarget_DirectX11.h"
 #include "renderEngine/window/DirectX11/WindowControllerInfo_DirectX11.h"
 
 namespace JumaRenderEngine
@@ -67,8 +68,13 @@ namespace JumaRenderEngine
     void RenderEngine_DirectX11::clearDirectX()
     {
         clearRenderAssets();
-
-        getWindowController<WindowController_DirectX11>()->clearWindowSwapchains();
+        {
+            WindowController_DirectX11* windowController = getWindowController<WindowController_DirectX11>();
+            if (windowController != nullptr)
+            {
+                windowController->clearWindowSwapchains();
+            }
+        }
         
         if (m_DeviceContext != nullptr)
         {
@@ -104,7 +110,7 @@ namespace JumaRenderEngine
     }
     RenderTarget* RenderEngine_DirectX11::createRenderTargetInternal()
     {
-        return nullptr;
+        return createObject<RenderTarget_DirectX11>();
     }
 }
 

@@ -451,7 +451,6 @@ namespace JumaRenderEngine
     void RenderEngine_Vulkan::clearInternal()
     {
         clearVulkan();
-        Super::clearInternal();
     }
     void RenderEngine_Vulkan::clearVulkan()
     {
@@ -461,8 +460,13 @@ namespace JumaRenderEngine
         }
 
         clearRenderAssets();
-
-        getWindowController<WindowController_Vulkan>()->clearWindowSwapchains();
+        {
+            WindowController_Vulkan* windowController = getWindowController<WindowController_Vulkan>();
+            if (windowController != nullptr)
+            {
+                windowController->clearWindowSwapchains();
+            }
+        }
 
         for (const auto& sampler : m_TextureSamplers)
         {

@@ -5,10 +5,16 @@
 #include "renderEngine/juma_render_engine_core.h"
 #include "renderEngine/RenderEngineContextObject.h"
 
+#include "jutils/math/vector2.h"
 #include "texture/TextureSamplerType.h"
 
 namespace JumaRenderEngine
 {
+    inline int32 GetMipLevelCountByTextureSize(const math::uvector2& size)
+    {
+        return static_cast<uint32>(std::floor(std::log2(math::min(size.x, size.y)))) + 1;
+    }
+
     class TextureBase : public RenderEngineContextObjectBase
     {
     public:

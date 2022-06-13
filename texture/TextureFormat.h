@@ -11,7 +11,6 @@ namespace JumaRenderEngine
         RGBA_UINT8,
         BGRA_UINT8,
         DEPTH_FLOAT32,
-        DEPTH_FLOAT32_STENCIL_UINT8,
         DEPTH_UNORM24_STENCIL_UINT8
     };
 
@@ -24,9 +23,6 @@ namespace JumaRenderEngine
         case TextureFormat::DEPTH_FLOAT32:
         case TextureFormat::DEPTH_UNORM24_STENCIL_UINT8:
             return 4;
-
-        case TextureFormat::DEPTH_FLOAT32_STENCIL_UINT8: 
-            return 5;
 
         default: ;
         }

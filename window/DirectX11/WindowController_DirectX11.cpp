@@ -113,15 +113,16 @@ namespace JumaRenderEngine
         }
 
         DXGI_SWAP_CHAIN_DESC swapchainDescription{};
-        swapchainDescription.BufferCount = 1;
+        swapchainDescription.BufferCount = 2;
         swapchainDescription.BufferDesc.Width = windowData.size.x;
         swapchainDescription.BufferDesc.Height = windowData.size.y;
         swapchainDescription.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        swapchainDescription.BufferDesc.RefreshRate = refreshRate;
         swapchainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         swapchainDescription.OutputWindow = windowData.windowHandler;
         swapchainDescription.SampleDesc.Count = 1;
         swapchainDescription.SampleDesc.Quality = 0;
-        swapchainDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+        swapchainDescription.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         swapchainDescription.Windowed = TRUE;
         result = factory->CreateSwapChain(device, &swapchainDescription, &windowData.swapchain);
         if (result < 0)
@@ -141,6 +142,17 @@ namespace JumaRenderEngine
             windowData.swapchain->Release();
             windowData.swapchain = nullptr;
         }
+    }
+
+    void WindowController_DirectX11::onFinishWindowRender(const window_id windowID)
+    {
+        const WindowData_DirectX11* windowData = findWindowData<WindowData_DirectX11>(windowID);
+        if (windowData->swapchain != nullptr)
+        {
+            windowData->swapchain->Present(1, 0);
+        }
+
+        Super::onFinishWindowRender(windowID);
     }
 }
 

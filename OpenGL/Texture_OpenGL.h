@@ -19,7 +19,6 @@ namespace JumaRenderEngine
         case TextureFormat::RGBA_UINT8: return GL_RGBA;
         case TextureFormat::BGRA_UINT8: return GL_BGRA;
         case TextureFormat::DEPTH_FLOAT32: return GL_DEPTH_COMPONENT32F;
-        case TextureFormat::DEPTH_FLOAT32_STENCIL_UINT8: return GL_DEPTH32F_STENCIL8;
         case TextureFormat::DEPTH_UNORM24_STENCIL_UINT8: return GL_DEPTH24_STENCIL8;
         default: ;
         }
