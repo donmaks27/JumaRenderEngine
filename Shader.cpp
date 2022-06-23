@@ -2,6 +2,8 @@
 
 #include "Shader.h"
 
+#include "material/ShaderUniformInfo.h"
+
 namespace JumaRenderEngine
 {
     Shader::~Shader()
@@ -12,6 +14,19 @@ namespace JumaRenderEngine
     bool Shader::init(const jmap<ShaderStageFlags, jstring>& fileNames, jmap<jstringID, ShaderUniform> uniforms)
     {
         m_ShaderUniforms = std::move(uniforms);
+        for (const auto& uniform : m_ShaderUniforms)
+        {
+            const uint32 size = GetShaderUniformValueSize(uniform.value.type);
+            if (size == 0)
+            {
+                continue;
+            }
+
+            ShaderUniformBufferDescription& uniformBuffer = m_CachedUniformBufferDescriptions[uniform.value.shaderLocation];
+            uniformBuffer.size = math::max(uniformBuffer.size, uniform.value.shaderBlockOffset + size);
+            uniformBuffer.shaderStages |= uniform.value.shaderStages;
+        }
+
         if (!initInternal(fileNames))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to initialize shader"));
@@ -23,6 +38,7 @@ namespace JumaRenderEngine
 
     void Shader::clearData()
     {
+        m_CachedUniformBufferDescriptions.clear();
         m_ShaderUniforms.clear();
     }
 }

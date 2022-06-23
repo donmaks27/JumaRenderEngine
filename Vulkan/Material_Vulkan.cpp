@@ -22,10 +22,6 @@ namespace JumaRenderEngine
 
     bool Material_Vulkan::initInternal()
     {
-        if (!Super::initInternal())
-        {
-            return false;
-        }
         if (!createDescriptorSet())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan descriptor set"));
@@ -43,7 +39,7 @@ namespace JumaRenderEngine
             return true;
         }
 
-        const uint32 bufferUniformCount = shader->getUniformBufferSizes().getSize();
+        const uint32 bufferUniformCount = shader->getUniformBufferDescriptions().getSize();
         uint32 imageUniformCount = 0;
         for (const auto& uniform : uniforms)
         {
@@ -110,24 +106,24 @@ namespace JumaRenderEngine
         }
 
         RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
-        const jmap<uint32, uint32>& bufferSizes = getShader<Shader_Vulkan>()->getUniformBufferSizes();
-        if (!bufferSizes.isEmpty())
+        const jmap<uint32, ShaderUniformBufferDescription>& uniformBufferDescriptions = getShader()->getUniformBufferDescriptions();
+        if (!uniformBufferDescriptions.isEmpty())
         {
             jarray<VkDescriptorBufferInfo> bufferInfos;
             jarray<VkWriteDescriptorSet> descriptorWrites;
-            m_UniformBuffers.reserve(bufferSizes.getSize());
-            bufferInfos.reserve(bufferSizes.getSize());
-            descriptorWrites.reserve(bufferSizes.getSize());
-            for (const auto& bufferSize : bufferSizes)
+            m_UniformBuffers.reserve(uniformBufferDescriptions.getSize());
+            bufferInfos.reserve(uniformBufferDescriptions.getSize());
+            descriptorWrites.reserve(uniformBufferDescriptions.getSize());
+            for (const auto& uniformBufferDescription : uniformBufferDescriptions)
             {
                 VulkanBuffer* buffer = renderEngine->getVulkanBuffer();
-                if (!buffer->initAccessedGPU(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, { VulkanQueueType::Graphics }, bufferSize.value))
+                if (!buffer->initAccessedGPU(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, { VulkanQueueType::Graphics }, uniformBufferDescription.value.size))
                 {
                     JUMA_RENDER_LOG(error, JSTR("Failed to initialize one of the vulkan uniform buffers"));
                     renderEngine->returnVulkanBuffer(buffer);
                     return false;
                 }
-                m_UniformBuffers.add(bufferSize.key, buffer);
+                m_UniformBuffers.add(uniformBufferDescription.key, buffer);
 
                 VkDescriptorBufferInfo& bufferInfo = bufferInfos.addDefault();
                 bufferInfo.buffer = buffer->get();
@@ -139,7 +135,7 @@ namespace JumaRenderEngine
                 descriptorWrite.pBufferInfo = &bufferInfo;
                 descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 descriptorWrite.dstSet = m_DescriptorSet;
-                descriptorWrite.dstBinding = bufferSize.key;
+                descriptorWrite.dstBinding = uniformBufferDescription.key;
                 descriptorWrite.dstArrayElement = 0;
             }
             if (!descriptorWrites.isEmpty())
@@ -463,11 +459,14 @@ namespace JumaRenderEngine
             return false;
         }
 
-        const Shader_Vulkan* shader = getShader<Shader_Vulkan>();
-        vkCmdBindDescriptorSets(commandBuffer, 
-            VK_PIPELINE_BIND_POINT_GRAPHICS, shader->getPipelineLayout(), 
-            0, 1, &m_DescriptorSet, 0, nullptr
-        );
+        if (m_DescriptorSet != nullptr)
+        {
+            const Shader_Vulkan* shader = getShader<Shader_Vulkan>();
+            vkCmdBindDescriptorSets(commandBuffer, 
+                VK_PIPELINE_BIND_POINT_GRAPHICS, shader->getPipelineLayout(), 
+                0, 1, &m_DescriptorSet, 0, nullptr
+            );
+        }
         return true;
     }
 }

@@ -165,9 +165,6 @@ namespace JumaRenderEngine
                 {
                     layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                     layoutBinding.descriptorCount = 1;
-
-                    uint32& bufferSize = m_CachedUniformBufferSizes[uniform.value.shaderLocation];
-                    bufferSize = math::max(bufferSize, uniform.value.shaderBlockOffset + GetShaderUniformValueSize(uniform.value.type));
                 }
                 break;
 
@@ -222,7 +219,6 @@ namespace JumaRenderEngine
         VkDevice device = getRenderEngine<RenderEngine_Vulkan>()->getDevice();
 
         m_CachedPipelineStageInfos.clear();
-        m_CachedUniformBufferSizes.clear();
 
         if (m_PipelineLayout != nullptr)
         {

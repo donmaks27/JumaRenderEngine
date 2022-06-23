@@ -19,24 +19,18 @@ namespace JumaRenderEngine
 
     bool Material_OpenGL::initInternal()
     {
-        if (!Super::initInternal())
+        const jmap<uint32, ShaderUniformBufferDescription>& uniformBufferDescriptions = getShader()->getUniformBufferDescriptions();
+        if (!uniformBufferDescriptions.isEmpty())
         {
-            return false;
-        }
-
-        const Shader_OpenGL* shader = getShader<Shader_OpenGL>();
-        const jmap<uint32, uint32>& uniformBufferSizes = shader->getUniformBufferSizes();
-        if (!uniformBufferSizes.isEmpty())
-        {
-            jarray<uint32> uniformBuffers(uniformBufferSizes.getSize(), 0);
+            jarray<uint32> uniformBuffers(uniformBufferDescriptions.getSize(), 0);
             glGenBuffers(uniformBuffers.getSize(), uniformBuffers.getData());
-            for (const auto& bufferSize : uniformBufferSizes)
+            for (const auto& uniformBufferDescription : uniformBufferDescriptions)
             {
-                const uint32 bufferIndex = m_UniformBufferIndices[bufferSize.key] = uniformBuffers.getLast();
+                const uint32 bufferIndex = m_UniformBufferIndices[uniformBufferDescription.key] = uniformBuffers.getLast();
                 uniformBuffers.removeLast();
 
                 glBindBuffer(GL_UNIFORM_BUFFER, bufferIndex);
-                glBufferData(GL_UNIFORM_BUFFER, bufferSize.value, nullptr, GL_DYNAMIC_DRAW);
+                glBufferData(GL_UNIFORM_BUFFER, uniformBufferDescription.value.size, nullptr, GL_DYNAMIC_DRAW);
             }
             glBindBuffer(GL_UNIFORM_BUFFER, 0);
         }

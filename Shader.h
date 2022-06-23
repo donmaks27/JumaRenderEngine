@@ -11,6 +11,12 @@
 
 namespace JumaRenderEngine
 {
+    struct ShaderUniformBufferDescription
+    {
+        uint32 size = 0;
+        uint8 shaderStages = 0;
+    };
+
     class Shader : public RenderEngineContextObjectBase
     {
         friend RenderEngine;
@@ -20,6 +26,7 @@ namespace JumaRenderEngine
         virtual ~Shader() override;
 
         const jmap<jstringID, ShaderUniform>& getUniforms() const { return m_ShaderUniforms; }
+        const jmap<uint32, ShaderUniformBufferDescription>& getUniformBufferDescriptions() const { return m_CachedUniformBufferDescriptions; }
 
     protected:
 
@@ -30,6 +37,7 @@ namespace JumaRenderEngine
     private:
 
         jmap<jstringID, ShaderUniform> m_ShaderUniforms;
+        jmap<uint32, ShaderUniformBufferDescription> m_CachedUniformBufferDescriptions;
 
 
         void clearData();

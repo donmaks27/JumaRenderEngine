@@ -236,6 +236,30 @@ namespace JumaRenderEngine
             }
         }
 
+        D3D11_RASTERIZER_DESC rasterizerDescription{};
+        rasterizerDescription.AntialiasedLineEnable = FALSE;
+        rasterizerDescription.CullMode = D3D11_CULL_BACK;
+        rasterizerDescription.DepthBias = 0;
+        rasterizerDescription.DepthBiasClamp = 0.0f;
+        rasterizerDescription.DepthClipEnable = TRUE;
+        rasterizerDescription.FillMode = D3D11_FILL_SOLID;
+        rasterizerDescription.FrontCounterClockwise = TRUE;
+        rasterizerDescription.MultisampleEnable = FALSE;
+        rasterizerDescription.ScissorEnable = FALSE;
+        rasterizerDescription.SlopeScaledDepthBias = 0.0f;
+        result = device->CreateRasterizerState(&rasterizerDescription, &m_RasterizerState);
+        if (result < 0)
+        {
+            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 rasterizer state"));
+            resultImageView->Release();
+            depthImageView->Release();
+            colorImageView->Release();
+            resolveImage->Release();
+            depthImage->Release();
+            colorImage->Release();
+            return false;
+        }
+
         m_ColorAttachmentImage = colorImage;
         m_DepthAttachmentImage = depthImage;
         m_ResolveAttachmentImage = resolveImage;
@@ -247,6 +271,12 @@ namespace JumaRenderEngine
 
     void RenderTarget_DirectX11::clearDirectX11()
     {
+        if (m_RasterizerState != nullptr)
+        {
+            m_RasterizerState->Release();
+            m_RasterizerState = nullptr;
+        }
+
         if (m_ResultImageView != nullptr)
         {
             m_ResultImageView->Release();
@@ -286,6 +316,11 @@ namespace JumaRenderEngine
         deviceContext->ClearRenderTargetView(m_ColorAttachmentView, clearColor);
         deviceContext->ClearDepthStencilView(m_DepthAttachmentView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
         deviceContext->OMSetRenderTargets(1, &m_ColorAttachmentView, m_DepthAttachmentView);
+
+        const math::uvector2 size = getSize();
+        const D3D11_VIEWPORT viewport = { 0, 0, static_cast<FLOAT>(size.x), static_cast<FLOAT>(size.y), 0.0f, 1.0f };
+        deviceContext->RSSetState(m_RasterizerState);
+        deviceContext->RSSetViewports(1, &viewport);
 
         return true;
     }

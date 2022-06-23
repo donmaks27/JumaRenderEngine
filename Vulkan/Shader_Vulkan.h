@@ -14,6 +14,8 @@ namespace JumaRenderEngine
 {
     class Shader_Vulkan final : public Shader
     {
+        using Super = Shader;
+
     public:
         Shader_Vulkan() = default;
         virtual ~Shader_Vulkan() override;
@@ -22,7 +24,6 @@ namespace JumaRenderEngine
         VkPipelineLayout getPipelineLayout() const { return m_PipelineLayout; }
 
         const jarray<VkPipelineShaderStageCreateInfo>& getPipelineStageInfos() const { return m_CachedPipelineStageInfos; }
-        const jmap<uint32, uint32>& getUniformBufferSizes() const { return m_CachedUniformBufferSizes; }
 
     protected:
 
@@ -35,7 +36,6 @@ namespace JumaRenderEngine
         VkPipelineLayout m_PipelineLayout = nullptr;
 
         jarray<VkPipelineShaderStageCreateInfo> m_CachedPipelineStageInfos;
-        jmap<uint32, uint32> m_CachedUniformBufferSizes;
 
 
         bool createShaderModules(VkDevice device, const jmap<ShaderStageFlags, jstring>& fileNames);

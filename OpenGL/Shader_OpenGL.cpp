@@ -202,31 +202,11 @@ namespace JumaRenderEngine
             }
         }
 
-        if (success)
-        {
-            cacheUniformsInfo();
-        }
         return success;
-    }
-    void Shader_OpenGL::cacheUniformsInfo()
-    {
-        const jmap<jstringID, ShaderUniform>& uniforms = getUniforms();
-        for (const auto& uniform : uniforms)
-        {
-            const uint32 size = GetShaderUniformValueSize(uniform.value.type);
-            if (size == 0)
-            {
-                continue;
-            }
-
-            uint32& bufferSize = m_CachedUniformBufferSizes[uniform.value.shaderLocation];
-            bufferSize = math::max(bufferSize, uniform.value.shaderBlockOffset + size);
-        }
     }
 
     void Shader_OpenGL::clearOpenGL()
     {
-        m_CachedUniformBufferSizes.clear();
         if (m_ShaderProgramIndex != 0)
         {
             glDeleteProgram(m_ShaderProgramIndex);

@@ -18,8 +18,6 @@ namespace JumaRenderEngine
         Shader_OpenGL() = default;
         virtual ~Shader_OpenGL() override;
 
-        const jmap<uint32, uint32>& getUniformBufferSizes() const { return m_CachedUniformBufferSizes; }
-
         bool activateShader() const;
         static void deactivateAnyShader();
 
@@ -30,10 +28,7 @@ namespace JumaRenderEngine
     private:
 
         uint32 m_ShaderProgramIndex = 0;
-        jmap<uint32, uint32> m_CachedUniformBufferSizes;
 
-
-        void cacheUniformsInfo();
 
         void clearOpenGL();
     };

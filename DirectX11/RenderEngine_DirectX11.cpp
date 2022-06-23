@@ -6,7 +6,10 @@
 
 #include <d3d11.h>
 
+#include "Material_DirectX11.h"
 #include "RenderTarget_DirectX11.h"
+#include "Shader_DirectX11.h"
+#include "VertexBuffer_DirectX11.h"
 #include "renderEngine/window/DirectX11/WindowControllerInfo_DirectX11.h"
 
 namespace JumaRenderEngine
@@ -94,7 +97,7 @@ namespace JumaRenderEngine
     }
     VertexBuffer* RenderEngine_DirectX11::createVertexBufferInternal()
     {
-        return nullptr;
+        return createObject<VertexBuffer_DirectX11>();
     }
     Texture* RenderEngine_DirectX11::createTextureInternal()
     {
@@ -102,11 +105,11 @@ namespace JumaRenderEngine
     }
     Shader* RenderEngine_DirectX11::createShaderInternal()
     {
-        return nullptr;
+        return createObject<Shader_DirectX11>();
     }
     Material* RenderEngine_DirectX11::createMaterialInternal()
     {
-        return nullptr;
+        return createObject<Material_DirectX11>();
     }
     RenderTarget* RenderEngine_DirectX11::createRenderTargetInternal()
     {

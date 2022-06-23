@@ -20,19 +20,16 @@ namespace JumaRenderEngine
         }
 
         m_Shader = shader;
+        for (const auto& uniform : m_Shader->getUniforms())
+        {
+            m_MaterialParams.setDefaultValue(uniform.key, uniform.value.type);
+        }
+
         if (!initInternal())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to initizlie material"));
             clearData();
             return false;
-        }
-        return true;
-    }
-    bool Material::initInternal()
-    {
-        for (const auto& uniform : m_Shader->getUniforms())
-        {
-            m_MaterialParams.setDefaultValue(uniform.key, uniform.value.type);
         }
         return true;
     }
