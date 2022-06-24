@@ -200,6 +200,10 @@ namespace JumaRenderEngine
     }
     void Shader_DirectX11::unbindShader(const RenderOptions* renderOptions, VertexBuffer_DirectX11* vertexBuffer)
     {
+        ID3D11DeviceContext* deviceContext = getRenderEngine<RenderEngine_DirectX11>()->getDeviceContext();
+        deviceContext->IASetInputLayout(nullptr);
+        deviceContext->PSSetShader(nullptr, nullptr, 0);
+        deviceContext->VSSetShader(nullptr, nullptr, 0);
     }
 }
 

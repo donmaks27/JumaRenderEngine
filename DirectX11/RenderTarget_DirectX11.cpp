@@ -84,7 +84,7 @@ namespace JumaRenderEngine
                 colorImageDescription.Usage = D3D11_USAGE_DEFAULT;
                 colorImageDescription.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
                 colorImageDescription.CPUAccessFlags = 0;
-                colorImageDescription.MiscFlags = 0;
+                colorImageDescription.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
                 result = device->CreateTexture2D(&colorImageDescription, nullptr, &colorImage);
                 if (result < 0)
                 {
@@ -327,6 +327,7 @@ namespace JumaRenderEngine
     void RenderTarget_DirectX11::onFinishRender(RenderOptions* renderOptions)
     {
         ID3D11DeviceContext* deviceContext = getRenderEngine<RenderEngine_DirectX11>()->getDeviceContext();
+        deviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
         if (getSampleCount() != TextureSamples::X1)
         {

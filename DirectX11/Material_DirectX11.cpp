@@ -158,6 +158,36 @@ namespace JumaRenderEngine
     }
     void Material_DirectX11::unbindMaterial(const RenderOptions* renderOptions, VertexBuffer_DirectX11* vertexBuffer)
     {
+        ID3D11DeviceContext* deviceContext = getRenderEngine<RenderEngine_DirectX11>()->getDeviceContext();
+        ID3D11ShaderResourceView* emptyTextureView = nullptr;
+        for (const auto& uniform : getShader()->getUniforms())
+        {
+            if (uniform.value.type != ShaderUniformType::Texture)
+            {
+                continue;
+            }
+            if (uniform.value.shaderStages & SHADER_STAGE_VERTEX)
+            {
+                deviceContext->VSSetShaderResources(uniform.value.shaderLocation, 1, &emptyTextureView);
+            }
+            if (uniform.value.shaderStages & SHADER_STAGE_FRAGMENT)
+            {
+                deviceContext->PSSetShaderResources(uniform.value.shaderLocation, 1, &emptyTextureView);
+            }
+        }
+        ID3D11Buffer* emptyBuffer = nullptr;
+        for (const auto& uniformBuffer : m_UniformBuffers)
+        {
+            if (uniformBuffer.value.shaderStages & SHADER_STAGE_VERTEX)
+            {
+                deviceContext->VSSetConstantBuffers(uniformBuffer.key, 1, &emptyBuffer);
+            }
+            if (uniformBuffer.value.shaderStages & SHADER_STAGE_FRAGMENT)
+            {
+                deviceContext->PSSetConstantBuffers(uniformBuffer.key, 1, &emptyBuffer);
+            }
+        }
+
         getShader<Shader_DirectX11>()->unbindShader(renderOptions, vertexBuffer);
     }
 
@@ -192,7 +222,7 @@ namespace JumaRenderEngine
                     ShaderUniformInfo<ShaderUniformType::Float>::value_type value;
                     if (materialParams.getValue<ShaderUniformType::Float>(uniform.key, value))
                     {
-                        std::memcpy(mappedData + uniform.value.shaderBlockOffset, &value, sizeof(value));
+                        std::memcpy(static_cast<uint8*>(mappedData->pData) + uniform.value.shaderBlockOffset, &value, sizeof(value));
                     }
                 }
                 break;
@@ -201,7 +231,7 @@ namespace JumaRenderEngine
                     ShaderUniformInfo<ShaderUniformType::Vec4>::value_type value;
                     if (materialParams.getValue<ShaderUniformType::Vec4>(uniform.key, value))
                     {
-                        std::memcpy(mappedData + uniform.value.shaderBlockOffset, &value[0], sizeof(value));
+                        std::memcpy(static_cast<uint8*>(mappedData->pData) + uniform.value.shaderBlockOffset, &value[0], sizeof(value));
                     }
                 }
                 break;
@@ -210,7 +240,7 @@ namespace JumaRenderEngine
                     ShaderUniformInfo<ShaderUniformType::Mat4>::value_type value;
                     if (materialParams.getValue<ShaderUniformType::Mat4>(uniform.key, value))
                     {
-                        std::memcpy(mappedData + uniform.value.shaderBlockOffset, &value[0][0], sizeof(value));
+                        std::memcpy(static_cast<uint8*>(mappedData->pData) + uniform.value.shaderBlockOffset, &value[0][0], sizeof(value));
                     }
                 }
                 break;

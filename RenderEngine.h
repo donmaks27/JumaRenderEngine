@@ -60,7 +60,7 @@ namespace JumaRenderEngine
         Shader* createShader(const jmap<ShaderStageFlags, jstring>& fileNames, jmap<jstringID, ShaderUniform> uniforms = {});
         Material* createMaterial(Shader* shader);
 
-        RenderTarget* createRenderTarget(window_id windowID, TextureSamples samples);
+        RenderTarget* createWindowRenderTarget(window_id windowID, TextureSamples samples);
         RenderTarget* createRenderTarget(TextureFormat format, const math::uvector2& size, TextureSamples samples);
 
     protected:
