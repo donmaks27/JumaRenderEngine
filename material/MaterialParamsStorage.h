@@ -45,6 +45,7 @@ namespace JumaRenderEngine
         using material_params_map = jmap<jstringID, typename ShaderUniformInfo<Type>::value_type>;
 
         material_params_map<ShaderUniformType::Float> m_MaterialParams_Float;
+        material_params_map<ShaderUniformType::Vec2> m_MaterialParams_Vec2;
         material_params_map<ShaderUniformType::Vec4> m_MaterialParams_Vec4;
         material_params_map<ShaderUniformType::Mat4> m_MaterialParams_Mat4;
         material_params_map<ShaderUniformType::Texture> m_MaterialParams_Texture;
@@ -56,6 +57,12 @@ namespace JumaRenderEngine
         bool setValueInternal<ShaderUniformType::Float>(const jstringID& name, const ShaderUniformInfo<ShaderUniformType::Float>::value_type& value)
         {
             m_MaterialParams_Float[name] = value;
+            return true;
+        }
+        template<>
+        bool setValueInternal<ShaderUniformType::Vec2>(const jstringID& name, const ShaderUniformInfo<ShaderUniformType::Vec2>::value_type& value)
+        {
+            m_MaterialParams_Vec2[name] = value;
             return true;
         }
         template<>
@@ -81,6 +88,8 @@ namespace JumaRenderEngine
         const typename ShaderUniformInfo<Type>::value_type* findValue(const jstringID& name) const { return nullptr; }
         template<>
         const ShaderUniformInfo<ShaderUniformType::Float>::value_type* findValue<ShaderUniformType::Float>(const jstringID& name) const { return m_MaterialParams_Float.find(name); }
+        template<>
+        const ShaderUniformInfo<ShaderUniformType::Vec2>::value_type* findValue<ShaderUniformType::Vec2>(const jstringID& name) const { return m_MaterialParams_Vec2.find(name); }
         template<>
         const ShaderUniformInfo<ShaderUniformType::Vec4>::value_type* findValue<ShaderUniformType::Vec4>(const jstringID& name) const { return m_MaterialParams_Vec4.find(name); }
         template<>

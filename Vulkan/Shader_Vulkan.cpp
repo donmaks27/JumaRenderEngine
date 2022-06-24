@@ -157,25 +157,8 @@ namespace JumaRenderEngine
             {
                 layoutBinding.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
             }
-            switch (uniform.value.type)
-            {
-            case ShaderUniformType::Float:
-            case ShaderUniformType::Vec4:
-            case ShaderUniformType::Mat4:
-                {
-                    layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    layoutBinding.descriptorCount = 1;
-                }
-                break;
-
-            case ShaderUniformType::Texture:
-                {
-                    layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                    layoutBinding.descriptorCount = 1;
-                }
-                break;
-            default: ;
-            }
+            layoutBinding.descriptorType = IsShaderUniformScalar(uniform.value.type) ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            layoutBinding.descriptorCount = 1;
         }
 
         VkDescriptorSetLayoutCreateInfo layoutInfo{};

@@ -226,6 +226,15 @@ namespace JumaRenderEngine
                     }
                 }
                 break;
+            case ShaderUniformType::Vec2:
+                {
+                    ShaderUniformInfo<ShaderUniformType::Vec2>::value_type value;
+                    if (materialParams.getValue<ShaderUniformType::Vec2>(uniform.key, value))
+                    {
+                        std::memcpy(static_cast<uint8*>(mappedData->pData) + uniform.value.shaderBlockOffset, &value[0], sizeof(value));
+                    }
+                }
+                break;
             case ShaderUniformType::Vec4:
                 {
                     ShaderUniformInfo<ShaderUniformType::Vec4>::value_type value;

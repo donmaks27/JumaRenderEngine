@@ -9,6 +9,7 @@ namespace JumaRenderEngine
     enum class ShaderUniformType : uint8
     {
         Float,
+        Vec2,
         Vec4,
         Mat4,
         Texture

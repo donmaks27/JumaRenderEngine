@@ -169,8 +169,20 @@ namespace JumaRenderEngine
             {
             case ShaderUniformType::Float:
                 {
-                    float value;
+                    ShaderUniformInfo<ShaderUniformType::Float>::value_type value;
                     if (!params.getValue<ShaderUniformType::Float>(uniform.key, value))
+                    {
+                        continue;
+                    }
+                    VulkanBuffer* buffer = m_UniformBuffers[uniform.value.shaderLocation];
+                    buffer->initMappedData();
+                    buffer->setMappedData(&value, sizeof(value), uniform.value.shaderBlockOffset);
+                }
+                break;
+            case ShaderUniformType::Vec2:
+                {
+                    ShaderUniformInfo<ShaderUniformType::Vec2>::value_type value;
+                    if (!params.getValue<ShaderUniformType::Vec2>(uniform.key, value))
                     {
                         continue;
                     }
@@ -181,7 +193,7 @@ namespace JumaRenderEngine
                 break;
             case ShaderUniformType::Vec4:
                 {
-                    math::vector4 value;
+                    ShaderUniformInfo<ShaderUniformType::Vec4>::value_type value;
                     if (!params.getValue<ShaderUniformType::Vec4>(uniform.key, value))
                     {
                         continue;
@@ -193,7 +205,7 @@ namespace JumaRenderEngine
                 break;
             case ShaderUniformType::Mat4:
                 {
-                    math::matrix4 value;
+                    ShaderUniformInfo<ShaderUniformType::Mat4>::value_type value;
                     if (!params.getValue<ShaderUniformType::Mat4>(uniform.key, value))
                     {
                         continue;
@@ -206,7 +218,7 @@ namespace JumaRenderEngine
 
             case ShaderUniformType::Texture:
                 {
-                    TextureBase* value = nullptr;
+                    ShaderUniformInfo<ShaderUniformType::Texture>::value_type value;
                     if (!params.getValue<ShaderUniformType::Texture>(uniform.key, value))
                     {
                         continue;

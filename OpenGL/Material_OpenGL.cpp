@@ -70,6 +70,17 @@ namespace JumaRenderEngine
                     }
                 }
                 break;
+            case ShaderUniformType::Vec2:
+                {
+                    ShaderUniformInfo<ShaderUniformType::Vec2>::value_type value;
+                    if (materialParams.getValue<ShaderUniformType::Vec2>(uniform.key, value))
+                    {
+                        glBindBuffer(GL_UNIFORM_BUFFER, m_UniformBufferIndices[uniform.value.shaderLocation]);
+                        glBufferSubData(GL_UNIFORM_BUFFER, uniform.value.shaderBlockOffset, sizeof(value), &value[0]);
+                        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+                    }
+                }
+                break;
             case ShaderUniformType::Vec4:
                 {
                     ShaderUniformInfo<ShaderUniformType::Vec4>::value_type value;
