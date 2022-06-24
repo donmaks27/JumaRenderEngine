@@ -7,7 +7,9 @@
 #include <d3d11.h>
 
 #include "RenderEngine_DirectX11.h"
+#include "RenderTarget_DirectX11.h"
 #include "Shader_DirectX11.h"
+#include "Texture_DirectX11.h"
 #include "VertexBuffer_DirectX11.h"
 #include "renderEngine/Shader.h"
 
@@ -87,7 +89,8 @@ namespace JumaRenderEngine
             return false;
         }
 
-        ID3D11DeviceContext* deviceContext = getRenderEngine<RenderEngine_DirectX11>()->getDeviceContext();
+        RenderEngine_DirectX11* renderEngine = getRenderEngine<RenderEngine_DirectX11>();
+        ID3D11DeviceContext* deviceContext = renderEngine->getDeviceContext();
 
         updateUniformBuffersData(deviceContext);
         for (const auto& uniformBuffer : m_UniformBuffers)
@@ -96,9 +99,57 @@ namespace JumaRenderEngine
             {
                 deviceContext->VSSetConstantBuffers(uniformBuffer.key, 1, &uniformBuffer.value.buffer);
             }
-            else if (uniformBuffer.value.shaderStages & SHADER_STAGE_FRAGMENT)
+            if (uniformBuffer.value.shaderStages & SHADER_STAGE_FRAGMENT)
             {
                 deviceContext->PSSetConstantBuffers(uniformBuffer.key, 1, &uniformBuffer.value.buffer);
+            }
+        }
+        const MaterialParamsStorage& materialParams = getMaterialParams();
+        for (const auto& uniform : getShader()->getUniforms())
+        {
+            if (uniform.value.type != ShaderUniformType::Texture)
+            {
+                continue;
+            }
+            ShaderUniformInfo<ShaderUniformType::Texture>::value_type value;
+            if (!materialParams.getValue<ShaderUniformType::Texture>(uniform.key, value) || (value == nullptr))
+            {
+                continue;
+            }
+            ID3D11SamplerState* sampler = renderEngine->getTextureSampler(value->getSamplerType());
+            if (sampler == nullptr)
+            {
+                continue;
+            }
+
+            ID3D11ShaderResourceView* textureView = nullptr;
+            const Texture_DirectX11* valueTexture = dynamic_cast<Texture_DirectX11*>(value);
+            if (valueTexture != nullptr)
+            {
+                textureView = valueTexture->getTextureView();
+            }
+            else
+            {
+                const RenderTarget_DirectX11* valueRenderTarget = dynamic_cast<RenderTarget_DirectX11*>(value);
+                if (valueRenderTarget != nullptr)
+                {
+                    textureView = valueRenderTarget->getResultImageView();
+                }
+            }
+            if (textureView == nullptr)
+            {
+                continue;
+            }
+
+            if (uniform.value.shaderStages & SHADER_STAGE_VERTEX)
+            {
+                deviceContext->VSSetSamplers(uniform.value.shaderLocation, 1, &sampler);
+                deviceContext->VSSetShaderResources(uniform.value.shaderLocation, 1, &textureView);
+            }
+            if (uniform.value.shaderStages & SHADER_STAGE_FRAGMENT)
+            {
+                deviceContext->PSSetSamplers(uniform.value.shaderLocation, 1, &sampler);
+                deviceContext->PSSetShaderResources(uniform.value.shaderLocation, 1, &textureView);
             }
         }
 

@@ -8,8 +8,11 @@
 
 #include "renderEngine/RenderEngine.h"
 
+#include "renderEngine/texture/TextureSamplerType.h"
+
 struct ID3D11Device;
 struct ID3D11DeviceContext;
+struct ID3D11SamplerState;
 
 namespace JumaRenderEngine
 {
@@ -25,6 +28,8 @@ namespace JumaRenderEngine
 
         ID3D11Device* getDevice() const { return m_Device; }
         ID3D11DeviceContext* getDeviceContext() const { return m_DeviceContext; }
+
+        ID3D11SamplerState* getTextureSampler(TextureSamplerType samplerType);
 
     protected:
 
@@ -42,6 +47,8 @@ namespace JumaRenderEngine
 
         ID3D11Device* m_Device = nullptr;
         ID3D11DeviceContext* m_DeviceContext = nullptr;
+
+        jmap<TextureSamplerType, ID3D11SamplerState*> m_TextureSamplers;
 
 
         bool createDirectXDevice();

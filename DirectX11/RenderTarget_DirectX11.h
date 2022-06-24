@@ -24,6 +24,8 @@ namespace JumaRenderEngine
         RenderTarget_DirectX11() = default;
         virtual ~RenderTarget_DirectX11() override;
 
+        ID3D11ShaderResourceView* getResultImageView() const { return m_ResultImageView; }
+
         virtual bool onStartRender(RenderOptions* renderOptions) override;
         virtual void onFinishRender(RenderOptions* renderOptions) override;
 

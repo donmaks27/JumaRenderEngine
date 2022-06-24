@@ -326,6 +326,21 @@ namespace JumaRenderEngine
     }
     void RenderTarget_DirectX11::onFinishRender(RenderOptions* renderOptions)
     {
+        ID3D11DeviceContext* deviceContext = getRenderEngine<RenderEngine_DirectX11>()->getDeviceContext();
+
+        if (getSampleCount() != TextureSamples::X1)
+        {
+            deviceContext->ResolveSubresource(
+                m_ResolveAttachmentImage, 0, 
+                m_ColorAttachmentImage, 0, 
+                GetDirectX11FormatByTextureFormat(getFormat())
+            );
+        }
+        if (!isWindowRenderTarget())
+        {
+            deviceContext->GenerateMips(m_ResultImageView);
+        }
+
         Super::onFinishRender(renderOptions);
     }
 }
