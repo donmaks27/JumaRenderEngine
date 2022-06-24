@@ -30,7 +30,7 @@ namespace JumaRenderEngine
         textureDescription.SampleDesc.Count = 1;
         textureDescription.SampleDesc.Quality = 0;
         textureDescription.Usage = D3D11_USAGE_DEFAULT;
-        textureDescription.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        textureDescription.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
         textureDescription.CPUAccessFlags = 0;
         textureDescription.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
         ID3D11Texture2D* texture = nullptr;
@@ -57,7 +57,7 @@ namespace JumaRenderEngine
 
         ID3D11DeviceContext* deviceContext = renderEngine->getDeviceContext();
         const D3D11_BOX textureRange = { 0, 0, 0, size.x, size.y, 1 };
-        deviceContext->UpdateSubresource(texture, 0, &textureRange, data, size.x, 1);
+        deviceContext->UpdateSubresource(texture, 0, &textureRange, data, size.x * GetTextureFormatSize(format), 1);
         deviceContext->GenerateMips(textureView);
 
         m_Texture = texture;
