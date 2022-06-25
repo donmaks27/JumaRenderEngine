@@ -119,7 +119,7 @@ namespace JumaRenderEngine
         return createObject<RenderPipeline>();
     }
 
-    VertexBuffer* RenderEngine::createVertexBuffer(const VertexBufferData* verticesData)
+    VertexBuffer* RenderEngine::createVertexBuffer(VertexBufferData* verticesData)
     {
         if (registerVertexType(verticesData) == nullptr)
         {

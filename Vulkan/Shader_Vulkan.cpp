@@ -139,11 +139,17 @@ namespace JumaRenderEngine
         jmap<uint32, int32> layoutBindingsMap;
         for (const auto& uniform : uniforms)
         {
-            int32& index = layoutBindingsMap[uniform.value.shaderLocation];
-            if (!layoutBindings.isValidIndex(index))
+            int32 index;
+            const int32* indexPtr = layoutBindingsMap.find(uniform.value.shaderLocation);
+            if (indexPtr == nullptr)
             {
                 index = layoutBindings.getSize();
                 layoutBindings.addDefault().stageFlags = 0;
+                layoutBindingsMap.add(uniform.value.shaderLocation, index);
+            }
+            else
+            {
+                index = *indexPtr;
             }
 
             VkDescriptorSetLayoutBinding& layoutBinding = layoutBindings[index];

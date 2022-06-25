@@ -25,7 +25,7 @@ namespace JumaRenderEngine
 
     protected:
 
-        virtual bool initInternal(const VertexBufferData* verticesData) override;
+        virtual bool initInternal(VertexBufferData* verticesData) override;
 
     private:
 

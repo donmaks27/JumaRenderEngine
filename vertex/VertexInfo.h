@@ -19,6 +19,8 @@ namespace JumaRenderEngine
         static uint32 getVertexSize() { return 0; }
 
         static jarray<VertexComponentDescription> getVertexComponents() { return {}; }
+
+        static void rotateTextureCoords(T& vertex) {}
     };
 
     template<typename T>

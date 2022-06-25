@@ -17,7 +17,7 @@ namespace JumaRenderEngine
         clearVulkan();
     }
 
-    bool VertexBuffer_Vulkan::initInternal(const VertexBufferData* verticesData)
+    bool VertexBuffer_Vulkan::initInternal(VertexBufferData* verticesData)
     {
         RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
 

@@ -25,6 +25,8 @@ namespace JumaRenderEngine
 
         void setVertexIndices(jarray<uint32> data) { vertexIndices = std::move(data); }
 
+        virtual void rotateTextureCoords() = 0;
+
     protected:
 
         jarray<uint32> vertexIndices;
@@ -46,6 +48,14 @@ namespace JumaRenderEngine
         virtual uint32 getVertexCount() const override { return static_cast<uint32>(vertices.getSize()); }
         
         void setVertices(jarray<VertexType> data) { vertices = std::move(data); }
+
+        virtual void rotateTextureCoords() override
+        {
+            for (auto& vertex : vertices)
+            {
+                VertexInfo<VertexType>::rotateTextureCoords(vertex);
+            }
+        }
 
     private:
 

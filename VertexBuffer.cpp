@@ -11,7 +11,7 @@ namespace JumaRenderEngine
         clearData();
     }
 
-    bool VertexBuffer::init(const VertexBufferData* verticesData)
+    bool VertexBuffer::init(VertexBufferData* verticesData)
     {
         m_VertexTypeName = verticesData->getVertexTypeName();
         if (!initInternal(verticesData))

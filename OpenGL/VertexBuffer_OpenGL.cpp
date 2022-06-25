@@ -20,7 +20,7 @@ namespace JumaRenderEngine
         clearOpenGL();
     }
 
-    bool VertexBuffer_OpenGL::initInternal(const VertexBufferData* verticesData)
+    bool VertexBuffer_OpenGL::initInternal(VertexBufferData* verticesData)
     {
         const uint32 vertexCount = verticesData->getVertexCount();
         if (vertexCount == 0)

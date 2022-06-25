@@ -23,5 +23,7 @@ namespace JumaRenderEngine
         {
             return {{ JSTR("position"), VertexComponentType::Vec2, 0, offsetof(VertexType, position) }};
         }
+
+        static void rotateTextureCoords(Vertex2D& vertex) {}
     };
 }

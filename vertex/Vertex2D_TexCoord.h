@@ -27,5 +27,7 @@ namespace JumaRenderEngine
                 { JSTR("textureCoords"), VertexComponentType::Vec2, 1, offsetof(VertexType, textureCoords) }
             };
         }
+
+        static void rotateTextureCoords(Vertex2D_TexCoord& vertex) { vertex.textureCoords.y = 1.0f - vertex.textureCoords.y; }
     };
 }

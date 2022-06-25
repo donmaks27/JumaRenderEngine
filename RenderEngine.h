@@ -52,7 +52,7 @@ namespace JumaRenderEngine
         template<typename T, TEMPLATE_ENABLE(is_base<RenderPipeline, T>)>
         T* getRenderPipeline() const { return dynamic_cast<T*>(getRenderPipeline()); }
 
-        VertexBuffer* createVertexBuffer(const VertexBufferData* verticesData);
+        VertexBuffer* createVertexBuffer(VertexBufferData* verticesData);
         const VertexDescription* findVertexType(const jstringID& vertexName) const { return m_RegisteredVertexTypes.find(vertexName); }
 
         Texture* createTexture(const math::uvector2& size, TextureFormat format, const uint8* data);

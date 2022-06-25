@@ -17,8 +17,10 @@ namespace JumaRenderEngine
         clearDirectX();
     }
 
-    bool VertexBuffer_DirectX11::initInternal(const VertexBufferData* verticesData)
+    bool VertexBuffer_DirectX11::initInternal(VertexBufferData* verticesData)
     {
+        verticesData->rotateTextureCoords();
+
         const uint32 vertexCount = verticesData->getVertexCount();
         if (vertexCount == 0)
         {
