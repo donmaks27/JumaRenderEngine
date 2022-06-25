@@ -11,6 +11,8 @@
 
 namespace JumaRenderEngine
 {
+    class RenderTarget;
+
     struct WindowProperties
     {
         jstring title;
@@ -20,6 +22,8 @@ namespace JumaRenderEngine
     {
         window_id windowID = window_id_INVALID;
         math::uvector2 size;
+
+        RenderTarget* windowRenderTarget = nullptr;
     };
 
     class WindowController : public RenderEngineContextObjectBase
@@ -30,8 +34,11 @@ namespace JumaRenderEngine
         WindowController() = default;
         virtual ~WindowController() override = default;
 
-        virtual bool createWindow(window_id windowID, const WindowProperties& properties) = 0;
+        bool createWindow(window_id windowID, const WindowProperties& properties);
         virtual void destroyWindow(window_id windowID) = 0;
+
+        bool createRenderTargets();
+        void clearRenderTargets();
 
         virtual const WindowData* findWindowData(window_id windowID) const = 0;
         template<typename T, TEMPLATE_ENABLE(is_base<WindowData, T>)>
@@ -51,10 +58,19 @@ namespace JumaRenderEngine
 
         virtual bool initWindowController() { return true; }
 
+        virtual WindowData* createWindowInternal(window_id windowID, const WindowProperties& properties) = 0;
+
+        void clearWindow(window_id windowID, WindowData& windowData);
+
         virtual WindowData* getWindowData(window_id windowID) = 0;
         template<typename T, TEMPLATE_ENABLE(is_base<WindowData, T>)>
         T* getWindowData(const window_id windowID) { return reinterpret_cast<T*>(getWindowData(windowID)); }
 
         void onWindowResized(window_id windowID, const math::uvector2& newSize);
+
+    private:
+        
+        bool createRenderTarget(window_id windowID, WindowData& windowData);
+        void clearRenderTarget(window_id windowID, WindowData& windowData);
     };
 }

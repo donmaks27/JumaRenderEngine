@@ -35,7 +35,7 @@ namespace JumaRenderEngine
 
     protected:
 
-        void destroyWindowDirectX11(window_id windowID, WindowData_DirectX11& windowData);
+        void clearWindowDirectX11(window_id windowID, WindowData_DirectX11& windowData);
 
         bool createWindowSwapchain(window_id windowID, WindowData_DirectX11& windowData);
 

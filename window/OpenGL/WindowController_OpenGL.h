@@ -27,9 +27,9 @@ namespace JumaRenderEngine
 
     protected:
 
-        virtual bool setActiveWindowInternal(window_id windowID) = 0;
-
         bool initOpenGL();
+
+        virtual bool setActiveWindowInternal(window_id windowID) = 0;
 
     private:
 

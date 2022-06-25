@@ -8,6 +8,17 @@
 
 namespace JumaRenderEngine
 {
+    bool WindowController_OpenGL::initOpenGL()
+    {
+        const GLenum glewInitResult = glewInit();
+        if (glewInitResult != GLEW_OK)
+        {
+            JUMA_RENDER_LOG(error, reinterpret_cast<const char*>(glewGetErrorString(glewInitResult)));
+            return false;
+        }
+        return true;
+    }
+    
     void WindowController_OpenGL::setActiveWindowID(const window_id windowID)
     {
         if (windowID != m_ActiveWindowID)
@@ -21,17 +32,6 @@ namespace JumaRenderEngine
                 JUMA_RENDER_LOG(warning, JSTR("Failed to set active window ID ") + TO_JSTR(windowID));
             }
         }
-    }
-
-    bool WindowController_OpenGL::initOpenGL()
-    {
-        const GLenum glewInitResult = glewInit();
-        if (glewInitResult != GLEW_OK)
-        {
-            JUMA_RENDER_LOG(error, reinterpret_cast<const char*>(glewGetErrorString(glewInitResult)));
-            return false;
-        }
-        return true;
     }
 }
 

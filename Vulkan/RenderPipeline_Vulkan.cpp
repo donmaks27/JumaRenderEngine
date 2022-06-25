@@ -93,14 +93,8 @@ namespace JumaRenderEngine
         const WindowController* windowController = getRenderEngine()->getWindowController();
         m_Swapchains.clear();
         m_SwapchainImageReadySemaphores.clear();
-        for (const auto& pipelineStage : getPipelineStages())
+        for (const auto& windowID : windowController->getWindowIDs())
         {
-            if (!pipelineStage.value.renderTarget->isWindowRenderTarget())
-            {
-                continue;
-            }
-
-            const window_id windowID = pipelineStage.value.renderTarget->getWindowID();
             const WindowData_Vulkan* windowData = windowController->findWindowData<WindowData_Vulkan>(windowID);
             VulkanSwapchain* swapchain = windowData != nullptr ? windowData->vulkanSwapchain : nullptr;
             if (swapchain == nullptr)

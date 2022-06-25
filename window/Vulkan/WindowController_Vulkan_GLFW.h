@@ -33,7 +33,6 @@ namespace JumaRenderEngine
 
         virtual jarray<const char*> getVulkanInstanceExtensions() const override;
 
-        virtual bool createWindow(window_id windowID, const WindowProperties& properties) override;
         virtual void destroyWindow(window_id windowID) override;
 
         virtual const WindowData* findWindowData(const window_id windowID) const override { return m_Windows.find(windowID); }
@@ -49,6 +48,8 @@ namespace JumaRenderEngine
 
         virtual bool initWindowController() override;
 
+        virtual WindowData* createWindowInternal(window_id windowID, const WindowProperties& properties) override;
+
         virtual WindowData* getWindowData(const window_id windowID) override { return m_Windows.find(windowID); }
 
     private:
@@ -61,7 +62,7 @@ namespace JumaRenderEngine
 
         void clearGLFW();
 
-        void destroyWindowGLFW(window_id windowID, WindowData_Vulkan_GLFW& windowData);
+        void clearWindowGLFW(window_id windowID, WindowData_Vulkan_GLFW& windowData);
     };
 }
 

@@ -35,7 +35,7 @@ namespace JumaRenderEngine
 
     protected:
 
-        void destroyWindowVulkan(window_id windowID, WindowData_Vulkan& windowData);
+        void clearWindowVulkan(window_id windowID, WindowData_Vulkan& windowData);
 
         bool createWindowSwapchain(window_id windowID, WindowData_Vulkan& windowData);
 

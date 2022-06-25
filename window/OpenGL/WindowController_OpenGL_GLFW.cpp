@@ -45,9 +45,9 @@ namespace JumaRenderEngine
 
     void WindowController_OpenGL_GLFW::clearGLFW()
     {
-        for (const auto& window : m_Windows)
+        for (auto& window : m_Windows)
         {
-            destroyWindowGLFW(window.key, window.value);
+            clearWindowGLFW(window.key, window.value);
         }
         m_Windows.clear();
 
@@ -59,17 +59,17 @@ namespace JumaRenderEngine
         glfwTerminate();
     }
 
-    bool WindowController_OpenGL_GLFW::createWindow(const window_id windowID, const WindowProperties& properties)
+    WindowData* WindowController_OpenGL_GLFW::createWindowInternal(const window_id windowID, const WindowProperties& properties)
     {
         if (windowID == window_id_INVALID)
         {
             JUMA_RENDER_LOG(error, JSTR("Invalid window ID"));
-            return false;
+            return nullptr;
         }
         if (m_Windows.contains(windowID))
         {
             JUMA_RENDER_LOG(error, JSTR("Window ") + TO_JSTR(windowID) + JSTR(" already created"));
-            return false;
+            return nullptr;
         }
 
         if (m_DefaultWindow == nullptr)
@@ -88,12 +88,10 @@ namespace JumaRenderEngine
         if (window == nullptr)
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create window ") + TO_JSTR(windowID));
-            return false;
+            return nullptr;
         }
 
         WindowData_OpenGL_GLFW& windowData = m_Windows[windowID];
-        windowData.windowID = windowID;
-        windowData.size = properties.size;
         windowData.windowGLFW = window;
         windowData.windowController = this;
         glfwSetWindowUserPointer(window, &windowData);
@@ -103,7 +101,7 @@ namespace JumaRenderEngine
         setActiveWindowID(windowID);
         glfwSwapInterval(1);
         setActiveWindowID(prevActiveWindowID);
-        return true;
+        return &windowData;
     }
     void WindowController_OpenGL_GLFW::GLFW_FramebufferResizeCallback(GLFWwindow* windowGLFW, int width, int height)
     {
@@ -130,18 +128,20 @@ namespace JumaRenderEngine
 
     void WindowController_OpenGL_GLFW::destroyWindow(const window_id windowID)
     {
-        const WindowData_OpenGL_GLFW* windowData = m_Windows.find(windowID);
+        WindowData_OpenGL_GLFW* windowData = m_Windows.find(windowID);
         if (windowData == nullptr)
         {
             JUMA_RENDER_LOG(warning, JSTR("Can't find window ") + TO_JSTR(windowID));
             return;
         }
 
-        destroyWindowGLFW(windowID, *windowData);
+        clearWindowGLFW(windowID, *windowData);
         m_Windows.remove(windowID);
     }
-    void WindowController_OpenGL_GLFW::destroyWindowGLFW(const window_id windowID, const WindowData_OpenGL_GLFW& windowData)
+    void WindowController_OpenGL_GLFW::clearWindowGLFW(const window_id windowID, WindowData_OpenGL_GLFW& windowData)
     {
+        clearWindow(windowID, windowData);
+
         glfwSetWindowUserPointer(windowData.windowGLFW, nullptr);
         glfwDestroyWindow(windowData.windowGLFW);
     }

@@ -64,7 +64,7 @@ namespace JumaRenderEngine
         {
             for (auto& window : m_Windows)
             {
-                destroyWindowGLFW(window.key, window.value);
+                clearWindowGLFW(window.key, window.value);
             }
             m_Windows.clear();
         }
@@ -72,17 +72,17 @@ namespace JumaRenderEngine
         glfwTerminate();
     }
 
-    bool WindowController_Vulkan_GLFW::createWindow(const window_id windowID, const WindowProperties& properties)
+    WindowData* WindowController_Vulkan_GLFW::createWindowInternal(const window_id windowID, const WindowProperties& properties)
     {
         if (windowID == window_id_INVALID)
         {
             JUMA_RENDER_LOG(error, JSTR("Invalid window ID"));
-            return false;
+            return nullptr;
         }
         if (m_Windows.contains(windowID))
         {
             JUMA_RENDER_LOG(error, JSTR("Window ") + TO_JSTR(windowID) + JSTR(" already created"));
-            return false;
+            return nullptr;
         }
 
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -93,7 +93,7 @@ namespace JumaRenderEngine
         if (window == nullptr)
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create window ") + TO_JSTR(windowID));
-            return false;
+            return nullptr;
         }
 
         VkSurfaceKHR surface = nullptr;
@@ -102,19 +102,23 @@ namespace JumaRenderEngine
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create surface for window ") + TO_JSTR(windowID));
             glfwDestroyWindow(window);
-            return false;
+            return nullptr;
         }
 
         WindowData_Vulkan_GLFW& windowData = m_Windows[windowID];
-        windowData.windowID = windowID;
-        windowData.size = properties.size;
         windowData.vulkanSurface = surface;
         windowData.windowGLFW = window;
         windowData.windowController = this;
         glfwSetWindowUserPointer(window, &windowData);
         glfwSetFramebufferSizeCallback(window, WindowController_Vulkan_GLFW::GLFW_FramebufferResizeCallback);
 
-        return createWindowSwapchain(windowID, windowData);
+        if (!createWindowSwapchain(windowID, windowData))
+        {
+            clearWindowGLFW(windowID, windowData);
+            m_Windows.remove(windowID);
+            return nullptr;
+        }
+        return &windowData;
     }
     void WindowController_Vulkan_GLFW::GLFW_FramebufferResizeCallback(GLFWwindow* windowGLFW, const int width, const int height)
     {
@@ -134,12 +138,12 @@ namespace JumaRenderEngine
             return;
         }
 
-        destroyWindowGLFW(windowID, *windowData);
+        clearWindowGLFW(windowID, *windowData);
         m_Windows.remove(windowID);
     }
-    void WindowController_Vulkan_GLFW::destroyWindowGLFW(const window_id windowID, WindowData_Vulkan_GLFW& windowData)
+    void WindowController_Vulkan_GLFW::clearWindowGLFW(const window_id windowID, WindowData_Vulkan_GLFW& windowData)
     {
-        destroyWindowVulkan(windowID, windowData);
+        clearWindowVulkan(windowID, windowData);
 
         glfwSetWindowUserPointer(windowData.windowGLFW, nullptr);
         glfwDestroyWindow(windowData.windowGLFW);

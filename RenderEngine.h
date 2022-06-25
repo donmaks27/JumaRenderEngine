@@ -25,6 +25,8 @@ namespace JumaRenderEngine
 
     class RenderEngine
     {
+        friend WindowController;
+
     public:
         RenderEngine() = default;
         virtual ~RenderEngine();
@@ -60,7 +62,6 @@ namespace JumaRenderEngine
         Shader* createShader(const jmap<ShaderStageFlags, jstring>& fileNames, jmap<jstringID, ShaderUniform> uniforms = {});
         Material* createMaterial(Shader* shader);
 
-        RenderTarget* createWindowRenderTarget(window_id windowID, TextureSamples samples);
         RenderTarget* createRenderTarget(TextureFormat format, const math::uvector2& size, TextureSamples samples);
 
     protected:
@@ -95,5 +96,7 @@ namespace JumaRenderEngine
         void registerObjectInternal(RenderEngineContextObjectBase* object);
         
         const VertexDescription* registerVertexType(const VertexBufferData* verticesData);
+
+        RenderTarget* createWindowRenderTarget(window_id windowID);
     };
 }

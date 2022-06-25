@@ -31,7 +31,6 @@ namespace JumaRenderEngine
         WindowController_OpenGL_GLFW() = default;
         virtual ~WindowController_OpenGL_GLFW() override;
 
-        virtual bool createWindow(window_id windowID, const WindowProperties& properties) override;
         virtual void destroyWindow(window_id windowID) override;
 
         virtual const WindowData* findWindowData(const window_id windowID) const override { return m_Windows.find(windowID); }
@@ -47,6 +46,8 @@ namespace JumaRenderEngine
     protected:
 
         virtual bool initWindowController() override;
+
+        virtual WindowData* createWindowInternal(window_id windowID, const WindowProperties& properties) override;
         
         virtual WindowData* getWindowData(const window_id windowID) override { return m_Windows.find(windowID); }
 
@@ -63,7 +64,7 @@ namespace JumaRenderEngine
 
         void clearGLFW();
 
-        static void destroyWindowGLFW(window_id windowID, const WindowData_OpenGL_GLFW& windowData);
+        void clearWindowGLFW(window_id windowID, WindowData_OpenGL_GLFW& windowData);
     };
 }
 

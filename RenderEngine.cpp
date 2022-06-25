@@ -69,6 +69,12 @@ namespace JumaRenderEngine
 
     bool RenderEngine::createRenderAssets()
     {
+        if (!m_WindowController->createRenderTargets())
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to create DirectX11 render targets for windows"));
+            return false;
+        }
+
         RenderPipeline* renderPipeline = createRenderPipelineInternal();
         if (!renderPipeline->init())
         {
@@ -86,6 +92,10 @@ namespace JumaRenderEngine
         {
             delete m_RenderPipeline;
             m_RenderPipeline = nullptr;
+        }
+        if (m_WindowController != nullptr)
+        {
+            m_WindowController->clearRenderTargets();
         }
     }
 
@@ -190,10 +200,10 @@ namespace JumaRenderEngine
         return material;
     }
 
-    RenderTarget* RenderEngine::createWindowRenderTarget(const window_id windowID, const TextureSamples samples)
+    RenderTarget* RenderEngine::createWindowRenderTarget(const window_id windowID)
     {
         RenderTarget* renderTarget = createRenderTargetInternal();
-        if (!renderTarget->init(windowID, samples))
+        if (!renderTarget->init(windowID, TextureSamples::X1))
         {
             delete renderTarget;
             return nullptr;

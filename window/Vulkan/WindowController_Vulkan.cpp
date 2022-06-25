@@ -14,8 +14,10 @@ namespace JumaRenderEngine
         clearVulkan();
     }
 
-    void WindowController_Vulkan::destroyWindowVulkan(const window_id windowID, WindowData_Vulkan& windowData)
+    void WindowController_Vulkan::clearWindowVulkan(const window_id windowID, WindowData_Vulkan& windowData)
     {
+        clearWindow(windowID, windowData);
+
         destroyWindowSwapchain(windowID, windowData);
 
         vkDestroySurfaceKHR(getRenderEngine<RenderEngine_Vulkan>()->getVulkanInstance(), windowData.vulkanSurface, nullptr);

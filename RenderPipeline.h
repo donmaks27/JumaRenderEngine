@@ -8,9 +8,12 @@
 #include "jutils/jmap.h"
 #include "jutils/jset.h"
 #include "jutils/jstringID.h"
+#include "jutils/math/vector2.h"
+#include "window/window_id.h"
 
 namespace JumaRenderEngine
 {
+    class Shader;
     class Material;
     class VertexBuffer;
     struct RenderOptions;
@@ -54,6 +57,8 @@ namespace JumaRenderEngine
         bool addPipelineStageDependency(const jstringID& stageName, const jstringID& dependencyStageName);
         void removePipelineStageDependency(const jstringID& stageName, const jstringID& dependencyStageName);
 
+        bool outputPipelineStageToWindow(const jstringID& stageName, window_id windowID);
+
         bool addRenderPrimitive(const jstringID& stageName, const RenderPrimitive& primitive);
         void clearRenderPrimitives();
 
@@ -62,7 +67,8 @@ namespace JumaRenderEngine
 
     protected:
 
-        virtual bool initInternal() { return true; }
+        virtual bool initInternal();
+        virtual math::vector2 getScreenCoordsModifier() const { return { 1.0f, 1.0f }; }
 
         virtual void renderInternal();
         template<typename T, TEMPLATE_ENABLE(is_base<RenderOptions, T>)>
@@ -77,7 +83,17 @@ namespace JumaRenderEngine
 
     private:
 
+        struct WindowRenderTarget
+        {
+            jstringID pipelineStage = jstringID_NONE;
+            Material* outputMaterial = nullptr;
+        };
+
+        Shader* m_OutputShader = nullptr;
+        VertexBuffer* m_OutputVertexBuffer = nullptr;
+
         jmap<jstringID, RenderPipelineStage> m_PipelineStages;
+        jmap<window_id, WindowRenderTarget> m_WindowRenderTargets;
 
         bool m_PipelineStagesQueueValid = false;
         jarray<RenderPipelineStageQueueEntry> m_PipelineStagesQueue;
