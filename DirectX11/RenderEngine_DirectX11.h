@@ -42,6 +42,7 @@ namespace JumaRenderEngine
         virtual Shader* createShaderInternal() override;
         virtual Material* createMaterialInternal() override;
         virtual RenderTarget* createRenderTargetInternal() override;
+        virtual RenderPipeline* createRenderPipelineInternal() override;
 
     private:
 

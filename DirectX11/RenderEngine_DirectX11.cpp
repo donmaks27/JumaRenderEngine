@@ -7,6 +7,7 @@
 #include <d3d11.h>
 
 #include "Material_DirectX11.h"
+#include "RenderPipeline_DirectX11.h"
 #include "RenderTarget_DirectX11.h"
 #include "Shader_DirectX11.h"
 #include "Texture_DirectX11.h"
@@ -121,6 +122,10 @@ namespace JumaRenderEngine
     RenderTarget* RenderEngine_DirectX11::createRenderTargetInternal()
     {
         return createObject<RenderTarget_DirectX11>();
+    }
+    RenderPipeline* RenderEngine_DirectX11::createRenderPipelineInternal()
+    {
+        return createObject<RenderPipeline_DirectX11>();
     }
 
     ID3D11SamplerState* RenderEngine_DirectX11::getTextureSampler(const TextureSamplerType samplerType)

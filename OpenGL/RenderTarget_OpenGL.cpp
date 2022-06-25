@@ -172,7 +172,7 @@ namespace JumaRenderEngine
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
+        glCullFace(isWindowRenderTarget() ? GL_FRONT : GL_BACK);
 
         const math::uvector2 size = getSize();
         glViewport(0, 0, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y));
