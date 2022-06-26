@@ -243,7 +243,7 @@ namespace JumaRenderEngine
         rasterizerDescription.DepthBiasClamp = 0.0f;
         rasterizerDescription.DepthClipEnable = TRUE;
         rasterizerDescription.FillMode = D3D11_FILL_SOLID;
-        rasterizerDescription.FrontCounterClockwise = isWindowRenderTarget() ? FALSE : TRUE;
+        rasterizerDescription.FrontCounterClockwise = FALSE;
         rasterizerDescription.MultisampleEnable = FALSE;
         rasterizerDescription.ScissorEnable = FALSE;
         rasterizerDescription.SlopeScaledDepthBias = 0.0f;

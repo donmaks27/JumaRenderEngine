@@ -39,7 +39,7 @@ namespace JumaRenderEngine
         bool found = false;
         for (const auto& mode : modes)
         {
-            if ((mode.Width == windowData.size.x) && (mode.Height == windowData.size.y))
+            if ((mode.Width == windowData.properties.size.x) && (mode.Height == windowData.properties.size.y))
             {
                 found = true;
                 outRefreshRate = mode.RefreshRate;
@@ -116,8 +116,8 @@ namespace JumaRenderEngine
 
         DXGI_SWAP_CHAIN_DESC swapchainDescription{};
         swapchainDescription.BufferCount = 2;
-        swapchainDescription.BufferDesc.Width = windowData.size.x;
-        swapchainDescription.BufferDesc.Height = windowData.size.y;
+        swapchainDescription.BufferDesc.Width = windowData.properties.size.x;
+        swapchainDescription.BufferDesc.Height = windowData.properties.size.y;
         swapchainDescription.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
         swapchainDescription.BufferDesc.RefreshRate = refreshRate;
         swapchainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;

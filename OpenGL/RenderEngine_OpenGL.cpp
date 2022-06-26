@@ -7,7 +7,6 @@
 #include <GL/glew.h>
 
 #include "Material_OpenGL.h"
-#include "RenderPipeline_OpenGL.h"
 #include "RenderTarget_OpenGL.h"
 #include "Shader_OpenGL.h"
 #include "Texture_OpenGL.h"
@@ -60,10 +59,6 @@ namespace JumaRenderEngine
     RenderTarget* RenderEngine_OpenGL::createRenderTargetInternal()
     {
         return createObject<RenderTarget_OpenGL>();
-    }
-    RenderPipeline* RenderEngine_OpenGL::createRenderPipelineInternal()
-    {
-        return createObject<RenderPipeline_OpenGL>();
     }
 
     uint32 RenderEngine_OpenGL::getTextureSamplerIndex(const TextureSamplerType sampler)

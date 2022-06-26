@@ -106,7 +106,10 @@ namespace JumaRenderEngine
         {
             return 0;
         }
-        glCompileShader(shaderIndex);
+        if (!binary)
+        {
+            glCompileShader(shaderIndex);
+        }
 
         GLint compileStatus;
         glGetShaderiv(shaderIndex, GL_COMPILE_STATUS, &compileStatus);

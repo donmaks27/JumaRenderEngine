@@ -24,6 +24,9 @@ namespace JumaRenderEngine
 
         uint32 getTextureSamplerIndex(TextureSamplerType sampler);
 
+        virtual math::vector2 getScreenCoordinateModifier() const override { return { 1.0f, -1.0f }; }
+        virtual bool shouldFlipLoadedTextures() const override { return true; }
+
     protected:
 
         virtual void clearInternal() override;
@@ -34,7 +37,6 @@ namespace JumaRenderEngine
         virtual Shader* createShaderInternal() override;
         virtual Material* createMaterialInternal() override;
         virtual RenderTarget* createRenderTargetInternal() override;
-        virtual RenderPipeline* createRenderPipelineInternal() override;
 
     private:
 

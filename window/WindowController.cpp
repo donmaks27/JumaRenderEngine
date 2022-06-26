@@ -16,7 +16,7 @@ namespace JumaRenderEngine
         }
 
         windowData->windowID = windowID;
-        windowData->size = properties.size;
+        windowData->properties = properties;
         if (!createRenderTarget(windowID, *windowData))
         {
             destroyWindow(windowID);
@@ -32,7 +32,7 @@ namespace JumaRenderEngine
 
     void WindowController::onWindowResized(const window_id windowID, const math::uvector2& newSize)
     {
-        getWindowData(windowID)->size = newSize;
+        getWindowData(windowID)->properties.size = newSize;
     }
 
     bool WindowController::createRenderTarget(const window_id windowID, WindowData& windowData)
@@ -47,7 +47,7 @@ namespace JumaRenderEngine
         {
             return true;
         }
-        RenderTarget* renderTarget = renderEngine->createWindowRenderTarget(windowID);
+        RenderTarget* renderTarget = renderEngine->createWindowRenderTarget(windowID, windowData.properties.samples);
         if (renderTarget == nullptr)
         {
             return false;

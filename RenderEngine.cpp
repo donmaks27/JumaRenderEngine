@@ -200,10 +200,10 @@ namespace JumaRenderEngine
         return material;
     }
 
-    RenderTarget* RenderEngine::createWindowRenderTarget(const window_id windowID)
+    RenderTarget* RenderEngine::createWindowRenderTarget(const window_id windowID, const TextureSamples samples)
     {
         RenderTarget* renderTarget = createRenderTargetInternal();
-        if (!renderTarget->init(windowID, TextureSamples::X1))
+        if (!renderTarget->init(windowID, samples))
         {
             delete renderTarget;
             return nullptr;

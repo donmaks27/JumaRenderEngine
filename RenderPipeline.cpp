@@ -2,14 +2,10 @@
 
 #include "RenderPipeline.h"
 
-#include "Material.h"
 #include "RenderEngine.h"
 #include "RenderOptions.h"
 #include "RenderTarget.h"
-#include "Shader.h"
 #include "VertexBuffer.h"
-#include "vertex/Vertex2D_TexCoord.h"
-#include "vertex/VertexBufferData.h"
 #include "window/WindowController.h"
 
 namespace JumaRenderEngine
@@ -31,62 +27,11 @@ namespace JumaRenderEngine
     }
     bool RenderPipeline::initInternal()
     {
-        RenderEngine* renderEngine = getRenderEngine();
-
-        Shader* outputShader = renderEngine->createShader({
-            { SHADER_STAGE_VERTEX, JSTR("JumaRenderEngineContent/shaderOutput") },
-            { SHADER_STAGE_FRAGMENT, JSTR("JumaRenderEngineContent/shaderOutput") }
-        }, {
-            { JSTR("uScreenCoordsModifier"), ShaderUniform{ ShaderUniformType::Vec2, SHADER_STAGE_VERTEX, 0, 0 } },
-            { JSTR("uTexture"), ShaderUniform{ ShaderUniformType::Texture, SHADER_STAGE_FRAGMENT, 1, 0 } }
-        });
-        if (outputShader == nullptr)
-        {
-            JUMA_RENDER_LOG(error, JSTR("Failed to create output shader for render pipeline"));
-            return false;
-        }
-
-        VertexBufferDataImpl<Vertex2D_TexCoord> vertexBufferData;
-        vertexBufferData.setVertices({
-            { { -1.0f, -1.0f }, { 0.0f, 0.0f } },
-            { {  1.0f, -1.0f }, { 1.0f, 0.0f } },
-            { { -1.0f,  1.0f }, { 0.0f, 1.0f } },
-            { { -1.0f,  1.0f }, { 0.0f, 1.0f } },
-            { {  1.0f, -1.0f }, { 1.0f, 0.0f } },
-            { {  1.0f,  1.0f }, { 1.0f, 1.0f } }
-        });
-        VertexBuffer* outputVertexBuffer = renderEngine->createVertexBuffer(&vertexBufferData);
-        if (outputVertexBuffer == nullptr)
-        {
-            JUMA_RENDER_LOG(error, JSTR("Failed to create output vertex buffer for render pipeline"));
-            delete outputShader;
-            return false;
-        }
-
-        m_OutputShader = outputShader;
-        m_OutputVertexBuffer = outputVertexBuffer;
         return true;
     }
 
     void RenderPipeline::clearData()
     {
-        for (const auto& windowRenderTarget : m_WindowRenderTargets)
-        {
-            delete windowRenderTarget.value.outputMaterial;
-        }
-        m_WindowRenderTargets.clear();
-
-        if (m_OutputVertexBuffer != nullptr)
-        {
-            delete m_OutputVertexBuffer;
-            m_OutputVertexBuffer = nullptr;
-        }
-        if (m_OutputShader != nullptr)
-        {
-            delete m_OutputShader;
-            m_OutputShader = nullptr;
-        }
-
         m_PipelineStages.clear();
         m_PipelineStagesQueueValid = false;
         m_PipelineStagesQueue.clear();
@@ -161,11 +106,6 @@ namespace JumaRenderEngine
             JUMA_RENDER_LOG(error, JSTR("Invalid input params"));
             return false;
         }
-        if (renderTarget->isWindowRenderTarget())
-        {
-            JUMA_RENDER_LOG(error, JSTR("You shouldn't add any window render target to render pipeline"));
-            return false;
-        }
         if (m_PipelineStages.contains(stageName))
         {
             JUMA_RENDER_LOG(error, JSTR("Stage already exists"));
@@ -235,46 +175,6 @@ namespace JumaRenderEngine
         }
     }
 
-    bool RenderPipeline::outputPipelineStageToWindow(const jstringID& stageName, const window_id windowID)
-    {
-        RenderEngine* renderEngine = getRenderEngine();
-        if (renderEngine->getWindowController()->findWindowData(windowID) == nullptr)
-        {
-            JUMA_RENDER_LOG(error, JSTR("Can't find window ") + TO_JSTR(windowID));
-            return false;
-        }
-
-        if (stageName == jstringID_NONE)
-        {
-            WindowRenderTarget* windowRenderTarget = m_WindowRenderTargets.find(windowID);
-            if (windowRenderTarget != nullptr)
-            {
-                windowRenderTarget->pipelineStage = jstringID_NONE;
-                windowRenderTarget->outputMaterial->setParamValue<ShaderUniformType::Texture>(JSTR("uTexture"), nullptr);
-            }
-            return true;
-        }
-        const RenderPipelineStage* pipelineStage = m_PipelineStages.find(stageName);
-        if (pipelineStage == nullptr)
-        {
-            JUMA_RENDER_LOG(error, JSTR("Can't find pipeline stage ") + stageName.toString());
-            return false;
-        }
-
-        WindowRenderTarget& windowRenderTarget = m_WindowRenderTargets[windowID];
-        if (windowRenderTarget.pipelineStage != stageName)
-        {
-            windowRenderTarget.pipelineStage = stageName;
-            if (windowRenderTarget.outputMaterial == nullptr)
-            {
-                windowRenderTarget.outputMaterial = renderEngine->createMaterial(m_OutputShader);
-                windowRenderTarget.outputMaterial->setParamValue<ShaderUniformType::Vec2>(JSTR("uScreenCoordsModifier"), getScreenCoordsModifier());
-            }
-            windowRenderTarget.outputMaterial->setParamValue<ShaderUniformType::Texture>(JSTR("uTexture"), pipelineStage->renderTarget);
-        }
-        return true;
-    }
-
     bool RenderPipeline::addRenderPrimitive(const jstringID& stageName, const RenderPrimitive& primitive)
     {
         RenderPipelineStage* stage = m_PipelineStages.find(stageName);
@@ -328,28 +228,6 @@ namespace JumaRenderEngine
                 renderPrimitive.vertexBuffer->render(renderOptions, renderPrimitive.material);
             }
             pipelineStage->renderTarget->onFinishRender(renderOptions);
-        }
-
-        const WindowController* windowController = getRenderEngine()->getWindowController();
-        for (const auto& windowRenderTarget : m_WindowRenderTargets)
-        {
-            if ((windowRenderTarget.value.pipelineStage == jstringID_NONE) || (windowRenderTarget.value.outputMaterial == nullptr))
-            {
-                continue;
-            }
-            const WindowData* windowData = windowController->findWindowData(windowRenderTarget.key);
-            if ((windowData == nullptr) || (windowData->windowRenderTarget == nullptr))
-            {
-                continue;
-            }
-
-            renderOptions->renderTarget = windowData->windowRenderTarget;
-            if (!windowData->windowRenderTarget->onStartRender(renderOptions))
-            {
-                continue;
-            }
-            m_OutputVertexBuffer->render(renderOptions, windowRenderTarget.value.outputMaterial);
-            windowData->windowRenderTarget->onFinishRender(renderOptions);
         }
 
         onFinishRender(renderOptions);

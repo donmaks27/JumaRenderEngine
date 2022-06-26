@@ -57,6 +57,9 @@ namespace JumaRenderEngine
         VertexBuffer* createVertexBuffer(VertexBufferData* verticesData);
         const VertexDescription* findVertexType(const jstringID& vertexName) const { return m_RegisteredVertexTypes.find(vertexName); }
 
+        virtual math::vector2 getScreenCoordinateModifier() const { return { 1.0f, 1.0f }; }
+        virtual bool shouldFlipLoadedTextures() const { return false; }
+
         Texture* createTexture(const math::uvector2& size, TextureFormat format, const uint8* data);
 
         Shader* createShader(const jmap<ShaderStageFlags, jstring>& fileNames, jmap<jstringID, ShaderUniform> uniforms = {});
@@ -97,6 +100,6 @@ namespace JumaRenderEngine
         
         const VertexDescription* registerVertexType(const VertexBufferData* verticesData);
 
-        RenderTarget* createWindowRenderTarget(window_id windowID);
+        RenderTarget* createWindowRenderTarget(window_id windowID, TextureSamples samples);
     };
 }

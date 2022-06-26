@@ -64,7 +64,7 @@ namespace JumaRenderEngine
             return m_Size;
         }
         const WindowData* window = getRenderEngine()->getWindowController()->findWindowData(getWindowID());
-        return window != nullptr ? window->size : math::uvector2(0);
+        return window != nullptr ? window->properties.size : math::uvector2(0);
     }
 
     bool RenderTarget::onStartRender(RenderOptions* renderOptions)

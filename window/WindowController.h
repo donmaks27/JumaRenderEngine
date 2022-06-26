@@ -8,6 +8,7 @@
 #include "window_id.h"
 #include "jutils/jarray.h"
 #include "jutils/math/vector2.h"
+#include "renderEngine/texture/TextureSamples.h"
 
 namespace JumaRenderEngine
 {
@@ -17,12 +18,12 @@ namespace JumaRenderEngine
     {
         jstring title;
         math::uvector2 size;
+        TextureSamples samples = TextureSamples::X1;
     };
     struct WindowData
     {
         window_id windowID = window_id_INVALID;
-        math::uvector2 size;
-
+        WindowProperties properties;
         RenderTarget* windowRenderTarget = nullptr;
     };
 
