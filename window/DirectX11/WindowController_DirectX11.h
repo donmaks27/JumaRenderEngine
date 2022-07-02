@@ -8,6 +8,7 @@
 
 #include "renderEngine/window/WindowController.h"
 
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
 struct IDXGISwapChain;

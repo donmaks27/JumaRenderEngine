@@ -4,9 +4,9 @@
 
 #include "renderEngine/juma_render_engine_core.h"
 
-#if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_DIRECTX11) && defined(JUMARENDERENGINE_INCLUDE_LIB_GLFW)
+#if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_DIRECTX12)
 
-#include "WindowController_DirectX11.h"
+#include "WindowController_DirectX12.h"
 
 #include "jutils/jmap.h"
 
@@ -14,22 +14,22 @@ struct GLFWwindow;
 
 namespace JumaRenderEngine
 {
-    class WindowController_DirectX11_GLFW;
+    class WindowController_DirectX12_GLFW;
 
-    struct WindowData_DirectX11_GLFW : WindowData_DirectX11
+    struct WindowData_DirectX12_GLFW : WindowData_DirectX12
     {
         GLFWwindow* windowGLFW = nullptr;
 
-        WindowController_DirectX11_GLFW* windowController = nullptr;
+        WindowController_DirectX12_GLFW* windowController = nullptr;
     };
 
-    class WindowController_DirectX11_GLFW final : public WindowController_DirectX11
+    class WindowController_DirectX12_GLFW final : public WindowController_DirectX12
     {
-        using Super = WindowController_DirectX11;
+        using Super = WindowController_DirectX12;
 
     public:
-        WindowController_DirectX11_GLFW() = default;
-        virtual ~WindowController_DirectX11_GLFW() override;
+        WindowController_DirectX12_GLFW() = default;
+        virtual ~WindowController_DirectX12_GLFW() override;
 
         virtual void destroyWindow(window_id windowID) override;
 
@@ -52,15 +52,15 @@ namespace JumaRenderEngine
 
     private:
 
-        jmap<window_id, WindowData_DirectX11_GLFW> m_Windows;
+        jmap<window_id, WindowData_DirectX12_GLFW> m_Windows;
 
-        
+
         static void GLFW_ErrorCallback(int errorCode, const char* errorMessage);
         static void GLFW_FramebufferResizeCallback(GLFWwindow* windowGLFW, int width, int height);
 
         void clearGLFW();
 
-        void clearWindowGLFW(window_id windowID, WindowData_DirectX11_GLFW& windowData);
+        void clearWindowGLFW(window_id windowID, WindowData_DirectX12_GLFW& windowData);
     };
 }
 

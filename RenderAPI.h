@@ -10,6 +10,7 @@ namespace JumaRenderEngine
     {
         Vulkan,
         OpenGL,
-        DirectX11
+        DirectX11,
+        DirectX12
     };
 }
