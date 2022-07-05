@@ -6,6 +6,9 @@
 
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#if defined(JDEBUG)
+#include <dxgidebug.h>
+#endif
 
 #include "Material_DirectX12.h"
 #include "RenderPipeline_DirectX12.h"
@@ -63,10 +66,32 @@ namespace JumaRenderEngine
     RenderEngine_DirectX12::~RenderEngine_DirectX12()
     {
         clearDirectX();
+#if defined(JDEBUG)
+        {
+            IDXGIDebug1* dxgiDebug;
+            DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug));
+            dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+            dxgiDebug->Release();
+        }
+#endif
     }
 
     bool RenderEngine_DirectX12::initInternal(const jmap<window_id, WindowProperties>& windows)
     {
+#if defined(JDEBUG)
+        {
+            ID3D12Debug* debugInterface;
+            const HRESULT result = D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface));
+            if (FAILED(result))
+            {
+                JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to get DirectX12 debug interface"));
+                return false;
+            }
+            debugInterface->EnableDebugLayer();
+            debugInterface->Release();
+        }
+#endif
+
         if (!Super::initInternal(windows))
         {
             return false;
@@ -90,20 +115,6 @@ namespace JumaRenderEngine
     }
     bool RenderEngine_DirectX12::createDirectXDevice()
     {
-#if defined(JDEBUG)
-        {
-            ID3D12Debug* debugInterface;
-            const HRESULT result = D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface));
-            if (FAILED(result))
-            {
-                JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to get DirectX12 debug interface"));
-                return false;
-            }
-            debugInterface->EnableDebugLayer();
-            debugInterface->Release();
-        }
-#endif
-
         IDXGIAdapter4* adapter = GetDXGIAdapter();
         if (adapter == nullptr)
         {
@@ -126,7 +137,7 @@ namespace JumaRenderEngine
             {
                 infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
                 infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
-                infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
+                infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, FALSE);
 
                 //static constexpr D3D12_MESSAGE_CATEGORY suppressCategories[] = {};
                 static D3D12_MESSAGE_SEVERITY suppressSeverities[] = { D3D12_MESSAGE_SEVERITY_INFO };
@@ -179,6 +190,11 @@ namespace JumaRenderEngine
     }
     void RenderEngine_DirectX12::clearDirectX()
     {
+        for (auto& commandQueue : m_CommandQueues)
+        {
+            commandQueue.value.waitForFinish();
+        }
+
         clearRenderAssets();
         {
             WindowController_DirectX12* windowController = getWindowController<WindowController_DirectX12>();

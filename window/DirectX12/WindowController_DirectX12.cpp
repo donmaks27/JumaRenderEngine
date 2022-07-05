@@ -13,16 +13,21 @@ namespace JumaRenderEngine
 {
     bool IsTearingSupported()
     {
-        IDXGIFactory4* factory = nullptr;
-        HRESULT result = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
+        IDXGIFactory5* factory4 = nullptr;
+#if defined(JDEBUG)
+        constexpr UINT createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+#else
+        constexpr UINT createFactoryFlags = 0;
+#endif
+        HRESULT result = CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&factory4));
         if (FAILED(result))
         {
             return false;
         }
 
         IDXGIFactory5* factory5 = nullptr;
-        result = factory->QueryInterface(&factory5);
-        factory->Release();
+        result = factory4->QueryInterface(&factory5);
+        factory4->Release();
         if (FAILED(result))
         {
             return false;
