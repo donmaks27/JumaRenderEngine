@@ -8,8 +8,12 @@
 
 #include <d3d12.h>
 
+#include "jutils/jarray.h"
+#include "jutils/jmap.h"
+
 namespace JumaRenderEngine
 {
+    class DirectX12Texture;
     class DirectX12CommandQueue;
 
     class DirectX12CommandList
@@ -26,6 +30,11 @@ namespace JumaRenderEngine
         void waitForFinish() const;
         void markUnused();
 
+        void reset();
+
+        void changeTextureState(DirectX12Texture* texture, D3D12_RESOURCE_STATES state);
+        void applyTextureStateChanges();
+
     private:
 
         DirectX12CommandQueue* m_ParentCommandQueue = nullptr;
@@ -33,6 +42,9 @@ namespace JumaRenderEngine
         ID3D12CommandAllocator* m_CommandAllocator = nullptr;
         ID3D12GraphicsCommandList2* m_CommandList = nullptr;
         uint64 m_FenceValue = 0;
+
+        jarray<D3D12_RESOURCE_BARRIER> m_ResourceBarriers;
+        jmap<DirectX12Texture*, D3D12_RESOURCE_STATES> m_TextureStates;
 
 
         bool init(DirectX12CommandQueue* commandQueue);

@@ -53,6 +53,7 @@ namespace JumaRenderEngine
         m_Fence = fence;
         m_FenceEvent = fenceEvent;
         m_LastFenceValue = 0;
+        markAsInitialized();
         return true;
     }
 
@@ -102,8 +103,6 @@ namespace JumaRenderEngine
         {
             DirectX12CommandList* commandList = m_UnusedCommandLists.getLast();
             m_UnusedCommandLists.removeLast();
-            commandList->m_CommandAllocator->Reset();
-            commandList->m_CommandList->Reset(commandList->m_CommandAllocator, nullptr);
             return commandList;
         }
 
@@ -120,6 +119,7 @@ namespace JumaRenderEngine
     {
         if (commandList != nullptr)
         {
+            commandList->reset();
             m_UnusedCommandLists.add(commandList);
         }
     }

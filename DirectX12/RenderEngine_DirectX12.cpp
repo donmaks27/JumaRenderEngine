@@ -124,12 +124,26 @@ namespace JumaRenderEngine
 
         ID3D12Device2* device = nullptr;
         HRESULT result = D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device));
-        adapter->Release();
         if (FAILED(result))
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX12 device"));
+            adapter->Release();
             return false;
         }
+
+        D3D12MA::ALLOCATOR_DESC allocatorDescription{};
+        allocatorDescription.pAdapter = adapter;
+        allocatorDescription.pDevice = device;
+        D3D12MA::Allocator* allocator = nullptr;
+        result = D3D12MA::CreateAllocator(&allocatorDescription, &allocator);
+        adapter->Release();
+        if (FAILED(result))
+        {
+            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create D3D12MA resource allocator"));
+            device->Release();
+            return false;
+        }
+
 #if defined(JDEBUG)
         {
             ID3D12InfoQueue* infoQueue = nullptr;
@@ -158,6 +172,7 @@ namespace JumaRenderEngine
                 if (FAILED(result))
                 {
                     JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to push message filter"));
+                    allocator->Release();
                     device->Release();
                     return false;
                 }
@@ -166,6 +181,12 @@ namespace JumaRenderEngine
 #endif
 
         m_Device = device;
+        m_ResourceAllocator = allocator;
+
+        m_CachedDescriptorSize_RTV = static_cast<uint8>(m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
+        m_CachedDescriptorSize_DSV = static_cast<uint8>(m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV));
+        m_CachedDescriptorSize_SRV = static_cast<uint8>(m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+        m_CachedDescriptorSize_Sampler = static_cast<uint8>(m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER));
         return true;
     }
     bool RenderEngine_DirectX12::createCommandQueues()
@@ -205,11 +226,39 @@ namespace JumaRenderEngine
         }
 
         m_CommandQueues.clear();
+        if (m_ResourceAllocator != nullptr)
+        {
+            m_ResourceAllocator->Release();
+            m_ResourceAllocator = nullptr;
+        }
         if (m_Device != nullptr)
         {
             m_Device->Release();
             m_Device = nullptr;
         }
+    }
+
+    ID3D12DescriptorHeap* RenderEngine_DirectX12::createDescriptorHeap(const D3D12_DESCRIPTOR_HEAP_TYPE heapType, const uint32 size, 
+        const bool shaderVisible) const
+    {
+        if ((m_Device == nullptr) || (size == 0))
+        {
+            return nullptr;
+        }
+
+        D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDescription{};
+        descriptorHeapDescription.Type = heapType;
+        descriptorHeapDescription.NumDescriptors = size;
+        descriptorHeapDescription.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+        descriptorHeapDescription.NodeMask = 0;
+        ID3D12DescriptorHeap* descriptorHeap = nullptr;
+        const HRESULT result = m_Device->CreateDescriptorHeap(&descriptorHeapDescription, IID_PPV_ARGS(&descriptorHeap));
+        if (FAILED(result))
+        {
+            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX12 descriptor heap"));
+            return nullptr;
+        }
+        return descriptorHeap;
     }
 
     WindowController* RenderEngine_DirectX12::createWindowController()

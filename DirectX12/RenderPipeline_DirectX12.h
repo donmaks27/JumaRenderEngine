@@ -22,6 +22,8 @@ namespace JumaRenderEngine
 
     protected:
 
+        virtual void renderInternal() override;
+
         virtual bool onStartRender(RenderOptions* renderOptions) override;
         virtual void onFinishRender(RenderOptions* renderOptions) override;
 

@@ -5,6 +5,7 @@
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_DIRECTX12)
 
 #include "RenderEngine_DirectX12.h"
+#include "RenderOptions_DirectX12.h"
 #include "DirectX12Objects/DirectX12CommandList.h"
 #include "DirectX12Objects/DirectX12Swapchain.h"
 #include "renderEngine/window/DirectX12/WindowController_DirectX12.h"
@@ -19,6 +20,11 @@ namespace JumaRenderEngine
     void RenderPipeline_DirectX12::clearDirectX()
     {
         waitForPreviousRenderFinish();
+    }
+
+    void RenderPipeline_DirectX12::renderInternal()
+    {
+        callRender<RenderOptions_DirectX12>();
     }
 
     bool RenderPipeline_DirectX12::onStartRender(RenderOptions* renderOptions)
@@ -54,10 +60,13 @@ namespace JumaRenderEngine
             return false;
         }
         m_RenderCommandList = commandQueue->getCommandList();
+        reinterpret_cast<RenderOptions_DirectX12*>(renderOptions)->renderCommandList = m_RenderCommandList;
         return true;
     }
     void RenderPipeline_DirectX12::finishCommandListRecord(RenderOptions* renderOptions)
     {
+        m_RenderCommandList->execute();
+
         const WindowController* windowController = getRenderEngine()->getWindowController();
         for (const auto& windowID : windowController->getWindowIDs())
         {
@@ -68,8 +77,6 @@ namespace JumaRenderEngine
             }
             windowData->swapchain->present();
         }
-
-        m_RenderCommandList->execute();
     }
 }
 

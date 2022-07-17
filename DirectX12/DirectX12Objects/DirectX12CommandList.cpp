@@ -5,6 +5,7 @@
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_DIRECTX12)
 
 #include "DirectX12CommandQueue.h"
+#include "DirectX12Texture.h"
 #include "renderEngine/DirectX12/RenderEngine_DirectX12.h"
 
 namespace JumaRenderEngine
@@ -44,6 +45,9 @@ namespace JumaRenderEngine
 
     void DirectX12CommandList::clearDirectX()
     {
+        m_TextureStates.clear();
+        m_ResourceBarriers.clear();
+
         if (m_CommandList != nullptr)
         {
             m_CommandList->Release();
@@ -66,6 +70,12 @@ namespace JumaRenderEngine
         ID3D12CommandList* const commandLists[] = { m_CommandList };
         m_ParentCommandQueue->get()->ExecuteCommandLists(1, commandLists);
         m_FenceValue = m_ParentCommandQueue->signalFence();
+
+        for (const auto& textureState : m_TextureStates)
+        {
+            textureState.key->setState(textureState.value);
+        }
+        m_TextureStates.clear();
     }
 
     void DirectX12CommandList::waitForFinish() const
@@ -76,6 +86,47 @@ namespace JumaRenderEngine
     void DirectX12CommandList::markUnused()
     {
         m_ParentCommandQueue->returnCommandList(this);
+    }
+
+    void DirectX12CommandList::reset()
+    {
+        m_ResourceBarriers.clear();
+        m_TextureStates.clear();
+
+        m_CommandAllocator->Reset();
+        m_CommandList->Reset(m_CommandAllocator, nullptr);
+    }
+
+    void DirectX12CommandList::changeTextureState(DirectX12Texture* texture, const D3D12_RESOURCE_STATES state)
+    {
+        if ((texture == nullptr) || !texture->isValid())
+        {
+            return;
+        }
+
+        const D3D12_RESOURCE_STATES* prevStatePtr = m_TextureStates.find(texture);
+        const D3D12_RESOURCE_STATES prevState = prevStatePtr != nullptr ? *prevStatePtr : texture->getState();
+        if (prevState == state)
+        {
+            return;
+        }
+
+        D3D12_RESOURCE_BARRIER& resourceBarrier = m_ResourceBarriers.addDefault();
+        resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        resourceBarrier.Transition.pResource = texture->getResource();
+        resourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        resourceBarrier.Transition.StateBefore = prevState;
+        resourceBarrier.Transition.StateAfter = state;
+        m_TextureStates[texture] = state;
+    }
+    void DirectX12CommandList::applyTextureStateChanges()
+    {
+        if (!m_ResourceBarriers.isEmpty())
+        {
+            m_CommandList->ResourceBarrier(m_ResourceBarriers.getSize(), m_ResourceBarriers.getData());
+            m_ResourceBarriers.clear();
+        }
     }
 }
 
