@@ -33,8 +33,8 @@ namespace JumaRenderEngine
 
     private:
 
-        jarray<DirectX12Texture*> m_ResultTextures;
         DirectX12Texture* m_ColorTexture = nullptr;
+        jarray<DirectX12Texture*> m_ResultTextures;
         ID3D12DescriptorHeap* m_DescriptorHeapRTV = nullptr;
 
         DirectX12Texture* m_DepthTexture = nullptr;
