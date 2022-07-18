@@ -7,6 +7,7 @@
 #include "RenderAPI.h"
 #include "RenderEngineContextObject.h"
 #include "jutils/jmap.h"
+#include "jutils/jset.h"
 #include "material/ShaderUniform.h"
 #include "texture/TextureFormat.h"
 #include "texture/TextureSamples.h"
@@ -62,7 +63,8 @@ namespace JumaRenderEngine
 
         Texture* createTexture(const math::uvector2& size, TextureFormat format, const uint8* data);
 
-        Shader* createShader(const jmap<ShaderStageFlags, jstring>& fileNames, jmap<jstringID, ShaderUniform> uniforms = {});
+        Shader* createShader(const jmap<ShaderStageFlags, jstring>& fileNames, jset<jstringID> vertexComponents, 
+            jmap<jstringID, ShaderUniform> uniforms = {});
         Material* createMaterial(Shader* shader);
 
         RenderTarget* createRenderTarget(TextureFormat format, const math::uvector2& size, TextureSamples samples);

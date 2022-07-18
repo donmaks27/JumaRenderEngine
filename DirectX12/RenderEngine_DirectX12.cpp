@@ -277,8 +277,7 @@ namespace JumaRenderEngine
     }
     Shader* RenderEngine_DirectX12::createShaderInternal()
     {
-        //return createObject<Shader_DirectX12>();
-        return nullptr;
+        return createObject<Shader_DirectX12>();
     }
     Material* RenderEngine_DirectX12::createMaterialInternal()
     {

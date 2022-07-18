@@ -179,10 +179,11 @@ namespace JumaRenderEngine
         return texture;
     }
 
-    Shader* RenderEngine::createShader(const jmap<ShaderStageFlags, jstring>& fileNames, jmap<jstringID, ShaderUniform> uniforms)
+    Shader* RenderEngine::createShader(const jmap<ShaderStageFlags, jstring>& fileNames, jset<jstringID> vertexComponents, 
+        jmap<jstringID, ShaderUniform> uniforms)
     {
         Shader* shader = createShaderInternal();
-        if (!shader->init(fileNames, std::move(uniforms)))
+        if (!shader->init(fileNames, std::move(vertexComponents), std::move(uniforms)))
         {
             delete shader;
             return nullptr;

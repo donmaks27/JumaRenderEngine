@@ -11,8 +11,10 @@ namespace JumaRenderEngine
         clearData();
     }
 
-    bool Shader::init(const jmap<ShaderStageFlags, jstring>& fileNames, jmap<jstringID, ShaderUniform> uniforms)
+    bool Shader::init(const jmap<ShaderStageFlags, jstring>& fileNames, jset<jstringID> vertexComponents, jmap<jstringID, ShaderUniform> uniforms)
     {
+        m_VertexComponents = std::move(vertexComponents);
+
         m_ShaderUniforms = std::move(uniforms);
         for (const auto& uniform : m_ShaderUniforms)
         {
@@ -40,5 +42,6 @@ namespace JumaRenderEngine
     {
         m_CachedUniformBufferDescriptions.clear();
         m_ShaderUniforms.clear();
+        m_VertexComponents.clear();
     }
 }

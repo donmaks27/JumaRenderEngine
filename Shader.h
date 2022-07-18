@@ -6,6 +6,7 @@
 #include "RenderEngineContextObject.h"
 
 #include "jutils/jmap.h"
+#include "jutils/jset.h"
 #include "jutils/jstringID.h"
 #include "material/ShaderUniform.h"
 
@@ -25,17 +26,20 @@ namespace JumaRenderEngine
         Shader() = default;
         virtual ~Shader() override;
 
+        const jset<jstringID>& getVertexComponents() const { return m_VertexComponents; }
+
         const jmap<jstringID, ShaderUniform>& getUniforms() const { return m_ShaderUniforms; }
         const jmap<uint32, ShaderUniformBufferDescription>& getUniformBufferDescriptions() const { return m_CachedUniformBufferDescriptions; }
 
     protected:
 
-        bool init(const jmap<ShaderStageFlags, jstring>& fileNames, jmap<jstringID, ShaderUniform> uniforms = {});
+        bool init(const jmap<ShaderStageFlags, jstring>& fileNames, jset<jstringID> vertexComponents, jmap<jstringID, ShaderUniform> uniforms = {});
 
         virtual bool initInternal(const jmap<ShaderStageFlags, jstring>& fileNames) = 0;
 
     private:
 
+        jset<jstringID> m_VertexComponents;
         jmap<jstringID, ShaderUniform> m_ShaderUniforms;
         jmap<uint32, ShaderUniformBufferDescription> m_CachedUniformBufferDescriptions;
 
