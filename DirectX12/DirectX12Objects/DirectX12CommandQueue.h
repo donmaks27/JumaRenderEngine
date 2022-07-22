@@ -18,7 +18,7 @@ namespace JumaRenderEngine
 {
     class RenderEngine_DirectX12;
 
-    class DirectX12CommandQueue : public RenderEngineContextObject
+    class DirectX12CommandQueue : public RenderEngineContextObjectBase
     {
         friend RenderEngine_DirectX12;
 

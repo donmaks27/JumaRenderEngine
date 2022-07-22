@@ -66,7 +66,8 @@ namespace JumaRenderEngine
         return fragmentShaderVisible ? D3D12_SHADER_VISIBILITY_PIXEL : D3D12_SHADER_VISIBILITY_VERTEX;
     }
     ID3DBlob* CreateDirectX12RootSignatureBlob(const jmap<uint32, ShaderUniformBufferDescription>& uniformBuffers, 
-        const jmap<jstringID, ShaderUniform>& uniforms, jmap<jstringID, uint32>& outDescriptorHeapOffsets)
+        const jmap<jstringID, ShaderUniform>& uniforms, jmap<uint32, uint32>& outBufferParamIndices, 
+        jmap<jstringID, uint32>& outDescriptorHeapOffsets)
     {
         ID3DBlob* resultBlob = nullptr;
         HRESULT result = 0;
@@ -75,6 +76,8 @@ namespace JumaRenderEngine
             jarray<D3D12_ROOT_PARAMETER1> rootSignatureParams;
             for (const auto& bufferDescription : uniformBuffers)
             {
+                outBufferParamIndices.add(rootSignatureParams.getSize(), bufferDescription.key);
+
                 D3D12_ROOT_PARAMETER1& parameter = rootSignatureParams.addDefault();
                 parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
                 parameter.ShaderVisibility = GetDirectX12ShaderParamVisibility(bufferDescription.value.shaderStages);
@@ -142,6 +145,8 @@ namespace JumaRenderEngine
             jarray<D3D12_ROOT_PARAMETER> rootSignatureParams;
             for (const auto& bufferDescription : uniformBuffers)
             {
+                outBufferParamIndices.add(rootSignatureParams.getSize(), bufferDescription.key);
+
                 D3D12_ROOT_PARAMETER& parameter = rootSignatureParams.addDefault();
                 parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
                 parameter.ShaderVisibility = GetDirectX12ShaderParamVisibility(bufferDescription.value.shaderStages);
@@ -240,8 +245,9 @@ namespace JumaRenderEngine
             CheckedRootSignatureSupport = true;
         }
 
+        jmap<uint32, uint32> bufferParamIndices;
         jmap<jstringID, uint32> descriptorHeapOffsets;
-        ID3DBlob* rootSignatureBlob = CreateDirectX12RootSignatureBlob(getUniformBufferDescriptions(), getUniforms(), descriptorHeapOffsets);
+        ID3DBlob* rootSignatureBlob = CreateDirectX12RootSignatureBlob(getUniformBufferDescriptions(), getUniforms(), bufferParamIndices, descriptorHeapOffsets);
         if (rootSignatureBlob == nullptr)
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create DirectX12 root signature blob"));
@@ -266,6 +272,7 @@ namespace JumaRenderEngine
 
         m_RootSignature = rootSignature;
         m_ShaderBytecodes = { { SHADER_STAGE_VERTEX, vertexShaderBlob }, { SHADER_STAGE_FRAGMENT, fragmentShaderBlob } };
+        m_UniformBufferParamIndices = std::move(bufferParamIndices);
         m_TextureDescriptorHeapOffsets = std::move(descriptorHeapOffsets);
         return true;
     }
@@ -273,11 +280,14 @@ namespace JumaRenderEngine
     void Shader_DirectX12::clearDirectX()
     {
         m_TextureDescriptorHeapOffsets.clear();
+        m_UniformBufferParamIndices.clear();
+
         for (const auto& bytecode : m_ShaderBytecodes)
         {
             bytecode.value->Release();
         }
         m_ShaderBytecodes.clear();
+
         if (m_RootSignature != nullptr)
         {
             m_RootSignature->Release();

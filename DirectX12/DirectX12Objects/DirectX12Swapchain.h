@@ -18,7 +18,7 @@ namespace JumaRenderEngine
 {
     class WindowController_DirectX12;
 
-    class DirectX12Swapchain : public RenderEngineContextObject
+    class DirectX12Swapchain : public RenderEngineContextObjectBase
     {
         friend WindowController_DirectX12;
 

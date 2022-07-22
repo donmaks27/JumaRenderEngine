@@ -100,7 +100,6 @@ namespace JumaRenderEngine
 
         m_Swapchain = swapchain4;
         m_CurrentBufferIndex = static_cast<uint8>(m_Swapchain->GetCurrentBackBufferIndex());
-        markAsInitialized();
         return true;
     }
 

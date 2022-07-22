@@ -225,6 +225,9 @@ namespace JumaRenderEngine
             }
         }
 
+        m_UnusedBuffers.clear();
+        m_Buffers.clear();
+
         m_CommandQueues.clear();
         if (m_ResourceAllocator != nullptr)
         {
@@ -261,14 +264,32 @@ namespace JumaRenderEngine
         return descriptorHeap;
     }
 
+    DirectX12Buffer* RenderEngine_DirectX12::getBuffer()
+    {
+        if (!m_UnusedBuffers.isEmpty())
+        {
+            DirectX12Buffer* buffer = m_UnusedBuffers.getLast();
+            m_UnusedBuffers.removeLast();
+            return buffer;
+        }
+        return registerObject(&m_Buffers.addDefault());
+    }
+    void RenderEngine_DirectX12::returnBuffer(DirectX12Buffer* buffer)
+    {
+        if (buffer != nullptr)
+        {
+            buffer->clear();
+            m_UnusedBuffers.addUnique(buffer);
+        }
+    }
+
     WindowController* RenderEngine_DirectX12::createWindowController()
     {
         return registerObject(WindowControllerInfo<RenderAPI::DirectX12>::create());
     }
     VertexBuffer* RenderEngine_DirectX12::createVertexBufferInternal()
     {
-        //return createObject<VertexBuffer_DirectX12>();
-        return nullptr;
+        return createObject<VertexBuffer_DirectX12>();
     }
     Texture* RenderEngine_DirectX12::createTextureInternal()
     {
@@ -281,8 +302,7 @@ namespace JumaRenderEngine
     }
     Material* RenderEngine_DirectX12::createMaterialInternal()
     {
-        //return createObject<Material_DirectX12>();
-        return nullptr;
+        return createObject<Material_DirectX12>();
     }
     RenderTarget* RenderEngine_DirectX12::createRenderTargetInternal()
     {

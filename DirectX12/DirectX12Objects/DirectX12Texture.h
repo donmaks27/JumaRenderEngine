@@ -28,9 +28,14 @@ namespace JumaRenderEngine
 
         ID3D12Resource* getResource() const { return m_TextureResource; }
         math::uvector2 getSize() const { return m_Size; }
+        DXGI_FORMAT getFormat() const { return m_Format; }
 
         D3D12_RESOURCE_STATES getState() const { return m_CurrentState; }
         void setState(const D3D12_RESOURCE_STATES newState) { m_CurrentState = newState; }
+
+    protected:
+
+        virtual void clearInternal() override { clearDirectX(); }
 
     private:
 

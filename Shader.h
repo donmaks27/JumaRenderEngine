@@ -26,7 +26,7 @@ namespace JumaRenderEngine
         Shader() = default;
         virtual ~Shader() override;
 
-        const jset<jstringID>& getVertexComponents() const { return m_VertexComponents; }
+        const jset<jstringID>& getRequiredVertexComponents() const { return m_VertexComponents; }
 
         const jmap<jstringID, ShaderUniform>& getUniforms() const { return m_ShaderUniforms; }
         const jmap<uint32, ShaderUniformBufferDescription>& getUniformBufferDescriptions() const { return m_CachedUniformBufferDescriptions; }

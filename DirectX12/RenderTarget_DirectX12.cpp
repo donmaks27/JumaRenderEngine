@@ -284,7 +284,7 @@ namespace JumaRenderEngine
 
         const D3D12_CPU_DESCRIPTOR_HANDLE rtvDescriptor = renderEngine->getDescriptorCPU<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(m_DescriptorHeapRTV, rtvIndex);
         const D3D12_CPU_DESCRIPTOR_HANDLE dsvDescriptor = m_DescriptorHeapDSV->GetCPUDescriptorHandleForHeapStart();
-        static constexpr FLOAT clearColor[] = { 0.4f, 0.6f, 0.9f, 1.0f };
+        static constexpr FLOAT clearColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
         commandList->ClearRenderTargetView(rtvDescriptor, clearColor, 0, nullptr);
         commandList->ClearDepthStencilView(dsvDescriptor, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
         commandList->OMSetRenderTargets(1, &rtvDescriptor, FALSE, &dsvDescriptor);

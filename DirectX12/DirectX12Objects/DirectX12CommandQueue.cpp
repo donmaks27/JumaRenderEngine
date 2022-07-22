@@ -53,7 +53,6 @@ namespace JumaRenderEngine
         m_Fence = fence;
         m_FenceEvent = fenceEvent;
         m_LastFenceValue = 0;
-        markAsInitialized();
         return true;
     }
 

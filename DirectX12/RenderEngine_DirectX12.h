@@ -10,6 +10,7 @@
 
 #include "D3D12MemAlloc.h"
 
+#include "DirectX12Objects/DirectX12Buffer.h"
 #include "DirectX12Objects/DirectX12CommandQueue.h"
 
 namespace JumaRenderEngine
@@ -24,6 +25,8 @@ namespace JumaRenderEngine
 
         virtual RenderAPI getRenderAPI() const override { return RenderAPI::DirectX12; }
 
+        virtual math::vector2 getScreenCoordinateModifier() const override { return { 1.0f, -1.0f }; }
+
         ID3D12Device2* getDevice() const { return m_Device; }
         D3D12MA::Allocator* getResourceAllocator() const { return m_ResourceAllocator; }
         DirectX12CommandQueue* getCommandQueue(const D3D12_COMMAND_LIST_TYPE queueType) const { return m_CommandQueues.find(queueType); }
@@ -36,6 +39,9 @@ namespace JumaRenderEngine
         {
             return { descriptorHeap != nullptr ? descriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + descriptorIndex * getDescriptorSize<Type>() : 0 };
         }
+
+        DirectX12Buffer* getBuffer();
+        void returnBuffer(DirectX12Buffer* buffer);
 
     protected:
 
@@ -60,6 +66,9 @@ namespace JumaRenderEngine
         uint8 m_CachedDescriptorSize_DSV = 0;
         uint8 m_CachedDescriptorSize_SRV = 0;
         uint8 m_CachedDescriptorSize_Sampler = 0;
+
+        jlist<DirectX12Buffer> m_Buffers;
+        jarray<DirectX12Buffer*> m_UnusedBuffers;
 
 
         bool createDirectXDevice();

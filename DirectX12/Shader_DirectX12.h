@@ -23,6 +23,7 @@ namespace JumaRenderEngine
         ID3D12RootSignature* getRootSignature() const { return m_RootSignature; }
 
         const jmap<ShaderStageFlags, ID3DBlob*>& getShaderBytecodes() const { return m_ShaderBytecodes; }
+        const jmap<uint32, uint32>& getUniformBufferParamIndices() const { return m_UniformBufferParamIndices; }
         const jmap<jstringID, uint32>& getTextureDescriptorHeapOffsets() const { return m_TextureDescriptorHeapOffsets; }
 
     protected:
@@ -34,6 +35,7 @@ namespace JumaRenderEngine
         ID3D12RootSignature* m_RootSignature = nullptr;
 
         jmap<ShaderStageFlags, ID3DBlob*> m_ShaderBytecodes;
+        jmap<uint32, uint32> m_UniformBufferParamIndices;
         jmap<jstringID, uint32> m_TextureDescriptorHeapOffsets;
 
 

@@ -8,6 +8,8 @@
 
 #include "renderEngine/RenderTarget.h"
 
+#include <dxgiformat.h>
+
 #include "jutils/jarray.h"
 
 struct ID3D12DescriptorHeap;
