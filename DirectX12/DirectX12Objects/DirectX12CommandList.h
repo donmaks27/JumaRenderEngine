@@ -27,9 +27,10 @@ namespace JumaRenderEngine
         ID3D12GraphicsCommandList2* get() const { return m_CommandList; }
 
         void execute();
-        void waitForFinish() const;
+        void waitForFinish();
         void markUnused();
-
+        
+        bool isValidForReuse() const;
         void reset();
 
         void changeTextureState(DirectX12Texture* texture, D3D12_RESOURCE_STATES state);
@@ -45,6 +46,8 @@ namespace JumaRenderEngine
 
         jarray<D3D12_RESOURCE_BARRIER> m_ResourceBarriers;
         jmap<DirectX12Texture*, D3D12_RESOURCE_STATES> m_TextureStates;
+
+        bool m_Executed = false;
 
 
         bool init(DirectX12CommandQueue* commandQueue);

@@ -12,6 +12,8 @@
 
 namespace JumaRenderEngine
 {
+    class DirectX12CommandList;
+
     class DirectX12Buffer : public RenderEngineContextObject
     {
     public:
@@ -31,7 +33,7 @@ namespace JumaRenderEngine
         bool initMappedData();
         void* getMappedData(uint32 offset) const;
         bool setMappedData(const void* data, uint32 size, uint32 offset = 0) const;
-        bool flushMappedData(bool waitForFinish);
+        bool flushMappedData(DirectX12CommandList* commandList, bool waitForFinish);
         
         bool setData(const void* data, uint32 size, uint32 offset, bool waitForFinish);
 
@@ -55,7 +57,7 @@ namespace JumaRenderEngine
         void clearDirectX();
 
         bool setDataInternal(const void* data, uint32 size, uint32 offset);
-        bool copyData(const DirectX12Buffer* destinationBuffer, bool shouldChangeState, bool waitForFinish);
+        bool copyData(DirectX12CommandList* commandList, const DirectX12Buffer* destinationBuffer, bool shouldChangeState, bool waitForFinish);
     };
 }
 

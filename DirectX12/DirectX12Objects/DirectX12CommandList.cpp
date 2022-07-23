@@ -61,16 +61,22 @@ namespace JumaRenderEngine
 
         m_ParentCommandQueue = nullptr;
         m_FenceValue = 0;
+        m_Executed = false;
     }
 
     void DirectX12CommandList::execute()
     {
-        m_CommandList->Close();
+        if (m_Executed)
+        {
+            return;
+        }
 
+        m_CommandList->Close();
         ID3D12CommandList* const commandLists[] = { m_CommandList };
         m_ParentCommandQueue->get()->ExecuteCommandLists(1, commandLists);
         m_FenceValue = m_ParentCommandQueue->signalFence();
 
+        m_Executed = true;
         for (const auto& textureState : m_TextureStates)
         {
             textureState.key->setState(textureState.value);
@@ -78,16 +84,24 @@ namespace JumaRenderEngine
         m_TextureStates.clear();
     }
 
-    void DirectX12CommandList::waitForFinish() const
+    void DirectX12CommandList::waitForFinish()
     {
-        m_ParentCommandQueue->waitForFenceValue(m_FenceValue);
+        if (m_Executed)
+        {
+            m_ParentCommandQueue->waitForFenceValue(m_FenceValue);
+            m_Executed = false;
+        }
     }
 
     void DirectX12CommandList::markUnused()
     {
         m_ParentCommandQueue->returnCommandList(this);
     }
-
+    
+    bool DirectX12CommandList::isValidForReuse() const
+    {
+        return !m_Executed || m_ParentCommandQueue->isFenceValueReached(m_FenceValue);
+    }
     void DirectX12CommandList::reset()
     {
         m_ResourceBarriers.clear();
@@ -95,11 +109,13 @@ namespace JumaRenderEngine
 
         m_CommandAllocator->Reset();
         m_CommandList->Reset(m_CommandAllocator, nullptr);
+
+        m_Executed = false;
     }
 
     void DirectX12CommandList::changeTextureState(DirectX12Texture* texture, const D3D12_RESOURCE_STATES state)
     {
-        if ((texture == nullptr) || !texture->isValid())
+        if (m_Executed || (texture == nullptr) || !texture->isValid())
         {
             return;
         }
@@ -122,7 +138,7 @@ namespace JumaRenderEngine
     }
     void DirectX12CommandList::applyTextureStateChanges()
     {
-        if (!m_ResourceBarriers.isEmpty())
+        if (!m_Executed && !m_ResourceBarriers.isEmpty())
         {
             m_CommandList->ResourceBarrier(m_ResourceBarriers.getSize(), m_ResourceBarriers.getData());
             m_ResourceBarriers.clear();

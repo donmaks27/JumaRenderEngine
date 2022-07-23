@@ -146,17 +146,18 @@ namespace JumaRenderEngine
 
     bool Material_DirectX12::bindMaterial(const RenderOptions* renderOptions, VertexBuffer_DirectX12* vertexBuffer)
     {
-        const RenderOptions_DirectX12* renderOptionsDirectX = reinterpret_cast<const RenderOptions_DirectX12*>(renderOptions);
-
         if (!updateUniformData())
         {
             return false;
         }
 
-        const TextureFormat colorFormat = renderOptionsDirectX->renderTarget->getFormat();
+        const RenderOptions_DirectX12* renderOptionsDirectX = reinterpret_cast<const RenderOptions_DirectX12*>(renderOptions);
+        const RenderTarget* renderTarget = renderOptionsDirectX->renderTarget;
+        const TextureFormat colorFormat = renderTarget->getFormat();
         const TextureFormat depthFormat = TextureFormat::DEPTH_UNORM24_STENCIL_UINT8;
+        const TextureSamples samples = renderTarget->getSampleCount();
         ID3D12PipelineState* pipelineState = nullptr;
-        if (!getPipelineState({ vertexBuffer->getVertexTypeName(), colorFormat, depthFormat }, pipelineState) && (pipelineState != nullptr))
+        if (!getPipelineState({ vertexBuffer->getVertexTypeName(), colorFormat, depthFormat, samples }, pipelineState) && (pipelineState != nullptr))
         {
             return false;
         }
@@ -245,6 +246,7 @@ namespace JumaRenderEngine
             DirectX12_PipelineStateStream_INPUT_LAYOUT inputLayout;
             DirectX12_PipelineStateStream_PRIMITIVE_TOPOLOGY primitiveTopologyType;
             DirectX12_PipelineStateStream_RASTERIZER rasterizer;
+            DirectX12_PipelineStateStream_SAMPLE_DESC sampleDescription;
             DirectX12_PipelineStateStream_VS VS;
             DirectX12_PipelineStateStream_PS PS;
             DirectX12_PipelineStateStream_DEPTH_STENCIL_FORMAT DSVFormat;
@@ -265,6 +267,8 @@ namespace JumaRenderEngine
         pipelineStateStream.rasterizer.data.AntialiasedLineEnable = FALSE;
         pipelineStateStream.rasterizer.data.ForcedSampleCount = 0;
         pipelineStateStream.rasterizer.data.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+        pipelineStateStream.sampleDescription.data.Count = GetTextureSamplesNumber(pipelineStateID.samplesCount);
+        pipelineStateStream.sampleDescription.data.Quality = 0;
         pipelineStateStream.VS.data.BytecodeLength = vertexShaderBytecode->GetBufferSize();
         pipelineStateStream.VS.data.pShaderBytecode = vertexShaderBytecode->GetBufferPointer();
         pipelineStateStream.PS.data.BytecodeLength = fragmentShaderBytecode->GetBufferSize();
@@ -404,10 +408,15 @@ namespace JumaRenderEngine
                 }
             }
         }
+
+        DirectX12CommandQueue* commandQueue = renderEngine->getCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
+        DirectX12CommandList* commandList = commandQueue->getCommandList();
         for (const auto& buffer : m_UniformBuffers)
         {
-            buffer.value->flushMappedData(false);
+            buffer.value->flushMappedData(commandList, false);
         }
+        commandList->execute();
+        commandQueue->returnCommandList(commandList);
 
         clearParamsForUpdate();
         return true;

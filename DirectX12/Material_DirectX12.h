@@ -9,6 +9,7 @@
 #include "renderEngine/Material.h"
 
 #include "renderEngine/texture/TextureFormat.h"
+#include "renderEngine/texture/TextureSamples.h"
 
 struct ID3D12PipelineState;
 struct ID3D12DescriptorHeap;
@@ -39,10 +40,11 @@ namespace JumaRenderEngine
             jstringID vertexName = jstringID_NONE;
             TextureFormat colorFormat = TextureFormat::RGBA_UINT8;
             TextureFormat depthFormat = TextureFormat::DEPTH_UNORM24_STENCIL_UINT8;
+            TextureSamples samplesCount = TextureSamples::X1;
 
             bool operator<(const PipelineStateID& ID) const
             {
-                return (vertexName < ID.vertexName) || (colorFormat < ID.colorFormat) || (depthFormat < ID.depthFormat);
+                return (vertexName < ID.vertexName) || (colorFormat < ID.colorFormat) || (depthFormat < ID.depthFormat) || (samplesCount < ID.samplesCount);
             }
         };
 

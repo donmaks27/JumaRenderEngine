@@ -197,9 +197,9 @@ namespace JumaRenderEngine
                 resolveImageDescription.SampleDesc.Count = 1;
                 resolveImageDescription.SampleDesc.Quality = 0;
                 resolveImageDescription.Usage = D3D11_USAGE_DEFAULT;
-                resolveImageDescription.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+                resolveImageDescription.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
                 resolveImageDescription.CPUAccessFlags = 0;
-                resolveImageDescription.MiscFlags = 0;
+                resolveImageDescription.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
                 result = device->CreateTexture2D(&resolveImageDescription, nullptr, &resolveImage);
                 if (result < 0)
                 {

@@ -53,7 +53,7 @@ namespace JumaRenderEngine
         {
             std::memcpy(stagingBuffer->getMappedData(bufferRowSize * y), data + formatSize * size.x * y, formatSize * size.x);
         }
-        stagingBuffer->flushMappedData(true);
+        stagingBuffer->flushMappedData(nullptr, true);
 
         DirectX12CommandQueue* commandQueue = renderEngine->getCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
         DirectX12CommandList* commandListObject = commandQueue->getCommandList();

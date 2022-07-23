@@ -100,9 +100,16 @@ namespace JumaRenderEngine
     {
         if (!m_UnusedCommandLists.isEmpty())
         {
-            DirectX12CommandList* commandList = m_UnusedCommandLists.getLast();
-            m_UnusedCommandLists.removeLast();
-            return commandList;
+            for (int32 index = 0; index < m_UnusedCommandLists.getSize(); index++)
+            {
+                DirectX12CommandList* commandList = m_UnusedCommandLists[index];
+                if (commandList->isValidForReuse())
+                {
+                    m_UnusedCommandLists.removeAt(index);
+                    commandList->reset();
+                    return commandList;
+                }
+            }
         }
 
         DirectX12CommandList* commandList = &m_CommandLists.addDefault();
@@ -118,7 +125,6 @@ namespace JumaRenderEngine
     {
         if (commandList != nullptr)
         {
-            commandList->reset();
             m_UnusedCommandLists.add(commandList);
         }
     }

@@ -90,7 +90,7 @@ namespace JumaRenderEngine
         allocationDescription.HeapType = D3D12_HEAP_TYPE_DEFAULT;
         const HRESULT result = renderEngine->getResourceAllocator()->CreateResource(
             &allocationDescription, &resourceDescription, 
-            D3D12_RESOURCE_STATE_COPY_DEST, nullptr, 
+            D3D12_RESOURCE_STATE_COMMON, nullptr, 
             &m_Allocation, IID_PPV_ARGS(&m_Buffer)
         );
         if (FAILED(result))
@@ -106,7 +106,7 @@ namespace JumaRenderEngine
         DirectX12Buffer* stagingBuffer = renderEngine->getBuffer();
         if (!stagingBuffer->initStaging(size) || 
             !stagingBuffer->setData(data, size, 0, true) || 
-            !stagingBuffer->copyData(this, false, true))
+            !stagingBuffer->copyData(nullptr, this, false, true))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to copy data to GPU buffer"));
             renderEngine->returnBuffer(stagingBuffer);
@@ -149,7 +149,7 @@ namespace JumaRenderEngine
         allocationDescription.HeapType = D3D12_HEAP_TYPE_DEFAULT;
         const HRESULT result = renderEngine->getResourceAllocator()->CreateResource(
             &allocationDescription, &resourceDescription, 
-            m_BufferState, nullptr, 
+            D3D12_RESOURCE_STATE_COMMON, nullptr, 
             &m_Allocation, IID_PPV_ARGS(&m_Buffer)
         );
         if (FAILED(result))
@@ -255,7 +255,7 @@ namespace JumaRenderEngine
         std::memcpy(mappedData, data, size);
         return true;
     }
-    bool DirectX12Buffer::flushMappedData(const bool waitForFinish)
+    bool DirectX12Buffer::flushMappedData(DirectX12CommandList* commandList, const bool waitForFinish)
     {
         if (!isValid())
         {
@@ -265,7 +265,7 @@ namespace JumaRenderEngine
 
         if (m_StagingBuffer != nullptr)
         {
-            if (!m_StagingBuffer->flushMappedData(false) || !m_StagingBuffer->copyData(this, true, waitForFinish))
+            if (!m_StagingBuffer->flushMappedData(nullptr, false) || !m_StagingBuffer->copyData(commandList, this, true, waitForFinish))
             {
                 JUMA_RENDER_LOG(error, JSTR("Failed to flush data from staging DirectX12 buffer"));
                 return false;
@@ -295,7 +295,7 @@ namespace JumaRenderEngine
         }
         if (m_StagingBuffer != nullptr)
         {
-            if (!m_StagingBuffer->setDataInternal(data, size, offset) || !m_StagingBuffer->copyData(this, true, waitForFinish))
+            if (!m_StagingBuffer->setDataInternal(data, size, offset) || !m_StagingBuffer->copyData(nullptr, this, true, waitForFinish))
             {
                 JUMA_RENDER_LOG(error, JSTR("Failed to copy data from staging buffer"));
                 return false;
@@ -323,12 +323,30 @@ namespace JumaRenderEngine
         m_Buffer->Unmap(0, nullptr);
         return true;
     }
-    bool DirectX12Buffer::copyData(const DirectX12Buffer* destinationBuffer, const bool shouldChangeState, const bool waitForFinish)
+    bool DirectX12Buffer::copyData(DirectX12CommandList* commandList, const DirectX12Buffer* destinationBuffer, const bool shouldChangeState, const bool waitForFinish)
     {
-        const RenderEngine_DirectX12* renderEngine = getRenderEngine<RenderEngine_DirectX12>();
+        if (commandList == nullptr)
+        {
+            const RenderEngine_DirectX12* renderEngine = getRenderEngine<RenderEngine_DirectX12>();
+            DirectX12CommandQueue* commandQueue = renderEngine->getCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
+            commandList = commandQueue->getCommandList();
+            commandList->get()->CopyResource(destinationBuffer->get(), m_Buffer);
+            commandList->execute();
+            if (waitForFinish)
+            {
+                commandList->waitForFinish();
+            }
+            commandQueue->returnCommandList(commandList);
+            commandList = nullptr;
+        }
+        else
+        {
+            commandList->get()->CopyResource(destinationBuffer->get(), m_Buffer);
+        }
+        /*const RenderEngine_DirectX12* renderEngine = getRenderEngine<RenderEngine_DirectX12>();
         DirectX12CommandQueue* commandQueue = renderEngine->getCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
         DirectX12CommandList* commandListObject = commandQueue->getCommandList();
-        ID3D12GraphicsCommandList2* commandList = commandListObject->get();
+        ID3D12GraphicsCommandList2* commandList = commandListObject->get();*/
 
         /*if (shouldChangeState && (destinationBuffer->m_BufferState != D3D12_RESOURCE_STATE_COPY_DEST))
         {
@@ -341,7 +359,7 @@ namespace JumaRenderEngine
             resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
             commandList->ResourceBarrier(1, &resourceBarrier);
         }*/
-        commandList->CopyResource(destinationBuffer->get(), m_Buffer);
+        //commandList->get()->CopyResource(destinationBuffer->get(), m_Buffer);
         /*if (destinationBuffer->m_BufferState != D3D12_RESOURCE_STATE_COPY_DEST)
         {
             D3D12_RESOURCE_BARRIER resourceBarrier{};
@@ -354,12 +372,12 @@ namespace JumaRenderEngine
             commandList->ResourceBarrier(1, &resourceBarrier);
         }*/
 
-        commandListObject->execute();
+        /*commandListObject->execute();
         if (waitForFinish)
         {
             commandListObject->waitForFinish();
         }
-        commandQueue->returnCommandList(commandListObject);
+        commandQueue->returnCommandList(commandListObject);*/
 
         return true;
     }
