@@ -8,7 +8,9 @@
 
 #include "RenderEngine_DirectX12.h"
 #include "RenderOptions_DirectX12.h"
+#include "RenderTarget_DirectX12.h"
 #include "Shader_DirectX12.h"
+#include "Texture_DirectX12.h"
 #include "TextureFormat_DirectX12.h"
 #include "VertexBuffer_DirectX12.h"
 #include "renderEngine/RenderTarget.h"
@@ -90,7 +92,7 @@ namespace JumaRenderEngine
         for (const auto& bufferDescription : shader->getUniformBufferDescriptions())
         {
             DirectX12Buffer* newBuffer = buffers.add(bufferDescription.key, renderEngine->getBuffer());
-            if ((newBuffer == nullptr) || !newBuffer->initAccessedGPU(bufferDescription.value.size))
+            if ((newBuffer == nullptr) || !newBuffer->initAccessedGPU(bufferDescription.value.size, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER))
             {
                 JUMA_RENDER_LOG(error, JSTR("Failed to create uniform buffer"));
                 for (const auto& buffer : buffers)
@@ -167,7 +169,16 @@ namespace JumaRenderEngine
         {
             commandList->SetGraphicsRootConstantBufferView(bufferParam.key, m_UniformBuffers[bufferParam.value]->get()->GetGPUVirtualAddress());
         }
-        // TODO: Bind descriptor heaps
+
+        if (m_TextureDescriptorHeap != nullptr)
+        {
+            const uint32 paramIndex = m_UniformBuffers.getSize();
+
+            ID3D12DescriptorHeap* const descriptorHeaps[2] = { m_TextureDescriptorHeap, m_SamplerDescriptorHeap };
+            commandList->SetDescriptorHeaps(2, descriptorHeaps);
+            commandList->SetGraphicsRootDescriptorTable(paramIndex, m_TextureDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+            commandList->SetGraphicsRootDescriptorTable(paramIndex + 1, m_SamplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+        }
         return true;
     }
 
@@ -278,13 +289,58 @@ namespace JumaRenderEngine
 
     bool Material_DirectX12::updateUniformData()
     {
+        const jset<jstringID>& notUpdatedParams = getNotUpdatedParams();
+        if (notUpdatedParams.isEmpty())
+        {
+            return true;
+        }
+
+        const RenderEngine_DirectX12* renderEngine = getRenderEngine<RenderEngine_DirectX12>();
+        ID3D12Device2* device = renderEngine->getDevice();
+
         const Shader_DirectX12* shader = getShader<Shader_DirectX12>();
+        const jmap<jstringID, uint32>& descriptorHeapOffsets = shader->getTextureDescriptorHeapOffsets();
         const MaterialParamsStorage& params = getMaterialParams();
         for (const auto& uniform : shader->getUniforms())
         {
+            if (!notUpdatedParams.contains(uniform.key))
+            {
+                continue;
+            }
+
             if (uniform.value.type == ShaderUniformType::Texture)
             {
-                // TODO: Copy descriptor
+                ShaderUniformInfo<ShaderUniformType::Texture>::value_type value;
+                if (params.getValue<ShaderUniformType::Texture>(uniform.key, value))
+                {
+                    const uint32* descriptorHeapIndex = descriptorHeapOffsets.find(uniform.key);
+                    if (descriptorHeapIndex == nullptr)
+                    {
+                        continue;
+                    }
+                    
+                    Texture_DirectX12* textureValue = dynamic_cast<Texture_DirectX12*>(value);
+                    if (textureValue != nullptr)
+                    {
+                        const D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptor = textureValue->getSRV()->GetCPUDescriptorHandleForHeapStart();
+                        const D3D12_CPU_DESCRIPTOR_HANDLE dstDescriptor = renderEngine->getDescriptorCPU<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(
+                            m_TextureDescriptorHeap, *descriptorHeapIndex
+                        );
+                        device->CopyDescriptorsSimple(1, dstDescriptor, srcDescriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                    }
+                    else
+                    {
+                        // TODO: Copy render target descriptor
+                        //RenderTarget_DirectX12* renderTargetValue =
+                        continue;
+                    }
+
+                    const D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptor = renderEngine->getSamplerDescription(value->getSamplerType());
+                    const D3D12_CPU_DESCRIPTOR_HANDLE dstDescriptor = renderEngine->getDescriptorCPU<D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER>(
+                        m_SamplerDescriptorHeap, *descriptorHeapIndex
+                    );
+                    device->CopyDescriptorsSimple(1, dstDescriptor, srcDescriptor, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+                }
             }
             else
             {
@@ -341,6 +397,7 @@ namespace JumaRenderEngine
             buffer.value->flushMappedData(false);
         }
 
+        clearParamsForUpdate();
         return true;
     }
 }

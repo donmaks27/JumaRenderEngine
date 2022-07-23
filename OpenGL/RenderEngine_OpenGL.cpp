@@ -71,39 +71,39 @@ namespace JumaRenderEngine
 
         uint32 samplerIndex = 0;
         glGenSamplers(1, &samplerIndex);
-        switch (sampler.filtering)
+        switch (sampler.filterType)
         {
-        case TextureFiltering::Point:
+        case TextureFilterType::Point:
             glSamplerParameteri(samplerIndex, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
             glSamplerParameteri(samplerIndex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glSamplerParameterf(samplerIndex, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1.0f);
             break;
-        case TextureFiltering::Bilinear:
+        case TextureFilterType::Bilinear:
             glSamplerParameteri(samplerIndex, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
             glSamplerParameteri(samplerIndex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glSamplerParameterf(samplerIndex, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1.0f);
             break;
-        case TextureFiltering::Trilinear:
+        case TextureFilterType::Trilinear:
             glSamplerParameteri(samplerIndex, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
             glSamplerParameteri(samplerIndex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glSamplerParameterf(samplerIndex, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1.0f);
             break;
-        case TextureFiltering::Anisotropic_2:
+        case TextureFilterType::Anisotropic_2:
             glSamplerParameteri(samplerIndex, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
             glSamplerParameteri(samplerIndex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glSamplerParameterf(samplerIndex, GL_TEXTURE_MAX_ANISOTROPY_EXT, 2.0f);
             break;
-        case TextureFiltering::Anisotropic_4:
+        case TextureFilterType::Anisotropic_4:
             glSamplerParameteri(samplerIndex, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
             glSamplerParameteri(samplerIndex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glSamplerParameterf(samplerIndex, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.0f);
             break;
-        case TextureFiltering::Anisotropic_8:
+        case TextureFilterType::Anisotropic_8:
             glSamplerParameteri(samplerIndex, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
             glSamplerParameteri(samplerIndex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glSamplerParameterf(samplerIndex, GL_TEXTURE_MAX_ANISOTROPY_EXT, 8.0f);
             break;
-        case TextureFiltering::Anisotropic_16:
+        case TextureFilterType::Anisotropic_16:
             glSamplerParameteri(samplerIndex, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
             glSamplerParameteri(samplerIndex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glSamplerParameterf(samplerIndex, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f);

@@ -23,6 +23,7 @@ namespace JumaRenderEngine
         for (const auto& uniform : m_Shader->getUniforms())
         {
             m_MaterialParams.setDefaultValue(uniform.key, uniform.value.type);
+            m_MaterialParamsForUpdate.add(uniform.key);
         }
 
         if (!initInternal())
@@ -48,6 +49,11 @@ namespace JumaRenderEngine
     bool Material::resetParamValue(const jstringID& name)
     {
         const ShaderUniform* uniform = m_Shader->getUniforms().find(name);
-        return (uniform != nullptr) && m_MaterialParams.setDefaultValue(name, uniform->type);
+        if ((uniform != nullptr) && m_MaterialParams.setDefaultValue(name, uniform->type))
+        {
+            m_MaterialParamsForUpdate.add(name);
+            return true;
+        }
+        return false;
     }
 }

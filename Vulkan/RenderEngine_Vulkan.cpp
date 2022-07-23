@@ -635,48 +635,48 @@ namespace JumaRenderEngine
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
         samplerInfo.mipLodBias = 0.0f;
-        switch (samplerType.filtering)
+        switch (samplerType.filterType)
         {
-        case TextureFiltering::Point: 
+        case TextureFilterType::Point: 
             samplerInfo.minFilter = VK_FILTER_NEAREST;
             samplerInfo.magFilter = VK_FILTER_NEAREST;
             samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
             samplerInfo.anisotropyEnable = VK_FALSE;
             break;
-        case TextureFiltering::Bilinear: 
+        case TextureFilterType::Bilinear: 
             samplerInfo.minFilter = VK_FILTER_LINEAR;
             samplerInfo.magFilter = VK_FILTER_LINEAR;
             samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
             samplerInfo.anisotropyEnable = VK_FALSE;
             break;
-        case TextureFiltering::Trilinear: 
+        case TextureFilterType::Trilinear: 
             samplerInfo.minFilter = VK_FILTER_LINEAR;
             samplerInfo.magFilter = VK_FILTER_LINEAR;
             samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
             samplerInfo.anisotropyEnable = VK_FALSE;
             break;
-        case TextureFiltering::Anisotropic_2: 
+        case TextureFilterType::Anisotropic_2: 
             samplerInfo.minFilter = VK_FILTER_LINEAR;
             samplerInfo.magFilter = VK_FILTER_LINEAR;
             samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
             samplerInfo.anisotropyEnable = VK_TRUE;
             samplerInfo.maxAnisotropy = 2.0f;
             break;
-        case TextureFiltering::Anisotropic_4: 
+        case TextureFilterType::Anisotropic_4: 
             samplerInfo.minFilter = VK_FILTER_LINEAR;
             samplerInfo.magFilter = VK_FILTER_LINEAR;
             samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
             samplerInfo.anisotropyEnable = VK_TRUE;
             samplerInfo.maxAnisotropy = 4.0f;
             break;
-        case TextureFiltering::Anisotropic_8: 
+        case TextureFilterType::Anisotropic_8: 
             samplerInfo.minFilter = VK_FILTER_LINEAR;
             samplerInfo.magFilter = VK_FILTER_LINEAR;
             samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
             samplerInfo.anisotropyEnable = VK_TRUE;
             samplerInfo.maxAnisotropy = 8.0f;
             break;
-        case TextureFiltering::Anisotropic_16: 
+        case TextureFilterType::Anisotropic_16: 
             samplerInfo.minFilter = VK_FILTER_LINEAR;
             samplerInfo.magFilter = VK_FILTER_LINEAR;
             samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;

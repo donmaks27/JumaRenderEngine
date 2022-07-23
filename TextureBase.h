@@ -26,6 +26,6 @@ namespace JumaRenderEngine
 
     private:
 
-        TextureSamplerType m_Sampler = { TextureFiltering::Trilinear, TextureWrapMode::Clamp };
+        TextureSamplerType m_Sampler = { TextureFilterType::Trilinear, TextureWrapMode::Clamp };
     };
 }

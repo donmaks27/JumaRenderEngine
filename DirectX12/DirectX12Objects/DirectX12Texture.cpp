@@ -39,15 +39,9 @@ namespace JumaRenderEngine
         resourceDescription.SampleDesc.Quality = 0;
         resourceDescription.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
         resourceDescription.Flags = flags;
-        D3D12_CLEAR_VALUE clearValue{};
-        clearValue.Format = resourceDescription.Format;
-        clearValue.Color[0] = 0.0f;
-        clearValue.Color[1] = 0.0f;
-        clearValue.Color[2] = 0.0f;
-        clearValue.Color[3] = 0.0f;
         D3D12MA::Allocation* allocation = nullptr;
         ID3D12Resource* resource = nullptr;
-        const HRESULT result = allocator->CreateResource(&allocationDescription, &resourceDescription, initialState, &clearValue, &allocation, IID_PPV_ARGS(&resource));
+        const HRESULT result = allocator->CreateResource(&allocationDescription, &resourceDescription, initialState, nullptr, &allocation, IID_PPV_ARGS(&resource));
         if (FAILED(result))
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX12 texture resource"));

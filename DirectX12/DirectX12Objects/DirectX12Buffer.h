@@ -21,15 +21,16 @@ namespace JumaRenderEngine
         // Temp buffer for passing data to GPU
         bool initStaging(uint32 size);
         // Only on GPU, not updated at all
-        bool initGPU(uint32 size, const void* data);
+        bool initGPU(uint32 size, const void* data, D3D12_RESOURCE_STATES bufferState);
         // GPU buffer, frequently writing from CPU. GPU with staging buffer
-        bool initAccessedGPU(uint32 size);
+        bool initAccessedGPU(uint32 size, D3D12_RESOURCE_STATES bufferState);
 
         ID3D12Resource* get() const { return m_Buffer; }
         uint32 getSize() const { return m_BufferSize; }
         
         bool initMappedData();
-        bool setMappedData(const void* data, uint32 size, uint32 offset = 0);
+        void* getMappedData(uint32 offset) const;
+        bool setMappedData(const void* data, uint32 size, uint32 offset = 0) const;
         bool flushMappedData(bool waitForFinish);
         
         bool setData(const void* data, uint32 size, uint32 offset, bool waitForFinish);
@@ -44,6 +45,7 @@ namespace JumaRenderEngine
         ID3D12Resource* m_Buffer = nullptr;
 
         uint32 m_BufferSize = 0;
+        D3D12_RESOURCE_STATES m_BufferState = D3D12_RESOURCE_STATE_COMMON;
 
         DirectX12Buffer* m_StagingBuffer = nullptr;
         void* m_MappedData = nullptr;
@@ -53,7 +55,7 @@ namespace JumaRenderEngine
         void clearDirectX();
 
         bool setDataInternal(const void* data, uint32 size, uint32 offset);
-        bool copyData(const DirectX12Buffer* destinationBuffer, bool waitForFinish);
+        bool copyData(const DirectX12Buffer* destinationBuffer, bool shouldChangeState, bool waitForFinish);
     };
 }
 

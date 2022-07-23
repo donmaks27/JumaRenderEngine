@@ -5,6 +5,7 @@
 #include "renderEngine/juma_render_engine_core.h"
 #include "RenderEngineContextObject.h"
 
+#include "jutils/jset.h"
 #include "material/MaterialParamsStorage.h"
 
 namespace JumaRenderEngine
@@ -25,7 +26,12 @@ namespace JumaRenderEngine
         template<ShaderUniformType Type>
         bool setParamValue(const jstringID& name, const typename ShaderUniformInfo<Type>::value_type& value)
         {
-            return checkParamType(name, Type) && m_MaterialParams.setValue<Type>(name, value);
+            if (checkParamType(name, Type) && m_MaterialParams.setValue<Type>(name, value))
+            {
+                m_MaterialParamsForUpdate.add(name);
+                return true;
+            }
+            return false;
         }
         bool resetParamValue(const jstringID& name);
         template<ShaderUniformType Type>
@@ -33,6 +39,8 @@ namespace JumaRenderEngine
         {
             return checkParamType(name, Type) && m_MaterialParams.getValue<Type>(name, outValue);
         }
+
+        const jset<jstringID>& getNotUpdatedParams() const { return m_MaterialParamsForUpdate; }
 
     protected:
         
@@ -43,10 +51,13 @@ namespace JumaRenderEngine
         template<typename T, TEMPLATE_ENABLE(is_base<Shader, T>)>
         T* getShader() const { return dynamic_cast<T*>(getShader()); }
 
+        void clearParamsForUpdate() { m_MaterialParamsForUpdate.clear(); }
+
     private:
 
         Shader* m_Shader = nullptr;
         MaterialParamsStorage m_MaterialParams;
+        jset<jstringID> m_MaterialParamsForUpdate;
 
 
         void clearData();

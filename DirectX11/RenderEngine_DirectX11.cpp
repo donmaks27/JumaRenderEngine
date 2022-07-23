@@ -132,33 +132,33 @@ namespace JumaRenderEngine
         }
 
         D3D11_SAMPLER_DESC samplerDescription{};
-        switch (samplerType.filtering)
+        switch (samplerType.filterType)
         {
-        case TextureFiltering::Point:
+        case TextureFilterType::Point:
             samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
             samplerDescription.MaxAnisotropy = 1;
             break;
-        case TextureFiltering::Bilinear:
+        case TextureFilterType::Bilinear:
             samplerDescription.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
             samplerDescription.MaxAnisotropy = 1;
             break;
-        case TextureFiltering::Trilinear:
+        case TextureFilterType::Trilinear:
             samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
             samplerDescription.MaxAnisotropy = 1;
             break;
-        case TextureFiltering::Anisotropic_2:
+        case TextureFilterType::Anisotropic_2:
             samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
             samplerDescription.MaxAnisotropy = 2;
             break;
-        case TextureFiltering::Anisotropic_4:
+        case TextureFilterType::Anisotropic_4:
             samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
             samplerDescription.MaxAnisotropy = 4;
             break;
-        case TextureFiltering::Anisotropic_8:
+        case TextureFilterType::Anisotropic_8:
             samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
             samplerDescription.MaxAnisotropy = 8;
             break;
-        case TextureFiltering::Anisotropic_16:
+        case TextureFilterType::Anisotropic_16:
             samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
             samplerDescription.MaxAnisotropy = 16;
             break;

@@ -187,6 +187,75 @@ namespace JumaRenderEngine
         m_CachedDescriptorSize_DSV = static_cast<uint8>(m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV));
         m_CachedDescriptorSize_SRV = static_cast<uint8>(m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
         m_CachedDescriptorSize_Sampler = static_cast<uint8>(m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER));
+
+        m_SamplersDescriptorHeap = createDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, TextureSamplerTypeCount, false);
+        D3D12_CPU_DESCRIPTOR_HANDLE descriptor = m_SamplersDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+        for (uint8 samplerID = 0; samplerID < TextureSamplerTypeCount; samplerID++)
+        {
+            const TextureSamplerType samplerType = GetTextureSamplerType(samplerID);
+            D3D12_SAMPLER_DESC samplerDescription{};
+            switch (samplerType.filterType)
+            {
+            case TextureFilterType::Point:
+                samplerDescription.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+                samplerDescription.MaxAnisotropy = 1;
+                break;
+            case TextureFilterType::Bilinear:
+                samplerDescription.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+                samplerDescription.MaxAnisotropy = 1;
+                break;
+            case TextureFilterType::Trilinear:
+                samplerDescription.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+                samplerDescription.MaxAnisotropy = 1;
+                break;
+            case TextureFilterType::Anisotropic_2:
+                samplerDescription.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+                samplerDescription.MaxAnisotropy = 2;
+                break;
+            case TextureFilterType::Anisotropic_4:
+                samplerDescription.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+                samplerDescription.MaxAnisotropy = 4;
+                break;
+            case TextureFilterType::Anisotropic_8:
+                samplerDescription.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+                samplerDescription.MaxAnisotropy = 8;
+                break;
+            case TextureFilterType::Anisotropic_16:
+                samplerDescription.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+                samplerDescription.MaxAnisotropy = 16;
+                break;
+            default: ;
+            }
+            switch (samplerType.wrapMode)
+            {
+            case TextureWrapMode::Repeat: 
+                samplerDescription.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+                samplerDescription.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+                samplerDescription.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+                break;
+            case TextureWrapMode::Mirror: 
+                samplerDescription.AddressU = D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+                samplerDescription.AddressV = D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+                samplerDescription.AddressW = D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+                break;
+            case TextureWrapMode::Clamp: 
+                samplerDescription.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+                samplerDescription.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+                samplerDescription.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+                break;
+            default: ;
+            }
+            samplerDescription.MipLODBias = 0.0f;
+            samplerDescription.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+            samplerDescription.BorderColor[0] = 1.0f;
+            samplerDescription.BorderColor[1] = 1.0f;
+            samplerDescription.BorderColor[2] = 1.0f;
+            samplerDescription.BorderColor[3] = 1.0f;
+            samplerDescription.MinLOD = -FLT_MAX;
+            samplerDescription.MaxLOD = FLT_MAX;
+            m_Device->CreateSampler(&samplerDescription, descriptor);
+            descriptor.ptr += m_CachedDescriptorSize_Sampler;
+        }
         return true;
     }
     bool RenderEngine_DirectX12::createCommandQueues()
@@ -227,6 +296,12 @@ namespace JumaRenderEngine
 
         m_UnusedBuffers.clear();
         m_Buffers.clear();
+
+        if (m_SamplersDescriptorHeap != nullptr)
+        {
+            m_SamplersDescriptorHeap->Release();
+            m_SamplersDescriptorHeap = nullptr;
+        }
 
         m_CommandQueues.clear();
         if (m_ResourceAllocator != nullptr)
@@ -293,8 +368,7 @@ namespace JumaRenderEngine
     }
     Texture* RenderEngine_DirectX12::createTextureInternal()
     {
-        //return createObject<Texture_DirectX12>();
-        return nullptr;
+        return createObject<Texture_DirectX12>();
     }
     Shader* RenderEngine_DirectX12::createShaderInternal()
     {

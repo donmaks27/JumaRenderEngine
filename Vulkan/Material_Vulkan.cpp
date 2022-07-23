@@ -154,6 +154,11 @@ namespace JumaRenderEngine
         {
             return true;
         }
+        const jset<jstringID>& notUpdatedParams = getNotUpdatedParams();
+        if (notUpdatedParams.isEmpty())
+        {
+            return true;
+        }
 
         RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
         const jmap<jstringID, ShaderUniform>& uniforms = getShader()->getUniforms();
@@ -165,6 +170,11 @@ namespace JumaRenderEngine
         descriptorWrites.reserve(uniforms.getSize());
         for (const auto& uniform : uniforms)
         {
+            if (!notUpdatedParams.contains(uniform.key))
+            {
+                continue;
+            }
+
             switch (uniform.value.type)
             {
             case ShaderUniformType::Float:
@@ -262,7 +272,6 @@ namespace JumaRenderEngine
             default: ;
             }
         }
-
         if (!descriptorWrites.isEmpty())
         {
             vkUpdateDescriptorSets(renderEngine->getDevice(), 
@@ -270,6 +279,8 @@ namespace JumaRenderEngine
                0, nullptr
             );
         }
+        clearParamsForUpdate();
+
         if (!m_UniformBuffers.isEmpty())
         {
             for (const auto& buffer : m_UniformBuffers)

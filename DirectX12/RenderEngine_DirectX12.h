@@ -12,6 +12,7 @@
 
 #include "DirectX12Objects/DirectX12Buffer.h"
 #include "DirectX12Objects/DirectX12CommandQueue.h"
+#include "renderEngine/texture/TextureSamplerType.h"
 
 namespace JumaRenderEngine
 {
@@ -40,6 +41,11 @@ namespace JumaRenderEngine
             return { descriptorHeap != nullptr ? descriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr + descriptorIndex * getDescriptorSize<Type>() : 0 };
         }
 
+        D3D12_CPU_DESCRIPTOR_HANDLE getSamplerDescription(const TextureSamplerType& samplerType) const
+        {
+            return getDescriptorCPU<D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER>(m_SamplersDescriptorHeap, GetTextureSamplerTypeID(samplerType));
+        }
+
         DirectX12Buffer* getBuffer();
         void returnBuffer(DirectX12Buffer* buffer);
 
@@ -66,6 +72,8 @@ namespace JumaRenderEngine
         uint8 m_CachedDescriptorSize_DSV = 0;
         uint8 m_CachedDescriptorSize_SRV = 0;
         uint8 m_CachedDescriptorSize_Sampler = 0;
+
+        ID3D12DescriptorHeap* m_SamplersDescriptorHeap = nullptr;
 
         jlist<DirectX12Buffer> m_Buffers;
         jarray<DirectX12Buffer*> m_UnusedBuffers;

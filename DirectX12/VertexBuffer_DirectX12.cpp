@@ -29,7 +29,7 @@ namespace JumaRenderEngine
         const VertexDescription* vertexDescription = renderEngine->findVertexType(getVertexTypeName());
 
         DirectX12Buffer* vertexBuffer = renderEngine->getBuffer();
-        if ((vertexBuffer == nullptr) || !vertexBuffer->initGPU(vertexDescription->size * vertexCount, verticesData->getVertices()))
+        if ((vertexBuffer == nullptr) || !vertexBuffer->initGPU(vertexDescription->size * vertexCount, verticesData->getVertices(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vertex buffer"));
             renderEngine->returnBuffer(vertexBuffer);
@@ -41,7 +41,7 @@ namespace JumaRenderEngine
         if (indexCount > 0)
         {
             indexBuffer = renderEngine->getBuffer();
-            if ((indexBuffer == nullptr) || !indexBuffer->initGPU(sizeof(uint32) * vertexCount, verticesData->getIndices()))
+            if ((indexBuffer == nullptr) || !indexBuffer->initGPU(sizeof(uint32) * vertexCount, verticesData->getIndices(), D3D12_RESOURCE_STATE_INDEX_BUFFER))
             {
                 JUMA_RENDER_LOG(error, JSTR("Failed to create index buffer"));
                 renderEngine->returnBuffer(indexBuffer);
