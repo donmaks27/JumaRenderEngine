@@ -318,8 +318,8 @@ namespace JumaRenderEngine
                     {
                         continue;
                     }
-                    
-                    Texture_DirectX12* textureValue = dynamic_cast<Texture_DirectX12*>(value);
+
+                    const Texture_DirectX12* textureValue = dynamic_cast<Texture_DirectX12*>(value);
                     if (textureValue != nullptr)
                     {
                         const D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptor = textureValue->getSRV()->GetCPUDescriptorHandleForHeapStart();
@@ -330,9 +330,21 @@ namespace JumaRenderEngine
                     }
                     else
                     {
-                        // TODO: Copy render target descriptor
-                        //RenderTarget_DirectX12* renderTargetValue =
-                        continue;
+                        const RenderTarget_DirectX12* renderTargetValue = dynamic_cast<RenderTarget_DirectX12*>(value);
+                        ID3D12DescriptorHeap* srv = renderTargetValue != nullptr ? renderTargetValue->getSRV() : nullptr;
+                        if (srv != nullptr)
+                        {
+                            const D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptor = srv->GetCPUDescriptorHandleForHeapStart();
+                            const D3D12_CPU_DESCRIPTOR_HANDLE dstDescriptor = renderEngine->getDescriptorCPU<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(
+                                m_TextureDescriptorHeap, *descriptorHeapIndex
+                            );
+                            device->CopyDescriptorsSimple(1, dstDescriptor, srcDescriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                        }
+                        else
+                        {
+                            // TODO: Default texture
+                            continue;
+                        }
                     }
 
                     const D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptor = renderEngine->getSamplerDescription(value->getSamplerType());

@@ -194,13 +194,29 @@ namespace JumaRenderEngine
             delete renderTexture;
             return false;
         }
+        ID3D12DescriptorHeap* srvDescriptorHeap = renderEngine->createDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, false);
+        if (srvDescriptorHeap == nullptr)
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to create descriptor heap for SRV"));
+            dsvDescriptorHeap->Release();
+            rtvDescriptorHeap->Release();
+            delete resolveTexture;
+            delete depthTexture;
+            delete renderTexture;
+            return false;
+        }
 
         device->CreateRenderTargetView(renderTexture->getResource(), nullptr, rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
         device->CreateDepthStencilView(depthTexture->getResource(), nullptr, dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+        device->CreateShaderResourceView(resolveTexture != nullptr ? resolveTexture->getResource() : renderTexture->getResource(), nullptr, srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
         m_ColorTexture = renderTexture;
-        m_ResultTextures = { resolveTexture };
+        if (resolveTexture != nullptr)
+        {
+            m_ResultTextures = { resolveTexture };
+        }
         m_DescriptorHeapRTV = rtvDescriptorHeap;
+        m_DescriptorHeapSRV = srvDescriptorHeap;
         m_DepthTexture = depthTexture;
         m_DescriptorHeapDSV = dsvDescriptorHeap;
         return true;
@@ -212,6 +228,11 @@ namespace JumaRenderEngine
         {
             m_DescriptorHeapDSV->Release();
             m_DescriptorHeapDSV = nullptr;
+        }
+        if (m_DescriptorHeapSRV != nullptr)
+        {
+            m_DescriptorHeapSRV->Release();
+            m_DescriptorHeapSRV = nullptr;
         }
         if (m_DescriptorHeapRTV != nullptr)
         {
@@ -273,7 +294,9 @@ namespace JumaRenderEngine
         }
         else
         {
-            return false;
+            size = getSize();
+            rtvIndex = 0;
+            renderTexture = m_ColorTexture;
         }
 
         DirectX12CommandList* commandListObject = reinterpret_cast<RenderOptions_DirectX12*>(renderOptions)->renderCommandList;
@@ -284,8 +307,9 @@ namespace JumaRenderEngine
 
         const D3D12_CPU_DESCRIPTOR_HANDLE rtvDescriptor = renderEngine->getDescriptorCPU<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(m_DescriptorHeapRTV, rtvIndex);
         const D3D12_CPU_DESCRIPTOR_HANDLE dsvDescriptor = m_DescriptorHeapDSV->GetCPUDescriptorHandleForHeapStart();
-        static constexpr FLOAT clearColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        commandList->ClearRenderTargetView(rtvDescriptor, clearColor, 0, nullptr);
+        static constexpr FLOAT clearColor[] = { 0.0f, 1.0f, 1.0f, 1.0f };
+        static constexpr FLOAT clearColorW[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        commandList->ClearRenderTargetView(rtvDescriptor, !isWindowRenderTarget() ? clearColor : clearColorW, 0, nullptr);
         commandList->ClearDepthStencilView(dsvDescriptor, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
         commandList->OMSetRenderTargets(1, &rtvDescriptor, FALSE, &dsvDescriptor);
 
@@ -332,7 +356,7 @@ namespace JumaRenderEngine
 
         if (!shouldResolve)
         {
-            commandListObject->changeTextureState(renderTexture, D3D12_RESOURCE_STATE_PRESENT);
+            commandListObject->changeTextureState(renderTexture, isWindowRenderTarget() ? D3D12_RESOURCE_STATE_PRESENT : D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
             commandListObject->applyTextureStateChanges();
         }
         else

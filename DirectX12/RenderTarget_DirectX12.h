@@ -26,6 +26,8 @@ namespace JumaRenderEngine
         RenderTarget_DirectX12() = default;
         virtual ~RenderTarget_DirectX12() override;
 
+        ID3D12DescriptorHeap* getSRV() const { return m_DescriptorHeapSRV; }
+
         virtual bool onStartRender(RenderOptions* renderOptions) override;
         virtual void onFinishRender(RenderOptions* renderOptions) override;
 
@@ -38,6 +40,7 @@ namespace JumaRenderEngine
         DirectX12Texture* m_ColorTexture = nullptr;
         jarray<DirectX12Texture*> m_ResultTextures;
         ID3D12DescriptorHeap* m_DescriptorHeapRTV = nullptr;
+        ID3D12DescriptorHeap* m_DescriptorHeapSRV = nullptr;
 
         DirectX12Texture* m_DepthTexture = nullptr;
         ID3D12DescriptorHeap* m_DescriptorHeapDSV = nullptr;
