@@ -312,7 +312,7 @@ namespace JumaRenderEngine
         ID3D12GraphicsCommandList2* commandList = commandListObject->get();
 
         commandListObject->changeTextureState(renderTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        commandListObject->applyTextureStateChanges();
+        commandListObject->applyStateChanges();
 
         const D3D12_CPU_DESCRIPTOR_HANDLE rtvDescriptor = renderEngine->getDescriptorCPU<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(m_DescriptorHeapRTV, rtvIndex);
         const D3D12_CPU_DESCRIPTOR_HANDLE dsvDescriptor = m_DescriptorHeapDSV->GetCPUDescriptorHandleForHeapStart();
@@ -372,13 +372,13 @@ namespace JumaRenderEngine
             {
                 commandListObject->changeTextureState(renderTexture, D3D12_RESOURCE_STATE_PRESENT);
             }
-            commandListObject->applyTextureStateChanges();
+            commandListObject->applyStateChanges();
         }
         else
         {
             commandListObject->changeTextureState(renderTexture, D3D12_RESOURCE_STATE_RESOLVE_SOURCE);
             commandListObject->changeTextureState(resolveTexture, D3D12_RESOURCE_STATE_RESOLVE_DEST);
-            commandListObject->applyTextureStateChanges();
+            commandListObject->applyStateChanges();
 
             commandList->ResolveSubresource(
                 resolveTexture->getResource(), 0, renderTexture->getResource(), 0, 
@@ -394,7 +394,7 @@ namespace JumaRenderEngine
             {
                 commandListObject->changeTextureState(renderTexture, D3D12_RESOURCE_STATE_PRESENT);
             }
-            commandListObject->applyTextureStateChanges();
+            commandListObject->applyStateChanges();
         }
 
         Super::onFinishRender(renderOptions);

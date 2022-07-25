@@ -45,6 +45,7 @@ namespace JumaRenderEngine
 
     void DirectX12CommandList::clearDirectX()
     {
+        m_BufferStates.clear();
         m_TextureStates.clear();
         m_ResourceBarriers.clear();
 
@@ -81,7 +82,12 @@ namespace JumaRenderEngine
         {
             textureStates.key->setMipLevelsState(std::move(textureStates.value));
         }
+        for (const auto& bufferState : m_BufferStates)
+        {
+            bufferState.key->setState(bufferState.value);
+        }
         m_TextureStates.clear();
+        m_BufferStates.clear();
     }
 
     void DirectX12CommandList::waitForFinish()
@@ -106,6 +112,7 @@ namespace JumaRenderEngine
     {
         m_ResourceBarriers.clear();
         m_TextureStates.clear();
+        m_BufferStates.clear();
 
         m_CommandAllocator->Reset();
         m_CommandList->Reset(m_CommandAllocator, nullptr);
@@ -210,7 +217,28 @@ namespace JumaRenderEngine
             }
         }
     }
-    void DirectX12CommandList::applyTextureStateChanges()
+    void DirectX12CommandList::changeBufferState(DirectX12Buffer* buffer, const D3D12_RESOURCE_STATES state)
+    {
+        if (m_Executed || (buffer == nullptr) || !buffer->isValid())
+        {
+            return;
+        }
+
+        const D3D12_RESOURCE_STATES* prevStatePtr = m_BufferStates.find(buffer);
+        const D3D12_RESOURCE_STATES prevState = prevStatePtr != nullptr ? *prevStatePtr : buffer->getState();
+        if (prevState != state)
+        {
+            D3D12_RESOURCE_BARRIER& resourceBarrier = m_ResourceBarriers.addDefault();
+            resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+            resourceBarrier.Transition.pResource = buffer->get();
+            resourceBarrier.Transition.Subresource = 0;
+            resourceBarrier.Transition.StateBefore = prevState;
+            resourceBarrier.Transition.StateAfter = state;
+            m_BufferStates[buffer] = state;
+        }
+    }
+    void DirectX12CommandList::applyStateChanges()
     {
         if (!m_Executed && !m_ResourceBarriers.isEmpty())
         {

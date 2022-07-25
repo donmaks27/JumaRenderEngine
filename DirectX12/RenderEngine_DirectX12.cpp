@@ -196,6 +196,11 @@ namespace JumaRenderEngine
             JUMA_RENDER_LOG(error, JSTR("Failed to create DirectX12 direct command queue"));
             return false;
         }
+        if (!registerObject(&m_CommandQueues.add(D3D12_COMMAND_LIST_TYPE_COMPUTE))->init(D3D12_COMMAND_LIST_TYPE_COMPUTE))
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to create DirectX12 compute command queue"));
+            return false;
+        }
         if (!registerObject(&m_CommandQueues.add(D3D12_COMMAND_LIST_TYPE_COPY))->init(D3D12_COMMAND_LIST_TYPE_COPY))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create DirectX12 copy command queue"));

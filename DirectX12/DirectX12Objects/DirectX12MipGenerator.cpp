@@ -254,7 +254,7 @@ namespace JumaRenderEngine
 
         commandListObject->changeTextureState(targetTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
         commandListObject->changeTextureState(stagingTexture, D3D12_RESOURCE_STATE_COPY_DEST);
-        commandListObject->applyTextureStateChanges();
+        commandListObject->applyStateChanges();
         commandList->CopyResource(stagingTextureResource, targetTextureResource);
 
         commandList->SetComputeRootSignature(m_ShaderRootSignature);
@@ -288,7 +288,7 @@ namespace JumaRenderEngine
             
             commandListObject->changeTextureState(stagingTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, srcMipIndex);
             commandListObject->changeTextureState(stagingTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, srcMipIndex + 1, dstMipLevelsCount);
-            commandListObject->applyTextureStateChanges();
+            commandListObject->applyStateChanges();
 
             commandList->SetComputeRoot32BitConstants(0, sizeof(MipGeneratorParams) / sizeof(uint32), &params, 0);
             commandList->SetComputeRootDescriptorTable(1, srvDescriptor);
@@ -302,7 +302,7 @@ namespace JumaRenderEngine
 
         commandListObject->changeTextureState(stagingTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
         commandListObject->changeTextureState(targetTexture, D3D12_RESOURCE_STATE_COPY_DEST);
-        commandListObject->applyTextureStateChanges();
+        commandListObject->applyStateChanges();
         commandList->CopyResource(targetTextureResource, stagingTextureResource);
         commandListObject->changeTextureState(targetTexture, finalState);
     }

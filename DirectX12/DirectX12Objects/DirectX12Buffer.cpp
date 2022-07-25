@@ -90,7 +90,7 @@ namespace JumaRenderEngine
         allocationDescription.HeapType = D3D12_HEAP_TYPE_DEFAULT;
         const HRESULT result = renderEngine->getResourceAllocator()->CreateResource(
             &allocationDescription, &resourceDescription, 
-            D3D12_RESOURCE_STATE_COMMON, nullptr, 
+            D3D12_RESOURCE_STATE_COPY_DEST, nullptr, 
             &m_Allocation, IID_PPV_ARGS(&m_Buffer)
         );
         if (FAILED(result))
@@ -100,13 +100,13 @@ namespace JumaRenderEngine
         }
 
         m_BufferSize = size;
-        m_BufferState = bufferState;
+        m_BufferState = D3D12_RESOURCE_STATE_COPY_DEST;
         m_Mapable = false;
 
         DirectX12Buffer* stagingBuffer = renderEngine->getBuffer();
         if (!stagingBuffer->initStaging(size) || 
             !stagingBuffer->setData(data, size, 0, true) || 
-            !stagingBuffer->copyData(nullptr, this, false, true))
+            !stagingBuffer->copyData(nullptr, this, bufferState, true))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to copy data to GPU buffer"));
             renderEngine->returnBuffer(stagingBuffer);
@@ -149,7 +149,7 @@ namespace JumaRenderEngine
         allocationDescription.HeapType = D3D12_HEAP_TYPE_DEFAULT;
         const HRESULT result = renderEngine->getResourceAllocator()->CreateResource(
             &allocationDescription, &resourceDescription, 
-            D3D12_RESOURCE_STATE_COMMON, nullptr, 
+            bufferState, nullptr, 
             &m_Allocation, IID_PPV_ARGS(&m_Buffer)
         );
         if (FAILED(result))
@@ -265,7 +265,7 @@ namespace JumaRenderEngine
 
         if (m_StagingBuffer != nullptr)
         {
-            if (!m_StagingBuffer->flushMappedData(nullptr, false) || !m_StagingBuffer->copyData(commandList, this, true, waitForFinish))
+            if (!m_StagingBuffer->flushMappedData(nullptr, false) || !m_StagingBuffer->copyData(commandList, this, m_BufferState, waitForFinish))
             {
                 JUMA_RENDER_LOG(error, JSTR("Failed to flush data from staging DirectX12 buffer"));
                 return false;
@@ -295,7 +295,7 @@ namespace JumaRenderEngine
         }
         if (m_StagingBuffer != nullptr)
         {
-            if (!m_StagingBuffer->setDataInternal(data, size, offset) || !m_StagingBuffer->copyData(nullptr, this, true, waitForFinish))
+            if (!m_StagingBuffer->setDataInternal(data, size, offset) || !m_StagingBuffer->copyData(nullptr, this, m_BufferState, waitForFinish))
             {
                 JUMA_RENDER_LOG(error, JSTR("Failed to copy data from staging buffer"));
                 return false;
@@ -323,62 +323,32 @@ namespace JumaRenderEngine
         m_Buffer->Unmap(0, nullptr);
         return true;
     }
-    bool DirectX12Buffer::copyData(DirectX12CommandList* commandList, const DirectX12Buffer* destinationBuffer, const bool shouldChangeState, const bool waitForFinish)
+    bool DirectX12Buffer::copyData(DirectX12CommandList* commandListObject, DirectX12Buffer* destinationBuffer, 
+        const D3D12_RESOURCE_STATES finalState, const bool waitForFinish) const
     {
-        if (commandList == nullptr)
+        const bool shouldCreateCommandList = (commandListObject == nullptr);
+        if (shouldCreateCommandList)
         {
             const RenderEngine_DirectX12* renderEngine = getRenderEngine<RenderEngine_DirectX12>();
-            DirectX12CommandQueue* commandQueue = renderEngine->getCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
-            commandList = commandQueue->getCommandList();
-            commandList->get()->CopyResource(destinationBuffer->get(), m_Buffer);
-            commandList->execute();
+            DirectX12CommandQueue* commandQueue = renderEngine->getCommandQueue(D3D12_COMMAND_LIST_TYPE_COMPUTE);
+            commandListObject = commandQueue->getCommandList();
+        }
+
+        commandListObject->changeBufferState(destinationBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
+        commandListObject->applyStateChanges();
+        commandListObject->get()->CopyResource(destinationBuffer->get(), m_Buffer);
+        commandListObject->changeBufferState(destinationBuffer, finalState);
+        commandListObject->applyStateChanges();
+
+        if (shouldCreateCommandList)
+        {
+            commandListObject->execute();
             if (waitForFinish)
             {
-                commandList->waitForFinish();
+                commandListObject->waitForFinish();
             }
-            commandQueue->returnCommandList(commandList);
-            commandList = nullptr;
+            commandListObject->markUnused();
         }
-        else
-        {
-            commandList->get()->CopyResource(destinationBuffer->get(), m_Buffer);
-        }
-        /*const RenderEngine_DirectX12* renderEngine = getRenderEngine<RenderEngine_DirectX12>();
-        DirectX12CommandQueue* commandQueue = renderEngine->getCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
-        DirectX12CommandList* commandListObject = commandQueue->getCommandList();
-        ID3D12GraphicsCommandList2* commandList = commandListObject->get();*/
-
-        /*if (shouldChangeState && (destinationBuffer->m_BufferState != D3D12_RESOURCE_STATE_COPY_DEST))
-        {
-            D3D12_RESOURCE_BARRIER resourceBarrier{};
-            resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-            resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-            resourceBarrier.Transition.pResource = destinationBuffer->get();
-            resourceBarrier.Transition.Subresource = 0;
-            resourceBarrier.Transition.StateBefore = destinationBuffer->m_BufferState;
-            resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
-            commandList->ResourceBarrier(1, &resourceBarrier);
-        }*/
-        //commandList->get()->CopyResource(destinationBuffer->get(), m_Buffer);
-        /*if (destinationBuffer->m_BufferState != D3D12_RESOURCE_STATE_COPY_DEST)
-        {
-            D3D12_RESOURCE_BARRIER resourceBarrier{};
-            resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-            resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-            resourceBarrier.Transition.pResource = destinationBuffer->get();
-            resourceBarrier.Transition.Subresource = 0;
-            resourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-            resourceBarrier.Transition.StateAfter = destinationBuffer->m_BufferState;
-            commandList->ResourceBarrier(1, &resourceBarrier);
-        }*/
-
-        /*commandListObject->execute();
-        if (waitForFinish)
-        {
-            commandListObject->waitForFinish();
-        }
-        commandQueue->returnCommandList(commandListObject);*/
-
         return true;
     }
 }

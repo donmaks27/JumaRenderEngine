@@ -29,7 +29,10 @@ namespace JumaRenderEngine
 
         ID3D12Resource* get() const { return m_Buffer; }
         uint32 getSize() const { return m_BufferSize; }
-        
+
+        D3D12_RESOURCE_STATES getState() const { return m_BufferState; }
+        void setState(const D3D12_RESOURCE_STATES state) { m_BufferState = state; }
+
         bool initMappedData();
         void* getMappedData(uint32 offset) const;
         bool setMappedData(const void* data, uint32 size, uint32 offset = 0) const;
@@ -57,7 +60,8 @@ namespace JumaRenderEngine
         void clearDirectX();
 
         bool setDataInternal(const void* data, uint32 size, uint32 offset);
-        bool copyData(DirectX12CommandList* commandList, const DirectX12Buffer* destinationBuffer, bool shouldChangeState, bool waitForFinish);
+        bool copyData(DirectX12CommandList* commandListObject, DirectX12Buffer* destinationBuffer, D3D12_RESOURCE_STATES finalState, 
+            bool waitForFinish) const;
     };
 }
 
