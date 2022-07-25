@@ -77,9 +77,9 @@ namespace JumaRenderEngine
         m_FenceValue = m_ParentCommandQueue->signalFence();
 
         m_Executed = true;
-        for (const auto& textureState : m_TextureStates)
+        for (auto& textureStates : m_TextureStates)
         {
-            textureState.key->setState(textureState.value);
+            textureStates.key->setMipLevelsState(std::move(textureStates.value));
         }
         m_TextureStates.clear();
     }
@@ -120,21 +120,95 @@ namespace JumaRenderEngine
             return;
         }
 
-        const D3D12_RESOURCE_STATES* prevStatePtr = m_TextureStates.find(texture);
-        const D3D12_RESOURCE_STATES prevState = prevStatePtr != nullptr ? *prevStatePtr : texture->getState();
-        if (prevState == state)
+        jarray<D3D12_RESOURCE_STATES>& states = m_TextureStates[texture];
+        if (states.isEmpty())
+        {
+            states = texture->getMipLevelsState();
+        }
+
+        bool sameStateForAll = true;
+        for (int32 index = 1; index < states.getSize(); index++)
+        {
+            if (states[index] != states[0])
+            {
+                sameStateForAll = false;
+                break;
+            }
+        }
+        if (sameStateForAll)
+        {
+            const D3D12_RESOURCE_STATES prevState = states[0];
+            if (prevState != state)
+            {
+                D3D12_RESOURCE_BARRIER& resourceBarrier = m_ResourceBarriers.addDefault();
+                resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                resourceBarrier.Transition.pResource = texture->getResource();
+                resourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+                resourceBarrier.Transition.StateBefore = prevState;
+                resourceBarrier.Transition.StateAfter = state;
+
+                for (int32 index = 0; index < states.getSize(); index++)
+                {
+                    states[index] = state;
+                }
+            }
+        }
+        else
+        {
+            for (int32 index = 0; index < states.getSize(); index++)
+            {
+                D3D12_RESOURCE_STATES& prevState = states[index];
+                if (prevState != state)
+                {
+                    D3D12_RESOURCE_BARRIER& resourceBarrier = m_ResourceBarriers.addDefault();
+                    resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                    resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                    resourceBarrier.Transition.pResource = texture->getResource();
+                    resourceBarrier.Transition.Subresource = index;
+                    resourceBarrier.Transition.StateBefore = prevState;
+                    resourceBarrier.Transition.StateAfter = state;
+
+                    prevState = state;
+                }
+            }
+        }
+    }
+    void DirectX12CommandList::changeTextureState(DirectX12Texture* texture, const D3D12_RESOURCE_STATES state, const uint8 firstMipLevelIndex, 
+        const uint8 mipLevelsCount)
+    {
+        if (m_Executed || (texture == nullptr) || !texture->isValid())
         {
             return;
         }
 
-        D3D12_RESOURCE_BARRIER& resourceBarrier = m_ResourceBarriers.addDefault();
-        resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-        resourceBarrier.Transition.pResource = texture->getResource();
-        resourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-        resourceBarrier.Transition.StateBefore = prevState;
-        resourceBarrier.Transition.StateAfter = state;
-        m_TextureStates[texture] = state;
+        jarray<D3D12_RESOURCE_STATES>& states = m_TextureStates[texture];
+        if (states.isEmpty())
+        {
+            states = texture->getMipLevelsState();
+        }
+        if (!states.isValidIndex(firstMipLevelIndex))
+        {
+            return;
+        }
+
+        const uint8 lastIndex = static_cast<uint8>(math::min(firstMipLevelIndex + mipLevelsCount, states.getSize()) - 1);
+        for (uint8 index = firstMipLevelIndex; index <= lastIndex; index++)
+        {
+            D3D12_RESOURCE_STATES& prevState = states[index];
+            if (prevState != state)
+            {
+                D3D12_RESOURCE_BARRIER& resourceBarrier = m_ResourceBarriers.addDefault();
+                resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                resourceBarrier.Transition.pResource = texture->getResource();
+                resourceBarrier.Transition.Subresource = index;
+                resourceBarrier.Transition.StateBefore = prevState;
+                resourceBarrier.Transition.StateAfter = state;
+
+                prevState = state;
+            }
+        }
     }
     void DirectX12CommandList::applyTextureStateChanges()
     {

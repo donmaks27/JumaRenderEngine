@@ -8,17 +8,14 @@
 
 #include "renderEngine/RenderTarget.h"
 
-#include <dxgiformat.h>
-
+#include "DirectX12Objects/DirectX12MipGeneratorTarget.h"
 #include "jutils/jarray.h"
-
-struct ID3D12DescriptorHeap;
 
 namespace JumaRenderEngine
 {
     class DirectX12Texture;
 
-    class RenderTarget_DirectX12 : public RenderTarget
+    class RenderTarget_DirectX12 : public RenderTarget, public DirectX12MipGeneratorTarget
     {
         using Super = RenderTarget;
 
@@ -34,6 +31,15 @@ namespace JumaRenderEngine
     protected:
 
         virtual bool initInternal() override;
+
+        virtual DirectX12Texture* getMipGeneratorTargetTexture() const override
+        {
+            if (!isWindowRenderTarget())
+            {
+                return !m_ResultTextures.isEmpty() ? m_ResultTextures[0] : m_ColorTexture;
+            }
+            return nullptr;
+        }
 
     private:
 

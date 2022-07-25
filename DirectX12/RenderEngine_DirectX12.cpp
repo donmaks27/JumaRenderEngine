@@ -16,6 +16,7 @@
 #include "Shader_DirectX12.h"
 #include "Texture_DirectX12.h"
 #include "VertexBuffer_DirectX12.h"
+#include "DirectX12Objects/DirectX12MipGenerator.h"
 #include "renderEngine/window/DirectX12/WindowControllerInfo_DirectX12.h"
 
 namespace JumaRenderEngine
@@ -106,6 +107,10 @@ namespace JumaRenderEngine
             JUMA_RENDER_LOG(error, JSTR("Failed to create DirectX12 command queues"));
             return false;
         }
+        if (!createOtherObjects())
+        {
+            return false;
+        }
         if (!getWindowController<WindowController_DirectX12>()->createWindowSwapchains())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create DirectX12 swapchains"));
@@ -182,7 +187,24 @@ namespace JumaRenderEngine
 
         m_Device = device;
         m_ResourceAllocator = allocator;
-
+        return true;
+    }
+    bool RenderEngine_DirectX12::createCommandQueues()
+    {
+        if (!registerObject(&m_CommandQueues.add(D3D12_COMMAND_LIST_TYPE_DIRECT))->init(D3D12_COMMAND_LIST_TYPE_DIRECT))
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to create DirectX12 direct command queue"));
+            return false;
+        }
+        if (!registerObject(&m_CommandQueues.add(D3D12_COMMAND_LIST_TYPE_COPY))->init(D3D12_COMMAND_LIST_TYPE_COPY))
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to create DirectX12 copy command queue"));
+            return false;
+        }
+        return true;
+    }
+    bool RenderEngine_DirectX12::createOtherObjects()
+    {
         m_CachedDescriptorSize_RTV = static_cast<uint8>(m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
         m_CachedDescriptorSize_DSV = static_cast<uint8>(m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV));
         m_CachedDescriptorSize_SRV = static_cast<uint8>(m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
@@ -256,18 +278,12 @@ namespace JumaRenderEngine
             m_Device->CreateSampler(&samplerDescription, descriptor);
             descriptor.ptr += m_CachedDescriptorSize_Sampler;
         }
-        return true;
-    }
-    bool RenderEngine_DirectX12::createCommandQueues()
-    {
-        if (!registerObject(&m_CommandQueues.add(D3D12_COMMAND_LIST_TYPE_DIRECT))->init(D3D12_COMMAND_LIST_TYPE_DIRECT))
+
+        m_TextureMipGenerator = createObject<DirectX12MipGenerator>();
+        if (!m_TextureMipGenerator->init())
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to create DirectX12 direct command queue"));
-            return false;
-        }
-        if (!registerObject(&m_CommandQueues.add(D3D12_COMMAND_LIST_TYPE_COPY))->init(D3D12_COMMAND_LIST_TYPE_COPY))
-        {
-            JUMA_RENDER_LOG(error, JSTR("Failed to create DirectX12 copy command queue"));
+            JUMA_RENDER_LOG(error, JSTR("Failed to initialize texture mip generator"));
+            delete m_TextureMipGenerator;
             return false;
         }
         return true;
@@ -297,6 +313,11 @@ namespace JumaRenderEngine
         m_UnusedBuffers.clear();
         m_Buffers.clear();
 
+        if (m_TextureMipGenerator != nullptr)
+        {
+            delete m_TextureMipGenerator;
+            m_TextureMipGenerator = nullptr;
+        }
         if (m_SamplersDescriptorHeap != nullptr)
         {
             m_SamplersDescriptorHeap->Release();

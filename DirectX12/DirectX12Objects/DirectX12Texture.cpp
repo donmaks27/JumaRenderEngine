@@ -52,8 +52,8 @@ namespace JumaRenderEngine
         m_TextureResource = resource;
         m_Size = size;
         m_Format = format;
-        m_MipLevels = m_TextureResource->GetDesc().MipLevels;
-        m_CurrentState = initialState;
+        m_MipLevels = static_cast<uint8>(m_TextureResource->GetDesc().MipLevels);
+        m_CurrentSubresourcesState = jarray(m_MipLevels, initialState);
         markAsInitialized();
         return true;
     }
@@ -101,7 +101,7 @@ namespace JumaRenderEngine
         m_Size = size;
         m_Format = format;
         m_MipLevels = 1;
-        m_CurrentState = initialState;
+        m_CurrentSubresourcesState = jarray(m_MipLevels, initialState);
         markAsInitialized();
         return true;
     }
@@ -123,8 +123,8 @@ namespace JumaRenderEngine
         m_TextureResource = existingResource;
         m_Size = { static_cast<uint32>(resourceDescription.Width), static_cast<uint32>(resourceDescription.Height) };
         m_Format = resourceDescription.Format;
-        m_MipLevels = resourceDescription.MipLevels;
-        m_CurrentState = currentState;
+        m_MipLevels = static_cast<uint8>(resourceDescription.MipLevels);
+        m_CurrentSubresourcesState = jarray(m_MipLevels, currentState);
         markAsInitialized();
         return true;
     }
@@ -144,6 +144,32 @@ namespace JumaRenderEngine
         else
         {
             m_TextureResource = nullptr;
+        }
+    }
+
+    void DirectX12Texture::setMipLevelState(const uint8 mipLevelIndex, const D3D12_RESOURCE_STATES state)
+    {
+        if (m_CurrentSubresourcesState.isValidIndex(mipLevelIndex))
+        {
+            m_CurrentSubresourcesState[mipLevelIndex] = state;
+        }
+    }
+    void DirectX12Texture::setMipLevelsState(jarray<D3D12_RESOURCE_STATES>&& states)
+    {
+        if (states.getSize() == m_MipLevels)
+        {
+            m_CurrentSubresourcesState = std::move(states);
+        }
+        else
+        {
+            JUMA_RENDER_LOG(warning, JSTR("Invalid input data"));
+        }
+    }
+    void DirectX12Texture::setMipLevelsState(const D3D12_RESOURCE_STATES state)
+    {
+        for (uint8 index = 0; index < m_MipLevels; index++)
+        {
+            m_CurrentSubresourcesState[index] = state;
         }
     }
 }

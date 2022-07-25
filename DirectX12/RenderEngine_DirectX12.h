@@ -16,6 +16,8 @@
 
 namespace JumaRenderEngine
 {
+    class DirectX12MipGenerator;
+
     class RenderEngine_DirectX12 final : public RenderEngine
     {
         using Super = RenderEngine;
@@ -46,6 +48,8 @@ namespace JumaRenderEngine
             return getDescriptorCPU<D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER>(m_SamplersDescriptorHeap, GetTextureSamplerTypeID(samplerType));
         }
 
+        DirectX12MipGenerator* getMipGenerator() const { return m_TextureMipGenerator; }
+
         DirectX12Buffer* getBuffer();
         void returnBuffer(DirectX12Buffer* buffer);
 
@@ -75,12 +79,15 @@ namespace JumaRenderEngine
 
         ID3D12DescriptorHeap* m_SamplersDescriptorHeap = nullptr;
 
+        DirectX12MipGenerator* m_TextureMipGenerator = nullptr;
+
         jlist<DirectX12Buffer> m_Buffers;
         jarray<DirectX12Buffer*> m_UnusedBuffers;
 
 
         bool createDirectXDevice();
         bool createCommandQueues();
+        bool createOtherObjects();
 
         void clearDirectX();
 

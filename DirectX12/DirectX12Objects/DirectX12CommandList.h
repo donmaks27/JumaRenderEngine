@@ -34,6 +34,7 @@ namespace JumaRenderEngine
         void reset();
 
         void changeTextureState(DirectX12Texture* texture, D3D12_RESOURCE_STATES state);
+        void changeTextureState(DirectX12Texture* texture, D3D12_RESOURCE_STATES state, uint8 firstMipLevelIndex, uint8 mipLevelsCount = 1);
         void applyTextureStateChanges();
 
     private:
@@ -45,7 +46,7 @@ namespace JumaRenderEngine
         uint64 m_FenceValue = 0;
 
         jarray<D3D12_RESOURCE_BARRIER> m_ResourceBarriers;
-        jmap<DirectX12Texture*, D3D12_RESOURCE_STATES> m_TextureStates;
+        jmap<DirectX12Texture*, jarray<D3D12_RESOURCE_STATES>> m_TextureStates;
 
         bool m_Executed = false;
 

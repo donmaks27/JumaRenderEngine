@@ -10,6 +10,7 @@
 
 #include "renderEngine/DirectX12/D3D12MemAlloc.h"
 
+#include "jutils/jarray.h"
 #include "jutils/math/vector2.h"
 
 namespace JumaRenderEngine
@@ -29,9 +30,13 @@ namespace JumaRenderEngine
         ID3D12Resource* getResource() const { return m_TextureResource; }
         math::uvector2 getSize() const { return m_Size; }
         DXGI_FORMAT getFormat() const { return m_Format; }
+        uint8 getMipLevelsCount() const { return m_MipLevels; }
 
-        D3D12_RESOURCE_STATES getState() const { return m_CurrentState; }
-        void setState(const D3D12_RESOURCE_STATES newState) { m_CurrentState = newState; }
+        D3D12_RESOURCE_STATES getMipLevelState(const uint8 mipLevelIndex) const { return m_CurrentSubresourcesState.isValidIndex(mipLevelIndex) ? m_CurrentSubresourcesState[mipLevelIndex] : D3D12_RESOURCE_STATE_COMMON; }
+        const jarray<D3D12_RESOURCE_STATES>& getMipLevelsState() const { return m_CurrentSubresourcesState; }
+        void setMipLevelState(uint8 mipLevelIndex, D3D12_RESOURCE_STATES state);
+        void setMipLevelsState(jarray<D3D12_RESOURCE_STATES>&& states);
+        void setMipLevelsState(D3D12_RESOURCE_STATES state);
 
     protected:
 
@@ -44,9 +49,9 @@ namespace JumaRenderEngine
 
         math::uvector2 m_Size = { 0, 0 };
         DXGI_FORMAT m_Format = DXGI_FORMAT_UNKNOWN;
-        uint32 m_MipLevels = 0;
+        uint8 m_MipLevels = 0;
 
-        D3D12_RESOURCE_STATES m_CurrentState = D3D12_RESOURCE_STATE_COMMON;
+        jarray<D3D12_RESOURCE_STATES> m_CurrentSubresourcesState;
 
 
         void clearDirectX();

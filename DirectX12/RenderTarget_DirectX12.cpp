@@ -7,6 +7,7 @@
 #include "RenderEngine_DirectX12.h"
 #include "RenderOptions_DirectX12.h"
 #include "TextureFormat_DirectX12.h"
+#include "DirectX12Objects/DirectX12MipGenerator.h"
 #include "DirectX12Objects/DirectX12Swapchain.h"
 #include "DirectX12Objects/DirectX12Texture.h"
 #include "renderEngine/window/DirectX12/WindowController_DirectX12.h"
@@ -23,6 +24,12 @@ namespace JumaRenderEngine
         if (!(isWindowRenderTarget() ? initWindowRenderTarget() : initRenderTarget()))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to init DirectX12 render target"));
+            return false;
+        }
+        if (!initMipGeneratorTarget())
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to init mip generator target"));
+            clearDirectX();
             return false;
         }
         return true;
@@ -138,7 +145,7 @@ namespace JumaRenderEngine
 
         DirectX12Texture* renderTexture = renderEngine->createObject<DirectX12Texture>();
         renderTexture->initColor(
-            size, samplesCount, format, 1, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET
+            size, samplesCount, format, sholdResolve ? 1 : 0, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET
         );
         if (!renderTexture->isValid())
         {
@@ -224,6 +231,8 @@ namespace JumaRenderEngine
 
     void RenderTarget_DirectX12::clearDirectX()
     {
+        clearMipGeneratorTarget();
+
         if (m_DescriptorHeapDSV != nullptr)
         {
             m_DescriptorHeapDSV->Release();
@@ -355,7 +364,14 @@ namespace JumaRenderEngine
 
         if (!shouldResolve)
         {
-            commandListObject->changeTextureState(renderTexture, isWindowRenderTarget() ? D3D12_RESOURCE_STATE_PRESENT : D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            if (!isWindowRenderTarget())
+            {
+                renderEngine->getMipGenerator()->generateMips(commandListObject, this, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            }
+            else
+            {
+                commandListObject->changeTextureState(renderTexture, D3D12_RESOURCE_STATE_PRESENT);
+            }
             commandListObject->applyTextureStateChanges();
         }
         else
@@ -370,9 +386,14 @@ namespace JumaRenderEngine
             );
 
             commandListObject->changeTextureState(renderTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
-            commandListObject->changeTextureState(
-                resolveTexture, isWindowRenderTarget() ? D3D12_RESOURCE_STATE_PRESENT : D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
-            );
+            if (!isWindowRenderTarget())
+            {
+                renderEngine->getMipGenerator()->generateMips(commandListObject, this, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            }
+            else
+            {
+                commandListObject->changeTextureState(renderTexture, D3D12_RESOURCE_STATE_PRESENT);
+            }
             commandListObject->applyTextureStateChanges();
         }
 
