@@ -8,20 +8,20 @@ namespace JumaRenderEngine
 {
     enum class TextureFormat : uint8
     {
-        RGBA_UINT8,
-        BGRA_UINT8,
-        DEPTH_FLOAT32,
-        DEPTH_UNORM24_STENCIL_UINT8
+        RGBA8,
+        BGRA8,
+        DEPTH32,
+        DEPTH24_STENCIL8
     };
 
     constexpr uint32 GetTextureFormatSize(const TextureFormat format)
     {
         switch (format)
         {
-        case TextureFormat::RGBA_UINT8:
-        case TextureFormat::BGRA_UINT8:
-        case TextureFormat::DEPTH_FLOAT32:
-        case TextureFormat::DEPTH_UNORM24_STENCIL_UINT8:
+        case TextureFormat::RGBA8:
+        case TextureFormat::BGRA8:
+        case TextureFormat::DEPTH32:
+        case TextureFormat::DEPTH24_STENCIL8:
             return 4;
 
         default: ;

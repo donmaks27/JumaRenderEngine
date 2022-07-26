@@ -21,6 +21,10 @@ namespace JumaRenderEngine
 
     bool RenderTarget_DirectX12::initInternal()
     {
+        if (!Super::initInternal())
+        {
+            return false;
+        }
         if (!(isWindowRenderTarget() ? initWindowRenderTarget() : initRenderTarget()))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to init DirectX12 render target"));
@@ -102,7 +106,7 @@ namespace JumaRenderEngine
 
         DirectX12Texture* depthTexture = renderEngine->createObject<DirectX12Texture>();
         depthTexture->initDepth(
-            size, samplesCount, GetDirectX12FormatByTextureFormat(TextureFormat::DEPTH_UNORM24_STENCIL_UINT8), D3D12_RESOURCE_STATE_DEPTH_WRITE, 
+            size, samplesCount, GetDirectX12FormatByTextureFormat(TextureFormat::DEPTH24_STENCIL8), D3D12_RESOURCE_STATE_DEPTH_WRITE, 
             D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE
         );
         if (!depthTexture->isValid())
@@ -156,7 +160,7 @@ namespace JumaRenderEngine
 
         DirectX12Texture* depthTexture = renderEngine->createObject<DirectX12Texture>();
         depthTexture->initDepth(
-            size, samplesCount, GetDirectX12FormatByTextureFormat(TextureFormat::DEPTH_UNORM24_STENCIL_UINT8), D3D12_RESOURCE_STATE_DEPTH_WRITE, 
+            size, samplesCount, GetDirectX12FormatByTextureFormat(TextureFormat::DEPTH24_STENCIL8), D3D12_RESOURCE_STATE_DEPTH_WRITE, 
             D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE
         );
         if (!depthTexture->isValid())

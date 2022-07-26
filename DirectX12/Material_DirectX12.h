@@ -38,8 +38,8 @@ namespace JumaRenderEngine
         struct PipelineStateID
         {
             jstringID vertexName = jstringID_NONE;
-            TextureFormat colorFormat = TextureFormat::RGBA_UINT8;
-            TextureFormat depthFormat = TextureFormat::DEPTH_UNORM24_STENCIL_UINT8;
+            TextureFormat colorFormat = TextureFormat::RGBA8;
+            TextureFormat depthFormat = TextureFormat::DEPTH24_STENCIL8;
             TextureSamples samplesCount = TextureSamples::X1;
 
             bool operator<(const PipelineStateID& ID) const

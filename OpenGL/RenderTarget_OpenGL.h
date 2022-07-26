@@ -23,11 +23,13 @@ namespace JumaRenderEngine
         virtual bool onStartRender(RenderOptions* renderOptions) override;
         virtual void onFinishRender(RenderOptions* renderOptions) override;
 
-        bool bindResultTexture(uint32 bindIndex) const;
+        bool bindToShader(uint32 bindIndex) const;
 
     protected:
 
         virtual bool initInternal() override;
+
+        virtual void onPropertiesChanged(const math::vector2& prevSize, TextureSamples prevSamples) override;
 
     private:
 
@@ -39,7 +41,7 @@ namespace JumaRenderEngine
         uint32 m_ResolveFramebuffer = 0;
 
 
-        bool createFramebuffers();
+        void createFramebuffers();
 
         void clearOpenGL();
     };

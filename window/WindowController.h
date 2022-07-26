@@ -7,12 +7,14 @@
 
 #include "window_id.h"
 #include "jutils/jarray.h"
+#include "jutils/jdelegate_multicast.h"
 #include "jutils/math/vector2.h"
 #include "renderEngine/texture/TextureSamples.h"
 
 namespace JumaRenderEngine
 {
     class RenderTarget;
+    class WindowController;
 
     struct WindowProperties
     {
@@ -27,6 +29,8 @@ namespace JumaRenderEngine
         RenderTarget* windowRenderTarget = nullptr;
     };
 
+    CREATE_JUTILS_MULTICAST_DELEGATE_TwoParams(OnWindowControllerWindowEvent, WindowController*, windowController, const WindowData*, windowData);
+
     class WindowController : public RenderEngineContextObjectBase
     {
         friend RenderEngine;
@@ -34,6 +38,9 @@ namespace JumaRenderEngine
     public:
         WindowController() = default;
         virtual ~WindowController() override = default;
+
+        OnWindowControllerWindowEvent OnWindowPropertiesChanged;
+
 
         bool createWindow(window_id windowID, const WindowProperties& properties);
         virtual void destroyWindow(window_id windowID) = 0;

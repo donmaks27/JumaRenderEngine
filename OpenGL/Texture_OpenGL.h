@@ -16,10 +16,10 @@ namespace JumaRenderEngine
     {
         switch (format)
         {
-        case TextureFormat::RGBA_UINT8: return GL_RGBA;
-        case TextureFormat::BGRA_UINT8: return GL_BGRA;
-        case TextureFormat::DEPTH_FLOAT32: return GL_DEPTH_COMPONENT32F;
-        case TextureFormat::DEPTH_UNORM24_STENCIL_UINT8: return GL_DEPTH24_STENCIL8;
+        case TextureFormat::RGBA8: return GL_RGBA;
+        case TextureFormat::BGRA8: return GL_BGRA;
+        case TextureFormat::DEPTH32: return GL_DEPTH_COMPONENT32F;
+        case TextureFormat::DEPTH24_STENCIL8: return GL_DEPTH24_STENCIL8;
         default: ;
         }
         return 0;
@@ -33,8 +33,8 @@ namespace JumaRenderEngine
         Texture_OpenGL() = default;
         virtual ~Texture_OpenGL() override;
 
-        bool bindTexture(const uint32 bindIndex) const { return bindTexture(this, m_TextureIndex, bindIndex, getSamplerType()); }
-        static bool bindTexture(const RenderEngineContextObjectBase* contextObject, uint32 textureIndex, uint32 bindIndex, TextureSamplerType sampler);
+        bool bindToShader(const uint32 bindIndex) const { return bindToShader(this, m_TextureIndex, bindIndex, getSamplerType()); }
+        static bool bindToShader(const RenderEngineContextObjectBase* contextObject, uint32 textureIndex, uint32 bindIndex, TextureSamplerType sampler);
         static void unbindTexture(uint32 bindIndex);
 
     protected:

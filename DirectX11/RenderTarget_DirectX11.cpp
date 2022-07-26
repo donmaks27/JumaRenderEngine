@@ -20,6 +20,10 @@ namespace JumaRenderEngine
 
     bool RenderTarget_DirectX11::initInternal()
     {
+        if (!Super::initInternal())
+        {
+            return false;
+        }
         if (isWindowRenderTarget() ? !initWindowRenderTarget() : !initRenderTarget(nullptr))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to initialize DirectX11 render target"));
@@ -146,7 +150,7 @@ namespace JumaRenderEngine
             depthImageDescription.Height = size.y;
             depthImageDescription.MipLevels = 1;
             depthImageDescription.ArraySize = 1;
-            depthImageDescription.Format = GetDirectX11FormatByTextureFormat(TextureFormat::DEPTH_UNORM24_STENCIL_UINT8);
+            depthImageDescription.Format = GetDirectX11FormatByTextureFormat(TextureFormat::DEPTH24_STENCIL8);
             depthImageDescription.SampleDesc.Count = sampleCount;
             depthImageDescription.SampleDesc.Quality = 0;
             depthImageDescription.Usage = D3D11_USAGE_DEFAULT;

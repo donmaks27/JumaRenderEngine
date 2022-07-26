@@ -19,14 +19,14 @@ namespace JumaRenderEngine
 
     bool RenderTarget_OpenGL::initInternal()
     {
-        if (!createFramebuffers())
+        if (!Super::initInternal())
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to create OpenGL framebuffers"));
             return false;
         }
+        createFramebuffers();
         return true;
     }
-    bool RenderTarget_OpenGL::createFramebuffers()
+    void RenderTarget_OpenGL::createFramebuffers()
     {
         const TextureSamples sampleCount = getSampleCount();
 
@@ -34,16 +34,11 @@ namespace JumaRenderEngine
         const bool shouldResolveMultisampling = sampleCount != TextureSamples::X1;
         if (!shouldResolveMultisampling && renderToWindow)
         {
-            return true;
+            return;
         }
 
-        const uint32 textureFormat = GetOpenGLFormatByTextureFormat(getFormat());
-        if (textureFormat == 0)
-        {
-            JUMA_RENDER_LOG(error, JSTR("Unsupported render target format"));
-            return false;
-        }
-
+        const GLenum colorFormat = GetOpenGLFormatByTextureFormat(getFormat());
+        const GLenum depthFormat = GetOpenGLFormatByTextureFormat(TextureFormat::DEPTH24_STENCIL8);
         const uint8 samplesNumber = GetTextureSamplesNumber(sampleCount);
         const bool depthEnabled = true;
         const bool resolveFramebufferEnabled = !renderToWindow && shouldResolveMultisampling;
@@ -60,7 +55,7 @@ namespace JumaRenderEngine
             glGenRenderbuffers(1, &colorAttachment);
             glBindRenderbuffer(GL_RENDERBUFFER, colorAttachment);
             glRenderbufferStorageMultisample(GL_RENDERBUFFER,
-                static_cast<GLsizei>(samplesNumber), textureFormat, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y)
+                samplesNumber, colorFormat, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y)
             );
             glBindRenderbuffer(GL_RENDERBUFFER, 0);
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, colorAttachment);
@@ -70,10 +65,9 @@ namespace JumaRenderEngine
             glGenTextures(1, &colorAttachment);
             glBindTexture(GL_TEXTURE_2D, colorAttachment);
             glTexImage2D(GL_TEXTURE_2D, 
-                0, textureFormat, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y), 0, 
+                0, colorFormat, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y), 0, 
                 GL_RGB, GL_UNSIGNED_BYTE, nullptr
             );
-            glGenerateMipmap(GL_TEXTURE_2D);
             glBindTexture(GL_TEXTURE_2D, 0);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorAttachment, 0);
         }
@@ -81,15 +75,15 @@ namespace JumaRenderEngine
         {
             glGenRenderbuffers(1, &depthAttachment);
             glBindRenderbuffer(GL_RENDERBUFFER, depthAttachment);
-            if (samplesNumber == 1)
+            if (shouldResolveMultisampling)
             {
-                glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y));
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, 
+                    samplesNumber, depthFormat, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y)
+                );
             }
             else
             {
-                glRenderbufferStorageMultisample(GL_RENDERBUFFER, 
-                    static_cast<GLsizei>(samplesNumber), GL_DEPTH24_STENCIL8, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y)
-                );
+                glRenderbufferStorage(GL_RENDERBUFFER, depthFormat, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y));
             }
             glBindRenderbuffer(GL_RENDERBUFFER, 0);
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthAttachment);
@@ -100,10 +94,9 @@ namespace JumaRenderEngine
             glGenTextures(1, &resolveAttachment);
             glBindTexture(GL_TEXTURE_2D, resolveAttachment);
             glTexImage2D(GL_TEXTURE_2D, 
-                0, textureFormat, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y), 0, 
+                0, colorFormat, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y), 0, 
                 GL_RGBA, GL_UNSIGNED_BYTE, nullptr
             );
-            glGenerateMipmap(GL_TEXTURE_2D);
             glBindTexture(GL_TEXTURE_2D, 0);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, resolveAttachment, 0);
         }
@@ -114,7 +107,6 @@ namespace JumaRenderEngine
         m_DepthAttachment = depthAttachment;
         m_ResolveFramebuffer = framebufferIndices[1];
         m_ResolveColorAttachment = resolveAttachment;
-        return true;
     }
 
     void RenderTarget_OpenGL::clearOpenGL()
@@ -123,13 +115,10 @@ namespace JumaRenderEngine
         {
             getRenderEngine()->getWindowController<WindowController_OpenGL>()->setActiveWindowID(getWindowID());
 
-            glDeleteFramebuffers(1, &m_Framebuffer);
+            const GLuint framebuffers[] = { m_Framebuffer, m_ResolveFramebuffer };
+            glDeleteFramebuffers(m_ResolveFramebuffer != 0 ? 2 : 1, &m_Framebuffer);
             m_Framebuffer = 0;
-            if (m_ResolveFramebuffer != 0)
-            {
-                glDeleteFramebuffers(1, &m_ResolveFramebuffer);
-                m_ResolveFramebuffer = 0;
-            }
+            m_ResolveFramebuffer = 0;
 
             const bool shouldResolveMultisampling = getSampleCount() != TextureSamples::X1;
             if (shouldResolveMultisampling)
@@ -153,6 +142,14 @@ namespace JumaRenderEngine
                 m_ResolveColorAttachment = 0;
             }
         }
+    }
+
+    void RenderTarget_OpenGL::onPropertiesChanged(const math::vector2& prevSize, const TextureSamples prevSamples)
+    {
+        Super::onPropertiesChanged(prevSize, prevSamples);
+
+        clearOpenGL();
+        createFramebuffers();
     }
 
     bool RenderTarget_OpenGL::onStartRender(RenderOptions* renderOptions)
@@ -205,10 +202,10 @@ namespace JumaRenderEngine
         Super::onFinishRender(renderOptions);
     }
 
-    bool RenderTarget_OpenGL::bindResultTexture(const uint32 bindIndex) const
+    bool RenderTarget_OpenGL::bindToShader(const uint32 bindIndex) const
     {
         const uint32 resultTextureIndex = getResultTextureIndex();
-        return resultTextureIndex != 0 ? Texture_OpenGL::bindTexture(this, resultTextureIndex, bindIndex, getSamplerType()) : false;
+        return resultTextureIndex != 0 ? Texture_OpenGL::bindToShader(this, resultTextureIndex, bindIndex, getSamplerType()) : false;
     }
 }
 

@@ -112,14 +112,14 @@ namespace JumaRenderEngine
                     const Texture_OpenGL* texture = dynamic_cast<Texture_OpenGL*>(value);
                     if (texture != nullptr)
                     {
-                        texture->bindTexture(uniform.value.shaderLocation);
+                        texture->bindToShader(uniform.value.shaderLocation);
                     }
                     else
                     {
                         const RenderTarget_OpenGL* renderTarget = dynamic_cast<RenderTarget_OpenGL*>(value);
                         if (renderTarget != nullptr)
                         {
-                            renderTarget->bindResultTexture(uniform.value.shaderLocation);
+                            renderTarget->bindToShader(uniform.value.shaderLocation);
                         }
                     }
                 }

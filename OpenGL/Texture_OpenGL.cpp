@@ -44,7 +44,7 @@ namespace JumaRenderEngine
         }
     }
 
-    bool Texture_OpenGL::bindTexture(const RenderEngineContextObjectBase* contextObject, const uint32 textureIndex, const uint32 bindIndex, 
+    bool Texture_OpenGL::bindToShader(const RenderEngineContextObjectBase* contextObject, const uint32 textureIndex, const uint32 bindIndex, 
         const TextureSamplerType sampler)
     {
         if (textureIndex == 0)

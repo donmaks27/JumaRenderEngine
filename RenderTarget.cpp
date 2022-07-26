@@ -13,7 +13,8 @@ namespace JumaRenderEngine
 
     bool RenderTarget::init(const window_id windowID, const TextureSamples samples)
     {
-        if (getRenderEngine()->getWindowController()->findWindowData(windowID) == nullptr)
+        const WindowData* windowData = getRenderEngine()->getWindowController()->findWindowData(windowID);
+        if (windowData == nullptr)
         {
             JUMA_RENDER_LOG(error, JSTR("There is not window ") + TO_JSTR(windowID));
             return false;
@@ -21,6 +22,7 @@ namespace JumaRenderEngine
 
         m_WindowID = windowID;
         m_TextureSamples = samples;
+        m_Size = windowData->properties.size;
         if (!initInternal())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to initialize window render target"));
@@ -49,22 +51,41 @@ namespace JumaRenderEngine
         return true;
     }
 
+    bool RenderTarget::initInternal()
+    {
+        if (isWindowRenderTarget())
+        {
+            getRenderEngine()->getWindowController()->OnWindowPropertiesChanged.bind(this, &RenderTarget::onWindowPropertiesChanged);
+        }
+        return true;
+    }
+
+    void RenderTarget::onWindowPropertiesChanged(WindowController* windowController, const WindowData* windowData)
+    {
+        if ((windowData != nullptr) && (windowData->windowID == m_WindowID))
+        {
+            if ((m_Size != windowData->properties.size) || (m_TextureSamples != windowData->properties.samples))
+            {
+                const math::vector2 prevSize = m_Size;
+                const TextureSamples prevSamples = m_TextureSamples;
+                m_Size = windowData->properties.size;
+                m_TextureSamples = windowData->properties.samples;
+                onPropertiesChanged(prevSize, prevSamples);
+            }
+        }
+    }
+
     void RenderTarget::clearData()
     {
+        if (isWindowRenderTarget())
+        {
+            getRenderEngine()->getWindowController()->OnWindowPropertiesChanged.unbind(this, &RenderTarget::onWindowPropertiesChanged);
+        }
+
         m_WindowID = window_id_INVALID;
         m_TextureSamples = TextureSamples::X1;
         m_Size = { 0, 0 };
-        m_Format = TextureFormat::RGBA_UINT8;
-    }
-
-    math::uvector2 RenderTarget::getSize() const
-    {
-        if (!isWindowRenderTarget())
-        {
-            return m_Size;
-        }
-        const WindowData* window = getRenderEngine()->getWindowController()->findWindowData(getWindowID());
-        return window != nullptr ? window->properties.size : math::uvector2(0);
+        m_Format = TextureFormat::RGBA8;
     }
 
     bool RenderTarget::onStartRender(RenderOptions* renderOptions)

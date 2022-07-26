@@ -19,6 +19,10 @@ namespace JumaRenderEngine
 
     bool RenderTarget_Vulkan::initInternal()
     {
+        if (!Super::initInternal())
+        {
+            return false;
+        }
         if (!isWindowRenderTarget() ? !initFramebuffer() : !initWindowFramebuffer())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan framebuffers"));

@@ -113,7 +113,7 @@ namespace JumaRenderEngine
         const RenderOptions_DirectX12* renderOptionsDirectX = reinterpret_cast<const RenderOptions_DirectX12*>(renderOptions);
         const RenderTarget* renderTarget = renderOptionsDirectX->renderTarget;
         const TextureFormat colorFormat = renderTarget->getFormat();
-        const TextureFormat depthFormat = TextureFormat::DEPTH_UNORM24_STENCIL_UINT8;
+        const TextureFormat depthFormat = TextureFormat::DEPTH24_STENCIL8;
         const TextureSamples samples = renderTarget->getSampleCount();
         ID3D12PipelineState* pipelineState = nullptr;
         if (!getPipelineState({ vertexBuffer->getVertexTypeName(), colorFormat, depthFormat, samples }, pipelineState) && (pipelineState != nullptr))

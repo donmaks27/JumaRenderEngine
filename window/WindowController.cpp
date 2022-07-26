@@ -32,7 +32,9 @@ namespace JumaRenderEngine
 
     void WindowController::onWindowResized(const window_id windowID, const math::uvector2& newSize)
     {
-        getWindowData(windowID)->properties.size = newSize;
+        WindowData* windowData = getWindowData(windowID);
+        windowData->properties.size = newSize;
+        OnWindowPropertiesChanged.call(this, windowData);
     }
 
     bool WindowController::createRenderTarget(const window_id windowID, WindowData& windowData)

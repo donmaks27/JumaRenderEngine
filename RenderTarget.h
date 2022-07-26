@@ -12,6 +12,8 @@
 
 namespace JumaRenderEngine
 {
+    class WindowController;
+    struct WindowData;
     struct RenderOptions;
 
     class RenderTarget : public TextureBase
@@ -26,7 +28,7 @@ namespace JumaRenderEngine
         window_id getWindowID() const { return m_WindowID; }
         TextureSamples getSampleCount() const { return m_TextureSamples; }
 
-        math::uvector2 getSize() const;
+        math::uvector2 getSize() const { return m_Size; }
         TextureFormat getFormat() const { return m_Format; }
 
         virtual bool onStartRender(RenderOptions* renderOptions);
@@ -34,20 +36,23 @@ namespace JumaRenderEngine
 
     protected:
 
-        virtual bool initInternal() { return true; }
+        virtual bool initInternal();
+
+        virtual void onPropertiesChanged(const math::vector2& prevSize, TextureSamples prevSamples) {}
 
     private:
 
         window_id m_WindowID = window_id_INVALID;
         TextureSamples m_TextureSamples = TextureSamples::X1;
 
-        // Ignore it if window ID is valid
         math::uvector2 m_Size = { 0, 0 };
-        TextureFormat m_Format = TextureFormat::RGBA_UINT8;
+        TextureFormat m_Format = TextureFormat::RGBA8;
 
 
         bool init(window_id windowID, TextureSamples samples);
         bool init(TextureFormat format, const math::uvector2& size, TextureSamples samples);
+
+        void onWindowPropertiesChanged(WindowController* windowController, const WindowData* windowData);
 
         void clearData();
     };
