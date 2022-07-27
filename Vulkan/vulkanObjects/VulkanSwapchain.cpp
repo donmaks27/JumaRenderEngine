@@ -34,12 +34,12 @@ namespace JumaRenderEngine
             return false;
         }
 
+        getRenderEngine()->getWindowController()->OnWindowPropertiesChanged.bind(this, &VulkanSwapchain::onWindowPropertiesChanged);
         return true;
     }
     bool VulkanSwapchain::createSwapchain(VkSwapchainKHR oldSwapchain)
     {
-        constexpr bool tripleBuffering = false;
-        constexpr uint8 defaultImageCount = tripleBuffering ? 3 : 2;
+        constexpr uint8 defaultImageCount = 3;
 
         const RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
         const WindowData_Vulkan* windowData = renderEngine->getWindowController()->findWindowData<WindowData_Vulkan>(m_WindowID);
@@ -121,7 +121,10 @@ namespace JumaRenderEngine
 
     void VulkanSwapchain::clearVulkan()
     {
-        VkDevice device = getRenderEngine<RenderEngine_Vulkan>()->getDevice();
+        const RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
+        VkDevice device = renderEngine->getDevice();
+
+        renderEngine->getWindowController()->OnWindowPropertiesChanged.unbind(this, &VulkanSwapchain::onWindowPropertiesChanged);
 
         if (m_RenderAvailableSemaphore != nullptr)
         {
@@ -139,29 +142,13 @@ namespace JumaRenderEngine
         m_AcquiredSwapchainImageIndex = -1;
         m_SwapchainImagesSize = { 0, 0 };
         m_SwapchainImagesFormat = VK_FORMAT_UNDEFINED;
-        m_NeedToRecreate = false;
+        m_SwapchainInvalid = false;
         m_WindowID = window_id_INVALID;
-    }
-
-    bool VulkanSwapchain::updateSwapchain()
-    {
-        if (!m_NeedToRecreate)
-        {
-            return true;
-        }
-
-        if (!createSwapchain(m_Swapchain))
-        {
-            JUMA_RENDER_LOG(error, JSTR("Failed to recreate vulkan swapchain"));
-            return false;
-        }
-        m_NeedToRecreate = false;
-        return true;
     }
 
     bool VulkanSwapchain::acquireNextImage(bool& availableForRender)
     {
-        if (m_NeedToRecreate)
+        if (m_SwapchainInvalid)
         {
             availableForRender = false;
             return true;
@@ -178,12 +165,45 @@ namespace JumaRenderEngine
                 return false;
             }
             
-            m_NeedToRecreate = true;
+            m_SwapchainInvalid = true;
             return true;
         }
         
         m_AcquiredSwapchainImageIndex = static_cast<int8>(renderImageIndex);
         availableForRender = true;
+        return true;
+    }
+
+    void VulkanSwapchain::onWindowPropertiesChanged(WindowController* windowController, const WindowData* windowData)
+    {
+        if (windowData->windowID == getWindowID())
+        {
+            m_WindowPropertiesChanged = true;
+            if (windowData->properties.size != m_SwapchainImagesSize)
+            {
+                invalidate();
+            }
+        }
+    }
+    bool VulkanSwapchain::updateSwapchain()
+    {
+        if (m_SwapchainInvalid)
+        {
+            if (!createSwapchain(m_Swapchain))
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to recreate vulkan swapchain"));
+                return false;
+            }
+
+            m_SwapchainInvalid = false;
+            m_WindowPropertiesChanged = false;
+            OnParentWindowPropertiesChanged.call(this);
+        }
+        else if (m_WindowPropertiesChanged)
+        {
+            m_WindowPropertiesChanged = false;
+            OnParentWindowPropertiesChanged.call(this);
+        }
         return true;
     }
 }

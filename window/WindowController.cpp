@@ -85,4 +85,15 @@ namespace JumaRenderEngine
             clearRenderTarget(windowID, *getWindowData(windowID));
         }
     }
+
+    bool WindowController::getActualWindowSize(const window_id windowID, math::uvector2& outSize) const
+    {
+        const WindowData* windowData = findWindowData(windowID);
+        if (windowData == nullptr)
+        {
+            return false;
+        }
+        outSize = windowData->properties.size;
+        return true;
+    }
 }

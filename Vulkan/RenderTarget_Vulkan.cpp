@@ -23,7 +23,7 @@ namespace JumaRenderEngine
         {
             return false;
         }
-        if (!isWindowRenderTarget() ? !initFramebuffer() : !initWindowFramebuffer())
+        if (!isWindowRenderTarget() ? !initRenderTarget() : !initWindowRenderTarget())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan framebuffers"));
             clearVulkan();
@@ -31,17 +31,10 @@ namespace JumaRenderEngine
         }
         return true;
     }
-    bool RenderTarget_Vulkan::initFramebuffer()
+    bool RenderTarget_Vulkan::initRenderTarget()
     {
-        const VkFormat formatVulkan = GetVulkanFormatByTextureFormat(getFormat());
-        if (formatVulkan == VK_FORMAT_UNDEFINED)
-        {
-            JUMA_RENDER_LOG(error, JSTR("Failed to get render target format"));
-            return false;
-        }
-
         VulkanRenderPassDescription renderPassDescription;
-        renderPassDescription.colorFormat = formatVulkan;
+        renderPassDescription.colorFormat = GetVulkanFormatByTextureFormat(getFormat());
         renderPassDescription.depthFormat = VK_FORMAT_D24_UNORM_S8_UINT;
         renderPassDescription.sampleCount = GetVulkanSampleCountByTextureSamples(getSampleCount());
         renderPassDescription.shouldUseDepth = true;
@@ -62,15 +55,37 @@ namespace JumaRenderEngine
         m_Framebuffers = { framebufferData };
         return true;
     }
-    bool RenderTarget_Vulkan::initWindowFramebuffer()
+    bool RenderTarget_Vulkan::initWindowRenderTarget()
     {
         const RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
         const WindowData_Vulkan* windowData = renderEngine->getWindowController()->findWindowData<WindowData_Vulkan>(getWindowID());
-        const VulkanSwapchain* swapchain = windowData != nullptr ? windowData->vulkanSwapchain : nullptr;
+        VulkanSwapchain* swapchain = windowData != nullptr ? windowData->vulkanSwapchain : nullptr;
         if (swapchain == nullptr)
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to find window data for ID ") + TO_JSTR(getWindowID()));
+            JUMA_RENDER_LOG(error, JSTR("Failed to find swapchain for window ") + TO_JSTR(getWindowID()));
             return false;
+        }
+        if (!createWindowFramebuffers(swapchain))
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to create window frambuffers"));
+            return false;
+        }
+
+        swapchain->OnParentWindowPropertiesChanged.bind(this, &RenderTarget_Vulkan::onWindowPropertiesChanged);
+        return true;
+    }
+    bool RenderTarget_Vulkan::createWindowFramebuffers(const VulkanSwapchain* swapchain)
+    {
+        if (swapchain == nullptr)
+        {
+            const RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
+            const WindowData_Vulkan* windowData = renderEngine->getWindowController()->findWindowData<WindowData_Vulkan>(getWindowID());
+            swapchain = windowData != nullptr ? windowData->vulkanSwapchain : nullptr;
+            if (swapchain == nullptr)
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to find swapchain for window ") + TO_JSTR(getWindowID()));
+                return false;
+            }
         }
 
         VulkanRenderPassDescription renderPassDescription;
@@ -102,6 +117,19 @@ namespace JumaRenderEngine
 
     void RenderTarget_Vulkan::clearVulkan()
     {
+        if (isWindowRenderTarget())
+        {
+            const WindowData_Vulkan* windowData = getRenderEngine()->getWindowController()->findWindowData<WindowData_Vulkan>(getWindowID());
+            if ((windowData != nullptr) && (windowData->vulkanSwapchain != nullptr))
+            {
+                windowData->vulkanSwapchain->OnParentWindowPropertiesChanged.unbind(this, &RenderTarget_Vulkan::onWindowPropertiesChanged);
+            }
+        }
+
+        clearFramebuffers();
+    }
+    void RenderTarget_Vulkan::clearFramebuffers()
+    {
         if (!m_Framebuffers.isEmpty())
         {
             RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
@@ -130,6 +158,20 @@ namespace JumaRenderEngine
             return m_Framebuffers[0].resultImage;
         }
         return nullptr;
+    }
+
+    void RenderTarget_Vulkan::onWindowPropertiesChanged(VulkanSwapchain* swapchain)
+    {
+        const math::uvector2& size = swapchain->getImagesSize();
+        const TextureSamples samples = getRenderEngine()->getWindowController()->findWindowData(getWindowID())->properties.samples;
+        changeProperties(size, samples);
+    }
+    void RenderTarget_Vulkan::onPropertiesChanged(const math::uvector2& prevSize, TextureSamples prevSamples)
+    {
+        Super::onPropertiesChanged(prevSize, prevSamples);
+
+        clearFramebuffers();
+        createWindowFramebuffers();
     }
 
     bool RenderTarget_Vulkan::onStartRender(RenderOptions* renderOptions)

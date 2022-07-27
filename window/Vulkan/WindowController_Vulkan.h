@@ -33,6 +33,8 @@ namespace JumaRenderEngine
         bool createWindowSwapchains();
         void clearWindowSwapchains();
 
+        virtual bool getActualWindowSize(window_id windowID, math::uvector2& outSize) const override;
+
     protected:
 
         void clearWindowVulkan(window_id windowID, WindowData_Vulkan& windowData);

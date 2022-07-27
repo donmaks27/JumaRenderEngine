@@ -189,6 +189,8 @@ namespace JumaRenderEngine
         imageBarrier.subresourceRange.levelCount = m_MipLevels;
         imageBarrier.subresourceRange.baseArrayLayer = 0;
         imageBarrier.subresourceRange.layerCount = 1;
+        // TODO: Track image layout
+        // TODO: change to vkCmdPipelineBarrier2
         vkCmdPipelineBarrier(
             commandBuffer, srcStage, dstStage, 0, 
             0, nullptr, 0, nullptr, 1, &imageBarrier

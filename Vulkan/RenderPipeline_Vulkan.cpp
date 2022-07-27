@@ -102,6 +102,12 @@ namespace JumaRenderEngine
                 JUMA_RENDER_LOG(error, JSTR("Failed to get data for window ") + TO_JSTR(windowID));
                 return false;
             }
+
+            if (!swapchain->updateSwapchain())
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to update swapchain"));
+                return false;
+            }
             bool availableForRender = false;
             if (!swapchain->acquireNextImage(availableForRender) || !availableForRender)
             {
@@ -213,7 +219,7 @@ namespace JumaRenderEngine
                 const VkResult presentResult = swapchainPresentResults[index];
                 if ((presentResult == VK_ERROR_OUT_OF_DATE_KHR) || (presentResult == VK_SUBOPTIMAL_KHR))
                 {
-                    m_Swapchains[index]->markAsNeedToRecreate();
+                    m_Swapchains[index]->invalidate();
                 }
                 else if (presentResult != VK_SUCCESS)
                 {

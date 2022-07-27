@@ -13,6 +13,7 @@
 
 namespace JumaRenderEngine
 {
+    class VulkanSwapchain;
     class VulkanRenderPass;
 
     class RenderTarget_Vulkan final : public RenderTarget
@@ -32,6 +33,8 @@ namespace JumaRenderEngine
 
         virtual bool initInternal() override;
 
+        virtual void onPropertiesChanged(const math::uvector2& prevSize, TextureSamples prevSamples) override;
+
     private:
 
         VulkanRenderPass* m_RenderPass = nullptr;
@@ -39,12 +42,16 @@ namespace JumaRenderEngine
         bool m_FramebuffersValidForRender = false;
 
 
-        bool initFramebuffer();
-        bool initWindowFramebuffer();
+        bool initRenderTarget();
+        bool initWindowRenderTarget();
+        bool createWindowFramebuffers(const VulkanSwapchain* swapchain = nullptr);
 
         void clearVulkan();
+        void clearFramebuffers();
 
         int32 getRequiredFramebufferIndex() const;
+
+        void onWindowPropertiesChanged(VulkanSwapchain* swapchain);
     };
 }
 

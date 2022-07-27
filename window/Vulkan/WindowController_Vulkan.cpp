@@ -78,6 +78,18 @@ namespace JumaRenderEngine
             windowData.vulkanSwapchain = nullptr;
         }
     }
+
+    bool WindowController_Vulkan::getActualWindowSize(const window_id windowID, math::uvector2& outSize) const
+    {
+        const WindowData_Vulkan* windowData = findWindowData<WindowData_Vulkan>(windowID);
+        const VulkanSwapchain* swapchain = windowData != nullptr ? windowData->vulkanSwapchain : nullptr;
+        if (swapchain == nullptr)
+        {
+            return false;
+        }
+        outSize = swapchain->getImagesSize();
+        return true;
+    }
 }
 
 #endif

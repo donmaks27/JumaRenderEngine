@@ -24,6 +24,10 @@ namespace JumaRenderEngine
             return false;
         }
         createFramebuffers();
+        if (isWindowRenderTarget())
+        {
+            getRenderEngine()->getWindowController()->OnWindowPropertiesChanged.bind(this, &RenderTarget_OpenGL::onWindowPropertiesChanged);
+        }
         return true;
     }
     void RenderTarget_OpenGL::createFramebuffers()
@@ -108,15 +112,14 @@ namespace JumaRenderEngine
         m_ResolveFramebuffer = framebufferIndices[1];
         m_ResolveColorAttachment = resolveAttachment;
     }
-
-    void RenderTarget_OpenGL::clearOpenGL()
+    void RenderTarget_OpenGL::clearFramebuffers()
     {
         if (m_Framebuffer != 0)
         {
             getRenderEngine()->getWindowController<WindowController_OpenGL>()->setActiveWindowID(getWindowID());
 
             const GLuint framebuffers[] = { m_Framebuffer, m_ResolveFramebuffer };
-            glDeleteFramebuffers(m_ResolveFramebuffer != 0 ? 2 : 1, &m_Framebuffer);
+            glDeleteFramebuffers(2, framebuffers);
             m_Framebuffer = 0;
             m_ResolveFramebuffer = 0;
 
@@ -144,11 +147,27 @@ namespace JumaRenderEngine
         }
     }
 
-    void RenderTarget_OpenGL::onPropertiesChanged(const math::vector2& prevSize, const TextureSamples prevSamples)
+    void RenderTarget_OpenGL::clearOpenGL()
+    {
+        if (isWindowRenderTarget())
+        {
+            getRenderEngine()->getWindowController()->OnWindowPropertiesChanged.unbind(this, &RenderTarget_OpenGL::onWindowPropertiesChanged);
+        }
+        clearFramebuffers();
+    }
+
+    void RenderTarget_OpenGL::onWindowPropertiesChanged(WindowController* windowController, const WindowData* windowData)
+    {
+        if ((windowData != nullptr) && (windowData->windowID == getWindowID()))
+        {
+            changeProperties(windowData->properties.size, windowData->properties.samples);
+        }
+    }
+    void RenderTarget_OpenGL::onPropertiesChanged(const math::uvector2& prevSize, const TextureSamples prevSamples)
     {
         Super::onPropertiesChanged(prevSize, prevSamples);
 
-        clearOpenGL();
+        clearFramebuffers();
         createFramebuffers();
     }
 

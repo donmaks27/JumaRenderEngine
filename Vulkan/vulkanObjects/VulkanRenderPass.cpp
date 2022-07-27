@@ -232,7 +232,7 @@ namespace JumaRenderEngine
         }
 
         VkImageView attachments[3];
-        uint32 attachmentCount = 1;
+        uint8 attachmentCount = 1;
         attachments[0] = colorImage->getImageView();
         if (depthImage != nullptr)
         {

@@ -53,6 +53,8 @@ namespace JumaRenderEngine
         const T* findWindowData(const window_id windowID) const { return reinterpret_cast<const T*>(findWindowData(windowID)); }
         virtual jarray<window_id> getWindowIDs() const = 0;
 
+        virtual bool getActualWindowSize(window_id windowID, math::uvector2& outSize) const;
+
         virtual bool shouldCloseWindow(window_id windowID) const = 0;
 
         virtual bool onStartRender() { return true; }
