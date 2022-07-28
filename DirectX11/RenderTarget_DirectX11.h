@@ -16,9 +16,15 @@ struct ID3D11RasterizerState;
 
 namespace JumaRenderEngine
 {
+    class WindowController_DirectX11;
+    class WindowController;
+    struct WindowData;
+
     class RenderTarget_DirectX11 : public RenderTarget
     {
         using Super = RenderTarget;
+
+        friend WindowController_DirectX11;
 
     public:
         RenderTarget_DirectX11() = default;
@@ -32,6 +38,8 @@ namespace JumaRenderEngine
     protected:
 
         virtual bool initInternal() override;
+
+        virtual void onPropertiesChanged(const math::uvector2& prevSize, TextureSamples prevSamples) override;
 
     private:
 
@@ -49,6 +57,9 @@ namespace JumaRenderEngine
         bool initRenderTarget(ID3D11Texture2D* resultImage);
 
         void clearDirectX11();
+        void clearRenderTarget();
+
+        void onWindowPropertiesChanged(WindowController* windowController, const WindowData* windowData);
     };
 }
 

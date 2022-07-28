@@ -11,14 +11,14 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-struct IDXGISwapChain;
+struct IDXGISwapChain1;
 
 namespace JumaRenderEngine
 {
     struct WindowData_DirectX11 : WindowData
     {
         HWND windowHandler = nullptr;
-        IDXGISwapChain* swapchain = nullptr;
+        IDXGISwapChain1* swapchain = nullptr;
     };
 
     class WindowController_DirectX11 : public WindowController
@@ -39,6 +39,8 @@ namespace JumaRenderEngine
         void clearWindowDirectX11(window_id windowID, WindowData_DirectX11& windowData);
 
         bool createWindowSwapchain(window_id windowID, WindowData_DirectX11& windowData);
+
+        virtual void onWindowResized(window_id windowID, const math::uvector2& newSize) override;
 
     private:
 

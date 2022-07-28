@@ -68,7 +68,7 @@ namespace JumaRenderEngine
             return nullptr;
         }
 
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         GLFWwindow* window = glfwCreateWindow(
             static_cast<int>(properties.size.x), static_cast<int>(properties.size.y), *properties.title, nullptr, nullptr
@@ -99,7 +99,7 @@ namespace JumaRenderEngine
         const WindowData_DirectX11_GLFW* windowData = static_cast<WindowData_DirectX11_GLFW*>(glfwGetWindowUserPointer(windowGLFW));
         if (windowData != nullptr)
         {
-            windowData->windowController->onWindowResized(windowData->windowID, { math::max<uint32>(width, 0), math::max<uint32>(height, 0) });
+            windowData->windowController->m_ChangedWindowSizes.add(windowData->windowID, { math::max<uint32>(width, 0), math::max<uint32>(height, 0) });
         }
     }
 
@@ -141,6 +141,15 @@ namespace JumaRenderEngine
         Super::onFinishRender();
 
         glfwPollEvents();
+
+        if (!m_ChangedWindowSizes.isEmpty())
+        {
+            for (const auto& changedWindowSize : m_ChangedWindowSizes)
+            {
+                onWindowResized(changedWindowSize.key, changedWindowSize.value);
+            }
+            m_ChangedWindowSizes.clear();
+        }
     }
 
     bool WindowController_DirectX11_GLFW::setWindowTitle(const window_id windowID, const jstring& title)

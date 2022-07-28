@@ -85,7 +85,12 @@ namespace JumaRenderEngine
             textureSampler.value->Release();
         }
         m_TextureSamplers.clear();
-        
+        for (const auto& rasterizerState : m_RasterizerStates)
+        {
+            rasterizerState.value->Release();
+        }
+        m_RasterizerStates.clear();
+
         if (m_DeviceContext != nullptr)
         {
             m_DeviceContext->Release();
@@ -123,6 +128,34 @@ namespace JumaRenderEngine
         return createObject<RenderTarget_DirectX11>();
     }
 
+    ID3D11RasterizerState* RenderEngine_DirectX11::getRasterizerState(const DirectX11RasterizationDescription& description)
+    {
+        ID3D11RasterizerState** statePtr = m_RasterizerStates.find(description);
+        if (statePtr != nullptr)
+        {
+            return *statePtr;
+        }
+
+        D3D11_RASTERIZER_DESC rasterizerDescription{};
+        rasterizerDescription.FillMode = description.wireframe ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
+        rasterizerDescription.CullMode = description.cullBackFaces ? D3D11_CULL_BACK : D3D11_CULL_FRONT;
+        rasterizerDescription.FrontCounterClockwise = FALSE;
+        rasterizerDescription.DepthBias = 0;
+        rasterizerDescription.DepthBiasClamp = 0.0f;
+        rasterizerDescription.SlopeScaledDepthBias = 0.0f;
+        rasterizerDescription.DepthClipEnable = TRUE;
+        rasterizerDescription.ScissorEnable = FALSE;
+        rasterizerDescription.MultisampleEnable = TRUE;
+        rasterizerDescription.AntialiasedLineEnable = TRUE;
+        ID3D11RasterizerState* rasterizerState;
+        const HRESULT result = m_Device->CreateRasterizerState(&rasterizerDescription, &rasterizerState);
+        if (FAILED(result))
+        {
+            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create rasterizer state"));
+            return nullptr;
+        }
+        return m_RasterizerStates.add(description, rasterizerState);
+    }
     ID3D11SamplerState* RenderEngine_DirectX11::getTextureSampler(const TextureSamplerType samplerType)
     {
         ID3D11SamplerState** samplerPtr = m_TextureSamplers.find(samplerType);

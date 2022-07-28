@@ -5,6 +5,7 @@
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_DIRECTX11)
 
 #include <d3d11.h>
+#include <dxgi1_2.h>
 
 #include "RenderEngine_DirectX11.h"
 #include "TextureFormat_DirectX11.h"
@@ -24,7 +25,16 @@ namespace JumaRenderEngine
         {
             return false;
         }
-        if (isWindowRenderTarget() ? !initWindowRenderTarget() : !initRenderTarget(nullptr))
+        if (isWindowRenderTarget())
+        {
+            if (!initWindowRenderTarget())
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to initialize DirectX11 window render target"));
+                return false;
+            }
+            getRenderEngine()->getWindowController()->OnWindowPropertiesChanged.bind(this, &RenderTarget_DirectX11::onWindowPropertiesChanged);
+        }
+        else if (!initRenderTarget(nullptr))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to initialize DirectX11 render target"));
             return false;
@@ -35,7 +45,7 @@ namespace JumaRenderEngine
     {
         const window_id windowID = getWindowID();
         const WindowData_DirectX11* windowData = getRenderEngine()->getWindowController()->findWindowData<WindowData_DirectX11>(windowID);
-        IDXGISwapChain* swapchain = windowData != nullptr ? windowData->swapchain : nullptr;
+        IDXGISwapChain1* swapchain = windowData != nullptr ? windowData->swapchain : nullptr;
         if (swapchain == nullptr)
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to get DirectX11 swapchain for window ") + TO_JSTR(windowID));
@@ -43,7 +53,7 @@ namespace JumaRenderEngine
         }
 
         ID3D11Texture2D* swapchainImage = nullptr;
-        const HRESULT result = swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&swapchainImage);
+        const HRESULT result = swapchain->GetBuffer(0, IID_PPV_ARGS(&swapchainImage));
         if (result < 0)
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to get DirectX11 swapchain image"));
@@ -240,19 +250,8 @@ namespace JumaRenderEngine
             }
         }
 
-        D3D11_RASTERIZER_DESC rasterizerDescription{};
-        rasterizerDescription.AntialiasedLineEnable = FALSE;
-        rasterizerDescription.CullMode = D3D11_CULL_BACK;
-        rasterizerDescription.DepthBias = 0;
-        rasterizerDescription.DepthBiasClamp = 0.0f;
-        rasterizerDescription.DepthClipEnable = TRUE;
-        rasterizerDescription.FillMode = D3D11_FILL_SOLID;
-        rasterizerDescription.FrontCounterClockwise = FALSE;
-        rasterizerDescription.MultisampleEnable = FALSE;
-        rasterizerDescription.ScissorEnable = FALSE;
-        rasterizerDescription.SlopeScaledDepthBias = 0.0f;
-        result = device->CreateRasterizerState(&rasterizerDescription, &m_RasterizerState);
-        if (result < 0)
+        ID3D11RasterizerState* rasterizerState = renderEngine->getRasterizerState({ true, false });
+        if (rasterizerState == nullptr)
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 rasterizer state"));
             resultImageView->Release();
@@ -270,17 +269,23 @@ namespace JumaRenderEngine
         m_ColorAttachmentView = colorImageView;
         m_DepthAttachmentView = depthImageView;
         m_ResultImageView = resultImageView;
+        m_RasterizerState = rasterizerState;
         return true;
     }
 
     void RenderTarget_DirectX11::clearDirectX11()
     {
-        if (m_RasterizerState != nullptr)
+        if (isWindowRenderTarget())
         {
-            m_RasterizerState->Release();
-            m_RasterizerState = nullptr;
+            getRenderEngine()->getWindowController()->OnWindowPropertiesChanged.unbind(this, &RenderTarget_DirectX11::onWindowPropertiesChanged);
         }
 
+        m_RasterizerState = nullptr;
+
+        clearRenderTarget();
+    }
+    void RenderTarget_DirectX11::clearRenderTarget()
+    {
         if (m_ResultImageView != nullptr)
         {
             m_ResultImageView->Release();
@@ -305,6 +310,20 @@ namespace JumaRenderEngine
             m_ColorAttachmentView = nullptr;
             m_ColorAttachmentImage = nullptr;
         }
+    }
+
+    void RenderTarget_DirectX11::onWindowPropertiesChanged(WindowController* windowController, const WindowData* windowData)
+    {
+        if ((windowData != nullptr) && (windowData->windowID == getWindowID()))
+        {
+            changeProperties(windowData->properties.size, windowData->properties.samples);
+        }
+    }
+    void RenderTarget_DirectX11::onPropertiesChanged(const math::uvector2& prevSize, TextureSamples prevSamples)
+    {
+        Super::onPropertiesChanged(prevSize, prevSamples);
+
+        initWindowRenderTarget();
     }
 
     bool RenderTarget_DirectX11::onStartRender(RenderOptions* renderOptions)

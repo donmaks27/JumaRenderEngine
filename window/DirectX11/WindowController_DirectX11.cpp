@@ -5,53 +5,14 @@
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_DIRECTX11)
 
 #include <d3d11_1.h>
-#include <dxgi.h>
+#include <dxgi1_3.h>
 
 #include "renderEngine/DirectX11/RenderEngine_DirectX11.h"
+#include "renderEngine/DirectX11/RenderTarget_DirectX11.h"
+#include "renderEngine/DirectX11/TextureFormat_DirectX11.h"
 
 namespace JumaRenderEngine
 {
-    bool QueryDisplayModeRefreshRate(WindowData_DirectX11& windowData, IDXGIFactory1* factory, DXGI_RATIONAL& outRefreshRate)
-    {
-        IDXGIAdapter1* adapter;
-        HRESULT result = factory->EnumAdapters1(0, &adapter);
-        if (result < 0)
-        {
-            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to get DirectX11 Adapter1"));
-            return false;
-        }
-        IDXGIOutput* output;
-        result = adapter->EnumOutputs(0, &output);
-        if (result < 0)
-        {
-            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to get DirectX11 Output"));
-            adapter->Release();
-            return false;
-        }
-        IDXGIOutput1* output1;
-        output->QueryInterface(&output1);
-
-        UINT modeCount = 0;
-        output1->GetDisplayModeList1(DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, DXGI_ENUM_MODES_INTERLACED, &modeCount, nullptr);
-        jarray<DXGI_MODE_DESC1> modes(static_cast<int32>(modeCount));
-        output1->GetDisplayModeList1(DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, DXGI_ENUM_MODES_INTERLACED, &modeCount, modes.getData());
-
-        bool found = false;
-        for (const auto& mode : modes)
-        {
-            if ((mode.Width == windowData.properties.size.x) && (mode.Height == windowData.properties.size.y))
-            {
-                found = true;
-                outRefreshRate = mode.RefreshRate;
-            }
-        }
-
-        output1->Release();
-        output->Release();
-        adapter->Release();
-        return found;
-    }
-
     WindowController_DirectX11::~WindowController_DirectX11()
     {
         clearDirectX11();
@@ -99,42 +60,40 @@ namespace JumaRenderEngine
             return true;
         }
 
-        IDXGIFactory1* factory;
-        HRESULT result = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&factory);
-        if (result < 0)
+        IDXGIFactory3* factory = nullptr;
+#if defined(JDEBUG)
+        constexpr UINT createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+#else
+        constexpr UINT createFactoryFlags = 0;
+#endif
+        HRESULT result = CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&factory));
+        if (FAILED(result))
         {
-            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to get DirectX11 Factory1"));
-            return false;
-        }
-        DXGI_RATIONAL refreshRate;
-        if (!QueryDisplayModeRefreshRate(windowData, factory, refreshRate))
-        {
-            JUMA_RENDER_LOG(error, JSTR("Failed to get refresh rate"));
-            factory->Release();
+            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DXGIFactory3"));
             return false;
         }
 
-        DXGI_SWAP_CHAIN_DESC swapchainDescription{};
-        swapchainDescription.BufferCount = 2;
-        swapchainDescription.BufferDesc.Width = windowData.properties.size.x;
-        swapchainDescription.BufferDesc.Height = windowData.properties.size.y;
-        swapchainDescription.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        swapchainDescription.BufferDesc.RefreshRate = refreshRate;
-        swapchainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        swapchainDescription.OutputWindow = windowData.windowHandler;
+        constexpr uint8 buffersCount = 3;
+        DXGI_SWAP_CHAIN_DESC1 swapchainDescription{};
+        swapchainDescription.Width = windowData.properties.size.x;
+        swapchainDescription.Height = windowData.properties.size.y;
+        swapchainDescription.Format = GetDirectX11FormatByTextureFormat(TextureFormat::RGBA8);
+        swapchainDescription.Stereo = FALSE;
         swapchainDescription.SampleDesc.Count = 1;
         swapchainDescription.SampleDesc.Quality = 0;
+        swapchainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        swapchainDescription.BufferCount = buffersCount;
+        swapchainDescription.Scaling = DXGI_SCALING_STRETCH;
         swapchainDescription.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-        swapchainDescription.Windowed = TRUE;
-        result = factory->CreateSwapChain(device, &swapchainDescription, &windowData.swapchain);
-        if (result < 0)
+        swapchainDescription.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+        swapchainDescription.Flags = 0; // TODO: Tearing supported?
+        result = factory->CreateSwapChainForHwnd(device, windowData.windowHandler, &swapchainDescription, nullptr, nullptr, &windowData.swapchain);
+        factory->Release();
+        if (FAILED(result))
         {
-            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 Swapchain"));
-            factory->Release();
+            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 swapchain"));
             return false;
         }
-
-        factory->Release();
         return true;
     }
     void WindowController_DirectX11::destroyWindowSwapchain(const window_id windowID, WindowData_DirectX11& windowData)
@@ -144,6 +103,22 @@ namespace JumaRenderEngine
             windowData.swapchain->Release();
             windowData.swapchain = nullptr;
         }
+    }
+
+    void WindowController_DirectX11::onWindowResized(const window_id windowID, const math::uvector2& newSize)
+    {
+        WindowData_DirectX11* windowData = getWindowData<WindowData_DirectX11>(windowID);
+        windowData->properties.size = newSize;
+
+        RenderTarget_DirectX11* renderTarget = dynamic_cast<RenderTarget_DirectX11*>(windowData->windowRenderTarget);
+        if (renderTarget != nullptr)
+        {
+            renderTarget->clearRenderTarget();
+        }
+        constexpr uint8 buffersCount = 3;
+        windowData->swapchain->ResizeBuffers(buffersCount, newSize.x, newSize.y, GetDirectX11FormatByTextureFormat(TextureFormat::RGBA8), 0);
+        
+        OnWindowPropertiesChanged.call(this, windowData);
     }
 
     void WindowController_DirectX11::onFinishWindowRender(const window_id windowID)

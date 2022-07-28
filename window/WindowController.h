@@ -76,7 +76,7 @@ namespace JumaRenderEngine
         template<typename T, TEMPLATE_ENABLE(is_base<WindowData, T>)>
         T* getWindowData(const window_id windowID) { return reinterpret_cast<T*>(getWindowData(windowID)); }
 
-        void onWindowResized(window_id windowID, const math::uvector2& newSize);
+        virtual void onWindowResized(window_id windowID, const math::uvector2& newSize);
 
     private:
         
