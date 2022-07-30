@@ -54,6 +54,8 @@ namespace JumaRenderEngine
 
         jmap<window_id, WindowData_DirectX12_GLFW> m_Windows;
 
+        jmap<window_id, math::uvector2> m_ChangedWindowSizes;
+
 
         static void GLFW_ErrorCallback(int errorCode, const char* errorMessage);
         static void GLFW_FramebufferResizeCallback(GLFWwindow* windowGLFW, int width, int height);

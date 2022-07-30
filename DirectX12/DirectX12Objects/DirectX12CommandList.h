@@ -27,7 +27,8 @@ namespace JumaRenderEngine
 
         ID3D12GraphicsCommandList2* get() const { return m_CommandList; }
 
-        void execute();
+        void execute(bool signalFence = true);
+        void signal();
         void waitForFinish();
         void markUnused();
         

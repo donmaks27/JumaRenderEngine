@@ -35,6 +35,24 @@ namespace JumaRenderEngine
         }
 
         waitForPreviousRenderFinish();
+
+        const WindowController* windowController = getRenderEngine()->getWindowController();
+        for (const auto& windowID : windowController->getWindowIDs())
+        {
+            const WindowData_DirectX12* windowData = windowController->findWindowData<WindowData_DirectX12>(windowID);
+            DirectX12Swapchain* swapchain = windowData != nullptr ? windowData->swapchain : nullptr;
+            if (swapchain == nullptr)
+            {
+                JUMA_RENDER_LOG(warning, JSTR("Failed to get swapchain for window ") + TO_JSTR(windowID));
+                return false;
+            }
+            if (!swapchain->updateSwapchain())
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to update swapchain for window ") + TO_JSTR(windowID));
+                return false;
+            }
+        }
+
         return startCommandListRecord(renderOptions);
     }
     void RenderPipeline_DirectX12::onFinishRender(RenderOptions* renderOptions)
@@ -65,7 +83,7 @@ namespace JumaRenderEngine
     }
     void RenderPipeline_DirectX12::finishCommandListRecord(RenderOptions* renderOptions)
     {
-        m_RenderCommandList->execute();
+        m_RenderCommandList->execute(false);
 
         const WindowController* windowController = getRenderEngine()->getWindowController();
         for (const auto& windowID : windowController->getWindowIDs())
@@ -77,6 +95,8 @@ namespace JumaRenderEngine
             }
             windowData->swapchain->present();
         }
+
+        m_RenderCommandList->signal();
     }
 }
 

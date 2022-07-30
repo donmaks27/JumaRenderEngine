@@ -8,6 +8,7 @@
 
 #include "DirectX12Texture.h"
 #include "renderEngine/DirectX12/RenderEngine_DirectX12.h"
+#include "renderEngine/DirectX12/RenderTarget_DirectX12.h"
 #include "renderEngine/window/DirectX12/WindowController_DirectX12.h"
 
 namespace JumaRenderEngine
@@ -19,8 +20,8 @@ namespace JumaRenderEngine
 
     bool DirectX12Swapchain::init(const window_id windowID)
     {
-        RenderEngine_DirectX12* renderEngine = getRenderEngine<RenderEngine_DirectX12>();
-        const WindowController_DirectX12* windowController = renderEngine->getWindowController<WindowController_DirectX12>();
+        const RenderEngine_DirectX12* renderEngine = getRenderEngine<RenderEngine_DirectX12>();
+        WindowController_DirectX12* windowController = renderEngine->getWindowController<WindowController_DirectX12>();
         const WindowData_DirectX12* windowData = windowController->findWindowData<WindowData_DirectX12>(windowID);
         if (windowData == nullptr)
         {
@@ -80,36 +81,48 @@ namespace JumaRenderEngine
             return false;
         }
 
+        m_WindowID = windowID;
+        m_Swapchain = swapchain4;
+        m_SwapchainBuffersSize = windowData->properties.size;
+        if (!getSwapchainBuffers(buffersCount))
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to get swapchain buffers"));
+            clearDirectX();
+            return false;
+        }
+
+        m_SwapchainInvalid = false;
+        m_WindowPropertiesChanged = false;
+
+        windowController->OnWindowPropertiesChanged.bind(this, &DirectX12Swapchain::onWindowPropertiesChanged);
+        return true;
+    }
+    bool DirectX12Swapchain::getSwapchainBuffers(const uint8 buffersCount)
+    {
+        RenderEngine* renderEngine = getRenderEngine();
+
         m_SwapchainBuffers.reserve(buffersCount);
         for (uint8 bufferIndex = 0; bufferIndex < buffersCount; bufferIndex++)
         {
             ID3D12Resource* swapchainBuffer = nullptr;
-            if (FAILED(swapchain4->GetBuffer(bufferIndex, IID_PPV_ARGS(&swapchainBuffer))))
+            const HRESULT result = m_Swapchain->GetBuffer(bufferIndex, IID_PPV_ARGS(&swapchainBuffer));
+            if (FAILED(result))
             {
                 JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to get DirectX12 swapchain buffer"));
-                for (const auto& buffer : m_SwapchainBuffers)
-                {
-                    buffer.getResource()->Release();
-                }
-                m_SwapchainBuffers.clear();
-                swapchain4->Release();
                 return false;
             }
             renderEngine->registerObject(&m_SwapchainBuffers.addDefault())->init(swapchainBuffer, D3D12_RESOURCE_STATE_PRESENT);
         }
 
-        m_Swapchain = swapchain4;
         m_CurrentBufferIndex = static_cast<uint8>(m_Swapchain->GetCurrentBackBufferIndex());
         return true;
     }
 
     void DirectX12Swapchain::clearDirectX()
     {
-        for (const auto& buffer : m_SwapchainBuffers)
-        {
-            buffer.getResource()->Release();
-        }
-        m_SwapchainBuffers.clear();
+        getRenderEngine()->getWindowController()->OnWindowPropertiesChanged.unbind(this, &DirectX12Swapchain::onWindowPropertiesChanged);
+
+        clearSwapchainBuffers();
 
         if (m_Swapchain != nullptr)
         {
@@ -117,7 +130,19 @@ namespace JumaRenderEngine
             m_Swapchain = nullptr;
         }
 
+        m_WindowID = window_id_INVALID;
+        m_SwapchainBuffersSize = { 0, 0 };
         m_CurrentBufferIndex = 0;
+        m_SwapchainInvalid = true;
+        m_WindowPropertiesChanged = false;
+    }
+    void DirectX12Swapchain::clearSwapchainBuffers()
+    {
+        for (const auto& buffer : m_SwapchainBuffers)
+        {
+            buffer.getResource()->Release();
+        }
+        m_SwapchainBuffers.clear();
     }
 
     bool DirectX12Swapchain::present()
@@ -135,6 +160,63 @@ namespace JumaRenderEngine
         }
 
         m_CurrentBufferIndex = static_cast<uint8>(m_Swapchain->GetCurrentBackBufferIndex());
+        return true;
+    }
+
+    void DirectX12Swapchain::onWindowPropertiesChanged(WindowController* windowController, const WindowData* windowData)
+    {
+        if (windowData->windowID == getWindowID())
+        {
+            m_WindowPropertiesChanged = true;
+            if (windowData->properties.size != m_SwapchainBuffersSize)
+            {
+                invalidate();
+            }
+        }
+    }
+
+    bool DirectX12Swapchain::updateSwapchain()
+    {
+        if (m_SwapchainInvalid)
+        {
+            const WindowData_DirectX12* windowData = getRenderEngine()->getWindowController()->findWindowData<WindowData_DirectX12>(getWindowID());
+            RenderTarget_DirectX12* renderTarget = windowData != nullptr ? dynamic_cast<RenderTarget_DirectX12*>(windowData->windowRenderTarget) : nullptr;
+            if (renderTarget == nullptr)
+            {
+                JUMA_RENDER_LOG(error, JSTR("Can't find render target of window ") + TO_JSTR(getWindowID()));
+                clearDirectX();
+                return false;
+            }
+            renderTarget->clearRenderTarget();
+
+            DXGI_SWAP_CHAIN_DESC swapchainDescription{};
+            m_Swapchain->GetDesc(&swapchainDescription);
+
+            clearSwapchainBuffers();
+            const HRESULT result = m_Swapchain->ResizeBuffers(0, windowData->properties.size.x, windowData->properties.size.y, DXGI_FORMAT_UNKNOWN, swapchainDescription.Flags);
+            if (FAILED(result))
+            {
+                JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to resize swapchain"));
+                clearDirectX();
+                return false;
+            }
+            m_SwapchainBuffersSize = windowData->properties.size;
+            if (!getSwapchainBuffers(static_cast<uint8>(swapchainDescription.BufferCount)))
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to update swapchain buffers"));
+                clearDirectX();
+                return false;
+            }
+
+            m_SwapchainInvalid = false;
+            m_WindowPropertiesChanged = false;
+            OnParentWindowPropertiesChanged.call(this);
+        }
+        else if (m_WindowPropertiesChanged)
+        {
+            m_WindowPropertiesChanged = false;
+            OnParentWindowPropertiesChanged.call(this);
+        }
         return true;
     }
 }

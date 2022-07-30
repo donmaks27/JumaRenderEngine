@@ -65,7 +65,7 @@ namespace JumaRenderEngine
         m_Executed = false;
     }
 
-    void DirectX12CommandList::execute()
+    void DirectX12CommandList::execute(const bool signalFence)
     {
         if (m_Executed)
         {
@@ -75,7 +75,10 @@ namespace JumaRenderEngine
         m_CommandList->Close();
         ID3D12CommandList* const commandLists[] = { m_CommandList };
         m_ParentCommandQueue->get()->ExecuteCommandLists(1, commandLists);
-        m_FenceValue = m_ParentCommandQueue->signalFence();
+        if (signalFence)
+        {
+            m_FenceValue = m_ParentCommandQueue->signalFence();
+        }
 
         m_Executed = true;
         for (auto& textureStates : m_TextureStates)
@@ -88,6 +91,13 @@ namespace JumaRenderEngine
         }
         m_TextureStates.clear();
         m_BufferStates.clear();
+    }
+    void DirectX12CommandList::signal()
+    {
+        if (m_Executed)
+        {
+            m_FenceValue = m_ParentCommandQueue->signalFence();
+        }
     }
 
     void DirectX12CommandList::waitForFinish()

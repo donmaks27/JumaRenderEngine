@@ -25,7 +25,18 @@ namespace JumaRenderEngine
         {
             return false;
         }
-        if (!(isWindowRenderTarget() ? initWindowRenderTarget() : initRenderTarget()))
+        if (isWindowRenderTarget())
+        {
+            if (!initWindowRenderTarget())
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to init DirectX12 window render target"));
+                return false;
+            }
+
+            const WindowData_DirectX12* windowData = getRenderEngine()->getWindowController()->findWindowData<WindowData_DirectX12>(getWindowID());
+            windowData->swapchain->OnParentWindowPropertiesChanged.bind(this, &RenderTarget_DirectX12::onParentWindowPropertiesChanged);
+        }
+        else if (!initRenderTarget())
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to init DirectX12 render target"));
             return false;
@@ -146,10 +157,14 @@ namespace JumaRenderEngine
         const uint8 samplesCount = GetTextureSamplesNumber(samples);
         const bool sholdResolve = samplesCount > 1;
         const math::uvector2 size = getSize();
+        const uint8 colorMipLevelsCount = sholdResolve ? 1 : 0;
+        //const uint8 colorMipLevelsCount = 1;
+        const uint8 resolveMipLevelsCount = 0;
+        //const uint8 resolveMipLevelsCount = 1;
 
         DirectX12Texture* renderTexture = renderEngine->createObject<DirectX12Texture>();
         renderTexture->initColor(
-            size, samplesCount, format, sholdResolve ? 1 : 0, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET
+            size, samplesCount, format, colorMipLevelsCount, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET
         );
         if (!renderTexture->isValid())
         {
@@ -175,7 +190,7 @@ namespace JumaRenderEngine
         if (sholdResolve)
         {
             resolveTexture = renderEngine->createObject<DirectX12Texture>();
-            resolveTexture->initColor(size, 1, format, 0, D3D12_RESOURCE_STATE_RESOLVE_DEST);
+            resolveTexture->initColor(size, 1, format, resolveMipLevelsCount, D3D12_RESOURCE_STATE_RESOLVE_DEST);
             if (!resolveTexture->isValid())
             {
                 JUMA_RENDER_LOG(error, JSTR("Failed to create resolve texture"));
@@ -235,6 +250,16 @@ namespace JumaRenderEngine
 
     void RenderTarget_DirectX12::clearDirectX()
     {
+        const WindowData_DirectX12* windowData = getRenderEngine()->getWindowController()->findWindowData<WindowData_DirectX12>(getWindowID());
+        if ((windowData != nullptr) && (windowData->swapchain != nullptr))
+        {
+            windowData->swapchain->OnParentWindowPropertiesChanged.unbind(this, &RenderTarget_DirectX12::onParentWindowPropertiesChanged);
+        }
+
+        clearRenderTarget();
+    }
+    void RenderTarget_DirectX12::clearRenderTarget()
+    {
         clearMipGeneratorTarget();
 
         if (m_DescriptorHeapDSV != nullptr)
@@ -271,6 +296,25 @@ namespace JumaRenderEngine
             }
         }
         m_ResultTextures.clear();
+    }
+
+    void RenderTarget_DirectX12::onParentWindowPropertiesChanged(DirectX12Swapchain* swapchain)
+    {
+        const WindowData* windowData = getRenderEngine()->getWindowController()->findWindowData(getWindowID());
+        if (windowData == nullptr)
+        {
+            JUMA_RENDER_LOG(error, JSTR("Failed to find window ") + TO_JSTR(getWindowID()));
+            return;
+        }
+
+        changeProperties(swapchain->getBuffersSize(), windowData->properties.samples);
+    }
+    void RenderTarget_DirectX12::onPropertiesChanged(const math::uvector2& prevSize, TextureSamples prevSamples)
+    {
+        Super::onPropertiesChanged(prevSize, prevSamples);
+
+        clearRenderTarget();
+        initWindowRenderTarget();
     }
 
     bool RenderTarget_DirectX12::onStartRender(RenderOptions* renderOptions)
@@ -396,7 +440,7 @@ namespace JumaRenderEngine
             }
             else
             {
-                commandListObject->changeTextureState(renderTexture, D3D12_RESOURCE_STATE_PRESENT);
+                commandListObject->changeTextureState(resolveTexture, D3D12_RESOURCE_STATE_PRESENT);
             }
             commandListObject->applyStateChanges();
         }

@@ -368,7 +368,7 @@ namespace JumaRenderEngine
             }
         }
 
-        DirectX12CommandQueue* commandQueue = renderEngine->getCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
+        DirectX12CommandQueue* commandQueue = renderEngine->getCommandQueue(D3D12_COMMAND_LIST_TYPE_COMPUTE);
         DirectX12CommandList* commandList = commandQueue->getCommandList();
         for (const auto& buffer : m_UniformBuffers)
         {

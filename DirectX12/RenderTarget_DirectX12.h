@@ -13,11 +13,14 @@
 
 namespace JumaRenderEngine
 {
+    class DirectX12Swapchain;
     class DirectX12Texture;
 
     class RenderTarget_DirectX12 : public RenderTarget, public DirectX12MipGeneratorTarget
     {
         using Super = RenderTarget;
+
+        friend DirectX12Swapchain;
 
     public:
         RenderTarget_DirectX12() = default;
@@ -41,6 +44,8 @@ namespace JumaRenderEngine
             return nullptr;
         }
 
+        virtual void onPropertiesChanged(const math::uvector2& prevSize, TextureSamples prevSamples) override;
+
     private:
 
         DirectX12Texture* m_ColorTexture = nullptr;
@@ -56,6 +61,9 @@ namespace JumaRenderEngine
         bool initRenderTarget();
 
         void clearDirectX();
+        void clearRenderTarget();
+
+        void onParentWindowPropertiesChanged(DirectX12Swapchain* swapchain);
     };
 }
 
