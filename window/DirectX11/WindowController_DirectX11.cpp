@@ -5,7 +5,7 @@
 #if defined(JUMARENDERENGINE_INCLUDE_RENDER_API_DIRECTX11)
 
 #include <d3d11_1.h>
-#include <dxgi1_3.h>
+#include <dxgi1_5.h>
 
 #include "renderEngine/DirectX11/RenderEngine_DirectX11.h"
 #include "renderEngine/DirectX11/RenderTarget_DirectX11.h"
@@ -13,13 +13,52 @@
 
 namespace JumaRenderEngine
 {
+    bool IsTearingSupported_DirectX11()
+    {
+        IDXGIFactory4* factory4 = nullptr;
+#if defined(JDEBUG)
+        constexpr UINT createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+#else
+        constexpr UINT createFactoryFlags = 0;
+#endif
+        HRESULT result = CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&factory4));
+        if (FAILED(result))
+        {
+            return false;
+        }
+
+        IDXGIFactory5* factory5 = nullptr;
+        result = factory4->QueryInterface(&factory5);
+        factory4->Release();
+        if (FAILED(result))
+        {
+            return false;
+        }
+
+        BOOL allowTearing = FALSE;
+        factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
+        factory5->Release();
+        return allowTearing == TRUE;
+    }
+
     WindowController_DirectX11::~WindowController_DirectX11()
     {
         clearDirectX11();
     }
 
+    bool WindowController_DirectX11::initWindowController()
+    {
+        if (!Super::initWindowController())
+        {
+            return false;
+        }
+        m_TearingSupported = IsTearingSupported_DirectX11();
+        return true;
+    }
+
     void WindowController_DirectX11::clearDirectX11()
     {
+        m_TearingSupported = false;
     }
 
     void WindowController_DirectX11::clearWindowDirectX11(const window_id windowID, WindowData_DirectX11& windowData)
@@ -73,7 +112,7 @@ namespace JumaRenderEngine
             return false;
         }
 
-        constexpr uint8 buffersCount = 3;
+        constexpr uint8 buffersCount = 2;
         DXGI_SWAP_CHAIN_DESC1 swapchainDescription{};
         swapchainDescription.Width = windowData.properties.size.x;
         swapchainDescription.Height = windowData.properties.size.y;
@@ -86,7 +125,7 @@ namespace JumaRenderEngine
         swapchainDescription.Scaling = DXGI_SCALING_STRETCH;
         swapchainDescription.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         swapchainDescription.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-        swapchainDescription.Flags = 0; // TODO: Tearing supported?
+        swapchainDescription.Flags = m_TearingSupported ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
         result = factory->CreateSwapChainForHwnd(device, windowData.windowHandler, &swapchainDescription, nullptr, nullptr, &windowData.swapchain);
         factory->Release();
         if (FAILED(result))
@@ -115,8 +154,7 @@ namespace JumaRenderEngine
         {
             renderTarget->clearRenderTarget();
         }
-        constexpr uint8 buffersCount = 3;
-        windowData->swapchain->ResizeBuffers(buffersCount, newSize.x, newSize.y, GetDirectX11FormatByTextureFormat(TextureFormat::RGBA8), 0);
+        windowData->swapchain->ResizeBuffers(0, newSize.x, newSize.y, DXGI_FORMAT_UNKNOWN, m_TearingSupported ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
         
         OnWindowPropertiesChanged.call(this, windowData);
     }

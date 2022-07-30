@@ -35,7 +35,7 @@ namespace JumaRenderEngine
         textureDescription.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
         ID3D11Texture2D* texture = nullptr;
         HRESULT result = device->CreateTexture2D(&textureDescription, nullptr, &texture);
-        if (result < 0)
+        if (FAILED(result))
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 texture"));
             return false;
@@ -48,7 +48,7 @@ namespace JumaRenderEngine
         textureViewDescription.Texture2D.MipLevels = textureDescription.MipLevels;
         ID3D11ShaderResourceView* textureView = nullptr;
         result = device->CreateShaderResourceView(texture, &textureViewDescription, &textureView);
-        if (result < 0)
+        if (FAILED(result))
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 texture shader resource view"));
             texture->Release();

@@ -36,6 +36,8 @@ namespace JumaRenderEngine
 
     protected:
 
+        virtual bool initWindowController() override;
+
         void clearWindowDirectX11(window_id windowID, WindowData_DirectX11& windowData);
 
         bool createWindowSwapchain(window_id windowID, WindowData_DirectX11& windowData);
@@ -43,6 +45,9 @@ namespace JumaRenderEngine
         virtual void onWindowResized(window_id windowID, const math::uvector2& newSize) override;
 
     private:
+
+        bool m_TearingSupported = false;
+
 
         void clearDirectX11();
 

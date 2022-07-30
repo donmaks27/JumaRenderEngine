@@ -176,15 +176,15 @@ namespace JumaRenderEngine
 
     bool RenderTarget_Vulkan::onStartRender(RenderOptions* renderOptions)
     {
-        if (!Super::onStartRender(renderOptions))
-        {
-            return false;
-        }
-
         const int32 framebufferIndex = getRequiredFramebufferIndex();
         if (!m_Framebuffers.isValidIndex(framebufferIndex))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to get vulkan framebuffer"));
+            return false;
+        }
+
+        if (!Super::onStartRender(renderOptions))
+        {
             return false;
         }
 

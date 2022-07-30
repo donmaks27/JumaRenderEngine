@@ -41,7 +41,7 @@ namespace JumaRenderEngine
         D3D11_SUBRESOURCE_DATA vertexBufferData{};
         vertexBufferData.pSysMem = verticesData->getVertices();
         HRESULT result = device->CreateBuffer(&vertexBufferDescription, &vertexBufferData, &vertexBuffer);
-        if (result < 0)
+        if (FAILED(result))
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 vertex buffer"));
             return false;
@@ -61,7 +61,7 @@ namespace JumaRenderEngine
             D3D11_SUBRESOURCE_DATA indexBufferData{};
             indexBufferData.pSysMem = verticesData->getIndices();
             result = device->CreateBuffer(&indexBufferDescription, &indexBufferData, &indexBuffer);
-            if (result < 0)
+            if (FAILED(result))
             {
                 JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 index buffer"));
                 vertexBuffer->Release();

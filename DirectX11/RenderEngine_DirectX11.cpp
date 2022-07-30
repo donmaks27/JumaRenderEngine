@@ -56,7 +56,7 @@ namespace JumaRenderEngine
             createDeviceFlags, featureLevels, 4, D3D11_SDK_VERSION, 
             &m_Device, nullptr, &m_DeviceContext
         );
-        if (result < 0)
+        if (FAILED(result))
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 device"));
             return false;
@@ -226,7 +226,7 @@ namespace JumaRenderEngine
         samplerDescription.MaxLOD = FLT_MAX;
         ID3D11SamplerState* samplerState = nullptr;
         const HRESULT result = m_Device->CreateSamplerState(&samplerDescription, &samplerState);
-        if (result < 0)
+        if (FAILED(result))
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 sampler state"));
             return nullptr;

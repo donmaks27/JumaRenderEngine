@@ -41,7 +41,7 @@ namespace JumaRenderEngine
                 description.StructureByteStride = description.ByteWidth;
                 ID3D11Buffer* uniformBuffer = nullptr;
                 const HRESULT result = device->CreateBuffer(&description, nullptr, &uniformBuffer);
-                if (result < 0)
+                if (FAILED(result))
                 {
                     JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 uniform buffer"));
                     continue;
@@ -57,7 +57,7 @@ namespace JumaRenderEngine
         depthStateDescription.DepthFunc = D3D11_COMPARISON_LESS;
         depthStateDescription.StencilEnable = FALSE;
         const HRESULT result = device->CreateDepthStencilState(&depthStateDescription, &m_DepthStencilState);
-        if (result < 0)
+        if (FAILED(result))
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 depth stencil state"));
             clearDirectX();
@@ -208,7 +208,7 @@ namespace JumaRenderEngine
 
                 mappedData = &uniformBuffersData[uniform.value.shaderLocation];
                 const HRESULT result = deviceContext->Map(uniformBuffer->buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, mappedData);
-                if (result < 0)
+                if (FAILED(result))
                 {
                     JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to map DirectX11 uniform buffer data"));
                     continue;

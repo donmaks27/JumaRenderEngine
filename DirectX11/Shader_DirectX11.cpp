@@ -27,7 +27,7 @@ namespace JumaRenderEngine
 
         ID3DBlob* shaderBlob = nullptr;
         const HRESULT result = D3DReadFileToBlob(fileNameWide.c_str(), &shaderBlob);
-        if (result < 0)
+        if (FAILED(result))
         {
             if (!optional)
             {
@@ -79,7 +79,7 @@ namespace JumaRenderEngine
 
         ID3D11VertexShader* vertexShader = nullptr;
         HRESULT result = device->CreateVertexShader(vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), nullptr, &vertexShader);
-        if (result < 0)
+        if (FAILED(result))
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 vertex shader"));
             fragmentShaderBlob->Release();
@@ -89,7 +89,7 @@ namespace JumaRenderEngine
 
         ID3D11PixelShader* fragmentShader = nullptr;
         result = device->CreatePixelShader(fragmentShaderBlob->GetBufferPointer(), fragmentShaderBlob->GetBufferSize(), nullptr, &fragmentShader);
-        if (result < 0)
+        if (FAILED(result))
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 vertex shader"));
             vertexShader->Release();
@@ -176,7 +176,7 @@ namespace JumaRenderEngine
             m_VertexShaderBlob->GetBufferPointer(), m_VertexShaderBlob->GetBufferSize(), 
             &inputLayout
         );
-        if (result < 0)
+        if (FAILED(result))
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 input layout for vertex ") + vertexName.toString());
             return nullptr;

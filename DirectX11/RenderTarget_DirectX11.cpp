@@ -54,7 +54,7 @@ namespace JumaRenderEngine
 
         ID3D11Texture2D* swapchainImage = nullptr;
         const HRESULT result = swapchain->GetBuffer(0, IID_PPV_ARGS(&swapchainImage));
-        if (result < 0)
+        if (FAILED(result))
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to get DirectX11 swapchain image"));
             return false;
@@ -100,7 +100,7 @@ namespace JumaRenderEngine
                 colorImageDescription.CPUAccessFlags = 0;
                 colorImageDescription.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
                 result = device->CreateTexture2D(&colorImageDescription, nullptr, &colorImage);
-                if (result < 0)
+                if (FAILED(result))
                 {
                     JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 color image"));
                     return false;
@@ -112,7 +112,7 @@ namespace JumaRenderEngine
                 resourceViewDescription.Texture2D.MostDetailedMip = 0;
                 resourceViewDescription.Texture2D.MipLevels = colorImageDescription.MipLevels;
                 result = device->CreateShaderResourceView(colorImage, &resourceViewDescription, &resultImageView);
-                if (result < 0)
+                if (FAILED(result))
                 {
                     JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 color image shader view"));
                     colorImage->Release();
@@ -135,14 +135,14 @@ namespace JumaRenderEngine
             colorImageDescription.CPUAccessFlags = 0;
             colorImageDescription.MiscFlags = 0;
             result = device->CreateTexture2D(&colorImageDescription, nullptr, &colorImage);
-            if (result < 0)
+            if (FAILED(result))
             {
                 JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 color image"));
                 return false;
             }
         }
         result = device->CreateRenderTargetView(colorImage, nullptr, &colorImageView);
-        if (result < 0)
+        if (FAILED(result))
         {
             JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 color image view"));
             if (resultImageView != nullptr)
@@ -168,7 +168,7 @@ namespace JumaRenderEngine
             depthImageDescription.CPUAccessFlags = 0;
             depthImageDescription.MiscFlags = 0;
             result = device->CreateTexture2D(&depthImageDescription, nullptr, &depthImage);
-            if (result < 0)
+            if (FAILED(result))
             {
                 JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 depth image"));
                 if (resultImageView != nullptr)
@@ -180,7 +180,7 @@ namespace JumaRenderEngine
                 return false;
             }
             result = device->CreateDepthStencilView(depthImage, nullptr, &depthImageView);
-            if (result < 0)
+            if (FAILED(result))
             {
                 JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 depth image view"));
                 depthImage->Release();
@@ -215,7 +215,7 @@ namespace JumaRenderEngine
                 resolveImageDescription.CPUAccessFlags = 0;
                 resolveImageDescription.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
                 result = device->CreateTexture2D(&resolveImageDescription, nullptr, &resolveImage);
-                if (result < 0)
+                if (FAILED(result))
                 {
                     JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 resolve image"));
                     if (useDepth)
@@ -234,7 +234,7 @@ namespace JumaRenderEngine
                 resourceViewDescription.Texture2D.MostDetailedMip = 0;
                 resourceViewDescription.Texture2D.MipLevels = resolveImageDescription.MipLevels;
                 result = device->CreateShaderResourceView(resolveImage, &resourceViewDescription, &resultImageView);
-                if (result < 0)
+                if (FAILED(result))
                 {
                     JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 color image shader view"));
                     resolveImage->Release();
@@ -323,11 +323,18 @@ namespace JumaRenderEngine
     {
         Super::onPropertiesChanged(prevSize, prevSamples);
 
+        clearRenderTarget();
         initWindowRenderTarget();
     }
 
     bool RenderTarget_DirectX11::onStartRender(RenderOptions* renderOptions)
     {
+        if (m_ColorAttachmentView == nullptr)
+        {
+            JUMA_RENDER_LOG(error, JSTR("Invalid render target"));
+            return false;
+        }
+
         if (!Super::onStartRender(renderOptions))
         {
             return false;
