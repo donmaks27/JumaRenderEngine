@@ -21,6 +21,8 @@ namespace JumaRenderEngine
         jstring title;
         math::uvector2 size;
         TextureSamples samples = TextureSamples::X1;
+
+        bool minimized = false;
     };
     struct WindowData
     {
@@ -53,14 +55,17 @@ namespace JumaRenderEngine
         const T* findWindowData(const window_id windowID) const { return reinterpret_cast<const T*>(findWindowData(windowID)); }
         virtual jarray<window_id> getWindowIDs() const = 0;
 
-        virtual bool getActualWindowSize(window_id windowID, math::uvector2& outSize) const;
-
         virtual bool shouldCloseWindow(window_id windowID) const = 0;
 
-        virtual bool onStartRender() { return true; }
-        virtual bool onStartWindowRender(window_id windowID) { return true; }
+        virtual bool onStartRender() { return !isAllWindowsMinimized(); }
+        virtual bool onStartWindowRender(const window_id windowID) { return !isWindowMinimized(windowID); }
         virtual void onFinishWindowRender(window_id windowID) {}
         virtual void onFinishRender() {}
+        virtual void updateWindows() {}
+
+        virtual bool getActualWindowSize(window_id windowID, math::uvector2& outSize) const;
+        bool isAllWindowsMinimized() const { return m_WindowsCount == m_MinimizedWindowsCount; }
+        bool isWindowMinimized(window_id windowID) const;
 
         virtual bool setWindowTitle(window_id windowID, const jstring& title) = 0;
 
@@ -77,9 +82,14 @@ namespace JumaRenderEngine
         T* getWindowData(const window_id windowID) { return reinterpret_cast<T*>(getWindowData(windowID)); }
 
         virtual void onWindowResized(window_id windowID, const math::uvector2& newSize);
+        virtual void onWindowMinimized(window_id windowID, bool minimized);
 
     private:
-        
+
+        uint8 m_WindowsCount = 0;
+        uint8 m_MinimizedWindowsCount = 0;
+
+
         bool createRenderTarget(window_id windowID, WindowData& windowData);
         void clearRenderTarget(window_id windowID, WindowData& windowData);
     };

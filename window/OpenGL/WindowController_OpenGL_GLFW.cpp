@@ -82,6 +82,7 @@ namespace JumaRenderEngine
 
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+        glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
         GLFWwindow* window = glfwCreateWindow(
             static_cast<int>(properties.size.x), static_cast<int>(properties.size.y), *properties.title, nullptr, m_DefaultWindow
         );
@@ -96,6 +97,7 @@ namespace JumaRenderEngine
         windowData.windowController = this;
         glfwSetWindowUserPointer(window, &windowData);
         glfwSetFramebufferSizeCallback(window, WindowController_OpenGL_GLFW::GLFW_FramebufferResizeCallback);
+        glfwSetWindowIconifyCallback(window, WindowController_OpenGL_GLFW::GLFW_WindowMinimizationCallback);
 
         const window_id prevActiveWindowID = getActiveWindowID();
         setActiveWindowID(windowID);
@@ -109,6 +111,14 @@ namespace JumaRenderEngine
         if (windowData != nullptr)
         {
             windowData->windowController->m_ChangedWindowSizes.add(windowData->windowID, { math::max<uint32>(width, 0), math::max<uint32>(height, 0) });
+        }
+    }
+    void WindowController_OpenGL_GLFW::GLFW_WindowMinimizationCallback(GLFWwindow* windowGLFW, const int minimized)
+    {
+        const WindowData_OpenGL_GLFW* windowData = static_cast<WindowData_OpenGL_GLFW*>(glfwGetWindowUserPointer(windowGLFW));
+        if (windowData != nullptr)
+        {
+            windowData->windowController->onWindowMinimized(windowData->windowID, minimized == GLFW_TRUE);
         }
     }
 
@@ -167,9 +177,9 @@ namespace JumaRenderEngine
             glfwSwapBuffers(windowData->windowGLFW);
         }
     }
-    void WindowController_OpenGL_GLFW::onFinishRender()
+    void WindowController_OpenGL_GLFW::updateWindows()
     {
-        Super::onFinishRender();
+        Super::updateWindows();
 
         glfwPollEvents();
 

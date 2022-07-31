@@ -209,28 +209,26 @@ namespace JumaRenderEngine
     void RenderPipeline::callRender(RenderOptions* renderOptions)
     {
         renderOptions->renderPipeline = this;
-        if (!onStartRender(renderOptions))
+        if (onStartRender(renderOptions))
         {
-            return;
-        }
-        
-        for (const auto& renderQueueEntry : getPipelineQueue())
-        {
-            const RenderPipelineStage* pipelineStage = getPipelineStage(renderQueueEntry.stage);
-            renderOptions->renderTarget = pipelineStage->renderTarget;
-            if (!pipelineStage->renderTarget->onStartRender(renderOptions))
+            for (const auto& renderQueueEntry : getPipelineQueue())
             {
-                continue;
+                const RenderPipelineStage* pipelineStage = getPipelineStage(renderQueueEntry.stage);
+                renderOptions->renderTarget = pipelineStage->renderTarget;
+                if (!pipelineStage->renderTarget->onStartRender(renderOptions))
+                {
+                    continue;
+                }
+
+                for (const auto& renderPrimitive : pipelineStage->renderPrimitives)
+                {
+                    renderPrimitive.vertexBuffer->render(renderOptions, renderPrimitive.material);
+                }
+                pipelineStage->renderTarget->onFinishRender(renderOptions);
             }
 
-            for (const auto& renderPrimitive : pipelineStage->renderPrimitives)
-            {
-                renderPrimitive.vertexBuffer->render(renderOptions, renderPrimitive.material);
-            }
-            pipelineStage->renderTarget->onFinishRender(renderOptions);
+            onFinishRender(renderOptions);
         }
-
-        onFinishRender(renderOptions);
     }
 
     bool RenderPipeline::onStartRender(RenderOptions* renderOptions)

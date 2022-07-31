@@ -39,7 +39,7 @@ namespace JumaRenderEngine
         virtual bool shouldCloseWindow(window_id windowID) const override;
 
         virtual void onFinishWindowRender(window_id windowID) override;
-        virtual void onFinishRender() override;
+        virtual void updateWindows() override;
 
         virtual bool setWindowTitle(window_id windowID, const jstring& title) override;
 
@@ -63,6 +63,7 @@ namespace JumaRenderEngine
 
         static void GLFW_ErrorCallback(int errorCode, const char* errorMessage);
         static void GLFW_FramebufferResizeCallback(GLFWwindow* windowGLFW, int width, int height);
+        static void GLFW_WindowMinimizationCallback(GLFWwindow* windowGLFW, int minimized);
 
         void clearGLFW();
 

@@ -22,19 +22,20 @@ namespace JumaRenderEngine
             destroyWindow(windowID);
             return false;
         }
+
+        m_WindowsCount++;
         return true;
     }
 
     void WindowController::clearWindow(const window_id windowID, WindowData& windowData)
     {
-        clearRenderTarget(windowID, windowData);
-    }
+        m_WindowsCount--;
+        if (windowData.properties.minimized)
+        {
+            m_MinimizedWindowsCount--;
+        }
 
-    void WindowController::onWindowResized(const window_id windowID, const math::uvector2& newSize)
-    {
-        WindowData* windowData = getWindowData(windowID);
-        windowData->properties.size = newSize;
-        OnWindowPropertiesChanged.call(this, windowData);
+        clearRenderTarget(windowID, windowData);
     }
 
     bool WindowController::createRenderTarget(const window_id windowID, WindowData& windowData)
@@ -95,5 +96,32 @@ namespace JumaRenderEngine
         }
         outSize = windowData->properties.size;
         return true;
+    }
+
+    void WindowController::onWindowResized(const window_id windowID, const math::uvector2& newSize)
+    {
+        WindowData* windowData = getWindowData(windowID);
+        windowData->properties.size = newSize;
+        OnWindowPropertiesChanged.call(this, windowData);
+    }
+
+    void WindowController::onWindowMinimized(const window_id windowID, const bool minimized)
+    {
+        WindowData* windowData = getWindowData(windowID);
+        windowData->properties.minimized = minimized;
+
+        if (minimized)
+        {
+            m_MinimizedWindowsCount++;
+        }
+        else
+        {
+            m_MinimizedWindowsCount--;
+        }
+    }
+    bool WindowController::isWindowMinimized(const window_id windowID) const
+    {
+        const WindowData* windowData = findWindowData(windowID);
+        return windowData != nullptr ? windowData->properties.minimized : false;
     }
 }
