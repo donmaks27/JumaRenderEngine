@@ -144,19 +144,23 @@ namespace JumaRenderEngine
         }
     }
 
-    void WindowController_DirectX11::onWindowResized(const window_id windowID, const math::uvector2& newSize)
+    void WindowController_DirectX11::updateWindowSize(WindowData* windowData, const math::uvector2& newSize)
     {
-        WindowData_DirectX11* windowData = getWindowData<WindowData_DirectX11>(windowID);
-        windowData->properties.size = newSize;
+        Super::updateWindowSize(windowData, newSize);
 
         RenderTarget_DirectX11* renderTarget = dynamic_cast<RenderTarget_DirectX11*>(windowData->windowRenderTarget);
         if (renderTarget != nullptr)
         {
             renderTarget->clearRenderTarget();
         }
-        windowData->swapchain->ResizeBuffers(0, newSize.x, newSize.y, DXGI_FORMAT_UNKNOWN, m_TearingSupported ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
-        
-        OnWindowPropertiesChanged.call(this, windowData);
+
+        IDXGISwapChain1* swapchain = reinterpret_cast<WindowData_DirectX11*>(windowData)->swapchain;
+        if (swapchain != nullptr)
+        {
+            DXGI_SWAP_CHAIN_DESC1 swapchainDescription{};
+            swapchain->GetDesc1(&swapchainDescription);
+            swapchain->ResizeBuffers(0, newSize.x, newSize.y, DXGI_FORMAT_UNKNOWN, swapchainDescription.Flags);
+        }
     }
 
     void WindowController_DirectX11::onFinishWindowRender(const window_id windowID)

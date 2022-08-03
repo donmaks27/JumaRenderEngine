@@ -44,7 +44,7 @@ namespace JumaRenderEngine
             return nullptr;
         }
 
-        virtual void onPropertiesChanged(const math::uvector2& prevSize, TextureSamples prevSamples) override;
+        virtual bool recreateRenderTarget() override;
 
     private:
 
@@ -62,8 +62,6 @@ namespace JumaRenderEngine
 
         void clearDirectX();
         void clearRenderTarget();
-
-        void onParentWindowPropertiesChanged(DirectX12Swapchain* swapchain);
     };
 }
 

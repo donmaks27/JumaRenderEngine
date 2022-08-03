@@ -85,6 +85,7 @@ namespace JumaRenderEngine
         windowData.windowController = this;
         glfwSetWindowUserPointer(window, &windowData);
         glfwSetFramebufferSizeCallback(window, WindowController_DirectX12_GLFW::GLFW_FramebufferResizeCallback);
+        glfwSetWindowIconifyCallback(window, WindowController_DirectX12_GLFW::GLFW_WindowMinimizationCallback);
 
         if (!createWindowSwapchain(windowID, windowData))
         {
@@ -99,7 +100,15 @@ namespace JumaRenderEngine
         const WindowData_DirectX12_GLFW* windowData = static_cast<WindowData_DirectX12_GLFW*>(glfwGetWindowUserPointer(windowGLFW));
         if (windowData != nullptr)
         {
-            windowData->windowController->m_ChangedWindowSizes.add(windowData->windowID, { math::max<uint32>(width, 0), math::max<uint32>(height, 0) });
+            windowData->windowController->onWindowResized(windowData->windowID, { math::max<uint32>(width, 0), math::max<uint32>(height, 0) });
+        }
+    }
+    void WindowController_DirectX12_GLFW::GLFW_WindowMinimizationCallback(GLFWwindow* windowGLFW, int minimized)
+    {
+        const WindowData_DirectX12_GLFW* windowData = static_cast<WindowData_DirectX12_GLFW*>(glfwGetWindowUserPointer(windowGLFW));
+        if (windowData != nullptr)
+        {
+            windowData->windowController->onWindowMinimized(windowData->windowID, minimized == GLFW_TRUE);
         }
     }
 
@@ -136,20 +145,11 @@ namespace JumaRenderEngine
         return glfwWindowShouldClose(windowData->windowGLFW) != GLFW_FALSE;
     }
 
-    void WindowController_DirectX12_GLFW::onFinishRender()
+    void WindowController_DirectX12_GLFW::updateWindows()
     {
-        Super::onFinishRender();
-
         glfwPollEvents();
 
-        if (!m_ChangedWindowSizes.isEmpty())
-        {
-            for (const auto& changedWindowSize : m_ChangedWindowSizes)
-            {
-                onWindowResized(changedWindowSize.key, changedWindowSize.value);
-            }
-            m_ChangedWindowSizes.clear();
-        }
+        Super::updateWindows();
     }
 
     bool WindowController_DirectX12_GLFW::setWindowTitle(window_id windowID, const jstring& title)

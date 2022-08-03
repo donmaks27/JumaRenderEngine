@@ -64,7 +64,6 @@ namespace JumaRenderEngine
     protected:
 
         virtual bool initInternal();
-        virtual math::vector2 getScreenCoordsModifier() const { return { 1.0f, 1.0f }; }
 
         virtual void renderInternal();
         template<typename T, TEMPLATE_ENABLE(is_base<RenderOptions, T>)>

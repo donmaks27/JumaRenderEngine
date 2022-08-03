@@ -13,8 +13,10 @@ namespace JumaRenderEngine
 
     bool RenderTarget::init(const window_id windowID, const TextureSamples samples)
     {
+        WindowController* windowController = getRenderEngine()->getWindowController();
+
         math::uvector2 windowSize;
-        if (!getRenderEngine()->getWindowController()->getActualWindowSize(windowID, windowSize))
+        if (!windowController->getActualWindowSize(windowID, windowSize))
         {
             JUMA_RENDER_LOG(error, JSTR("Failed to get size of window ") + TO_JSTR(windowID));
             return false;
@@ -29,6 +31,9 @@ namespace JumaRenderEngine
             clearData();
             return false;
         }
+
+        m_Invalid = false;
+        windowController->OnWindowPropertiesChanged.bind(this, &RenderTarget::onWindowPropertiesChanged);
         return true;
     }
     bool RenderTarget::init(const TextureFormat format, const math::uvector2& size, const TextureSamples samples)
@@ -48,31 +53,57 @@ namespace JumaRenderEngine
             clearData();
             return false;
         }
-        return true;
-    }
 
-    void RenderTarget::changeProperties(const math::uvector2& size, const TextureSamples samples)
-    {
-        if ((m_Size != size) || (m_TextureSamples != samples))
-        {
-            const math::uvector2 prevSize = m_Size;
-            const TextureSamples prevSamples = m_TextureSamples;
-            m_Size = size;
-            m_TextureSamples = samples;
-            onPropertiesChanged(prevSize, prevSamples);
-        }
+        m_Invalid = false;
+        return true;
     }
 
     void RenderTarget::clearData()
     {
+        if (isWindowRenderTarget())
+        {
+            getRenderEngine()->getWindowController()->OnWindowPropertiesChanged.unbind(this, &RenderTarget::onWindowPropertiesChanged);
+        }
+
         m_WindowID = window_id_INVALID;
         m_TextureSamples = TextureSamples::X1;
         m_Size = { 0, 0 };
         m_Format = TextureFormat::RGBA8;
     }
 
+    bool RenderTarget::update()
+    {
+        if (m_Invalid)
+        {
+            if (!recreateRenderTarget())
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to recreate render target"));
+                return false;
+            }
+            m_Invalid = false;
+        }
+        return true;
+    }
+
+    void RenderTarget::onWindowPropertiesChanged(WindowController* windowController, const WindowData* windowData)
+    {
+        if (windowData->windowID == getWindowID())
+        {
+            if ((windowData->properties.size != m_Size) || (windowData->properties.samples != m_TextureSamples))
+            {
+                m_Size = windowData->properties.size;
+                m_TextureSamples = windowData->properties.samples;
+                invalidate();
+            }
+        }
+    }
+
     bool RenderTarget::onStartRender(RenderOptions* renderOptions)
     {
+        if (!update())
+        {
+            return false;
+        }
         if (isWindowRenderTarget())
         {
             return getRenderEngine()->getWindowController()->onStartWindowRender(getWindowID());

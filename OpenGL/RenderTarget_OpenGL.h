@@ -10,9 +10,6 @@
 
 namespace JumaRenderEngine
 {
-    class WindowController;
-    struct WindowData;
-
     class RenderTarget_OpenGL final : public RenderTarget
     {
         using Super = RenderTarget;
@@ -32,7 +29,7 @@ namespace JumaRenderEngine
 
         virtual bool initInternal() override;
 
-        virtual void onPropertiesChanged(const math::uvector2& prevSize, TextureSamples prevSamples) override;
+        virtual bool recreateRenderTarget() override;
 
     private:
 
@@ -48,8 +45,6 @@ namespace JumaRenderEngine
         void clearFramebuffers();
 
         void clearOpenGL();
-
-        void onWindowPropertiesChanged(WindowController* windowController, const WindowData* windowData);
     };
 }
 

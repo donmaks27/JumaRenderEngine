@@ -110,7 +110,7 @@ namespace JumaRenderEngine
         const WindowData_OpenGL_GLFW* windowData = static_cast<WindowData_OpenGL_GLFW*>(glfwGetWindowUserPointer(windowGLFW));
         if (windowData != nullptr)
         {
-            windowData->windowController->m_ChangedWindowSizes.add(windowData->windowID, { math::max<uint32>(width, 0), math::max<uint32>(height, 0) });
+            windowData->windowController->onWindowResized(windowData->windowID, { math::max<uint32>(width, 0), math::max<uint32>(height, 0) });
         }
     }
     void WindowController_OpenGL_GLFW::GLFW_WindowMinimizationCallback(GLFWwindow* windowGLFW, const int minimized)
@@ -139,14 +139,11 @@ namespace JumaRenderEngine
     void WindowController_OpenGL_GLFW::destroyWindow(const window_id windowID)
     {
         WindowData_OpenGL_GLFW* windowData = m_Windows.find(windowID);
-        if (windowData == nullptr)
+        if (windowData != nullptr)
         {
-            JUMA_RENDER_LOG(warning, JSTR("Can't find window ") + TO_JSTR(windowID));
-            return;
+            clearWindowGLFW(windowID, *windowData);
+            m_Windows.remove(windowID);
         }
-
-        clearWindowGLFW(windowID, *windowData);
-        m_Windows.remove(windowID);
     }
     void WindowController_OpenGL_GLFW::clearWindowGLFW(const window_id windowID, WindowData_OpenGL_GLFW& windowData)
     {
@@ -154,6 +151,8 @@ namespace JumaRenderEngine
 
         glfwSetWindowUserPointer(windowData.windowGLFW, nullptr);
         glfwDestroyWindow(windowData.windowGLFW);
+        windowData.windowGLFW = nullptr;
+        windowData.windowController = nullptr;
     }
 
     bool WindowController_OpenGL_GLFW::shouldCloseWindow(const window_id windowID) const
@@ -179,18 +178,9 @@ namespace JumaRenderEngine
     }
     void WindowController_OpenGL_GLFW::updateWindows()
     {
-        Super::updateWindows();
-
         glfwPollEvents();
 
-        if (!m_ChangedWindowSizes.isEmpty())
-        {
-            for (const auto& changedWindowSize : m_ChangedWindowSizes)
-            {
-                onWindowResized(changedWindowSize.key, changedWindowSize.value);
-            }
-            m_ChangedWindowSizes.clear();
-        }
+        Super::updateWindows();
     }
 
     bool WindowController_OpenGL_GLFW::setWindowTitle(const window_id windowID, const jstring& title)

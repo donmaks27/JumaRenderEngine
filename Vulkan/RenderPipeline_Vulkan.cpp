@@ -103,7 +103,7 @@ namespace JumaRenderEngine
                 return false;
             }
 
-            if (!swapchain->updateSwapchain())
+            if (!swapchain->update())
             {
                 JUMA_RENDER_LOG(error, JSTR("Failed to update swapchain"));
                 return false;

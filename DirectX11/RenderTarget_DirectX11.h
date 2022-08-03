@@ -39,7 +39,7 @@ namespace JumaRenderEngine
 
         virtual bool initInternal() override;
 
-        virtual void onPropertiesChanged(const math::uvector2& prevSize, TextureSamples prevSamples) override;
+        virtual bool recreateRenderTarget() override;
 
     private:
 
@@ -58,8 +58,6 @@ namespace JumaRenderEngine
 
         void clearDirectX11();
         void clearRenderTarget();
-
-        void onWindowPropertiesChanged(WindowController* windowController, const WindowData* windowData);
     };
 }
 

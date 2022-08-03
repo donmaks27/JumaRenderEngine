@@ -12,6 +12,8 @@
 
 namespace JumaRenderEngine
 {
+    class WindowController;
+    struct WindowData;
     struct RenderOptions;
 
     class RenderTarget : public TextureBase
@@ -32,25 +34,30 @@ namespace JumaRenderEngine
         virtual bool onStartRender(RenderOptions* renderOptions);
         virtual void onFinishRender(RenderOptions* renderOptions);
 
+        void invalidate() { m_Invalid = true; }
+        bool update();
+
     protected:
 
         virtual bool initInternal() { return true; }
 
-        void changeProperties(const math::uvector2& size, TextureSamples samples);
-        virtual void onPropertiesChanged(const math::uvector2& prevSize, TextureSamples prevSamples) {}
+        virtual bool recreateRenderTarget() { return false; }
 
     private:
 
         window_id m_WindowID = window_id_INVALID;
         TextureSamples m_TextureSamples = TextureSamples::X1;
-
         math::uvector2 m_Size = { 0, 0 };
         TextureFormat m_Format = TextureFormat::RGBA8;
+
+        bool m_Invalid = true;
 
 
         bool init(window_id windowID, TextureSamples samples);
         bool init(TextureFormat format, const math::uvector2& size, TextureSamples samples);
 
         void clearData();
+
+        void onWindowPropertiesChanged(WindowController* windowController, const WindowData* windowData);
     };
 }

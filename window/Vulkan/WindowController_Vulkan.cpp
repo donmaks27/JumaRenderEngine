@@ -90,6 +90,20 @@ namespace JumaRenderEngine
         outSize = swapchain->getImagesSize();
         return true;
     }
+
+    void WindowController_Vulkan::onWindowMinimized(const window_id windowID, const bool minimized)
+    {
+        Super::onWindowMinimized(windowID, minimized);
+
+        if (minimized)
+        {
+            const WindowData_Vulkan* windowData = findWindowData<WindowData_Vulkan>(windowID);
+            if (windowData != nullptr)
+            {
+                windowData->vulkanSwapchain->invalidate();
+            }
+        }
+    }
 }
 
 #endif

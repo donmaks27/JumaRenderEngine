@@ -85,6 +85,7 @@ namespace JumaRenderEngine
         windowData.windowController = this;
         glfwSetWindowUserPointer(window, &windowData);
         glfwSetFramebufferSizeCallback(window, WindowController_DirectX11_GLFW::GLFW_FramebufferResizeCallback);
+        glfwSetWindowIconifyCallback(window, WindowController_DirectX11_GLFW::GLFW_WindowMinimizationCallback);
 
         if (!createWindowSwapchain(windowID, windowData))
         {
@@ -99,21 +100,26 @@ namespace JumaRenderEngine
         const WindowData_DirectX11_GLFW* windowData = static_cast<WindowData_DirectX11_GLFW*>(glfwGetWindowUserPointer(windowGLFW));
         if (windowData != nullptr)
         {
-            windowData->windowController->m_ChangedWindowSizes.add(windowData->windowID, { math::max<uint32>(width, 0), math::max<uint32>(height, 0) });
+            windowData->windowController->onWindowResized(windowData->windowID, { math::max<uint32>(width, 0), math::max<uint32>(height, 0) });
+        }
+    }
+    void WindowController_DirectX11_GLFW::GLFW_WindowMinimizationCallback(GLFWwindow* windowGLFW, const int minimized)
+    {
+        const WindowData_DirectX11_GLFW* windowData = static_cast<WindowData_DirectX11_GLFW*>(glfwGetWindowUserPointer(windowGLFW));
+        if (windowData != nullptr)
+        {
+            windowData->windowController->onWindowMinimized(windowData->windowID, minimized == GLFW_TRUE);
         }
     }
 
     void WindowController_DirectX11_GLFW::destroyWindow(const window_id windowID)
     {
         WindowData_DirectX11_GLFW* windowData = m_Windows.find(windowID);
-        if (windowData == nullptr)
+        if (windowData != nullptr)
         {
-            JUMA_RENDER_LOG(warning, JSTR("Can't find window ") + TO_JSTR(windowID));
-            return;
+            clearWindowGLFW(windowID, *windowData);
+            m_Windows.remove(windowID);
         }
-
-        clearWindowGLFW(windowID, *windowData);
-        m_Windows.remove(windowID);
     }
     void WindowController_DirectX11_GLFW::clearWindowGLFW(const window_id windowID, WindowData_DirectX11_GLFW& windowData)
     {
@@ -136,20 +142,11 @@ namespace JumaRenderEngine
         return glfwWindowShouldClose(windowData->windowGLFW) != GLFW_FALSE;
     }
 
-    void WindowController_DirectX11_GLFW::onFinishRender()
+    void WindowController_DirectX11_GLFW::updateWindows()
     {
-        Super::onFinishRender();
-
         glfwPollEvents();
 
-        if (!m_ChangedWindowSizes.isEmpty())
-        {
-            for (const auto& changedWindowSize : m_ChangedWindowSizes)
-            {
-                onWindowResized(changedWindowSize.key, changedWindowSize.value);
-            }
-            m_ChangedWindowSizes.clear();
-        }
+        Super::updateWindows();
     }
 
     bool WindowController_DirectX11_GLFW::setWindowTitle(const window_id windowID, const jstring& title)

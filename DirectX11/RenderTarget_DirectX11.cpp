@@ -32,7 +32,6 @@ namespace JumaRenderEngine
                 JUMA_RENDER_LOG(error, JSTR("Failed to initialize DirectX11 window render target"));
                 return false;
             }
-            getRenderEngine()->getWindowController()->OnWindowPropertiesChanged.bind(this, &RenderTarget_DirectX11::onWindowPropertiesChanged);
         }
         else if (!initRenderTarget(nullptr))
         {
@@ -275,11 +274,6 @@ namespace JumaRenderEngine
 
     void RenderTarget_DirectX11::clearDirectX11()
     {
-        if (isWindowRenderTarget())
-        {
-            getRenderEngine()->getWindowController()->OnWindowPropertiesChanged.unbind(this, &RenderTarget_DirectX11::onWindowPropertiesChanged);
-        }
-
         m_RasterizerState = nullptr;
 
         clearRenderTarget();
@@ -312,31 +306,21 @@ namespace JumaRenderEngine
         }
     }
 
-    void RenderTarget_DirectX11::onWindowPropertiesChanged(WindowController* windowController, const WindowData* windowData)
+    bool RenderTarget_DirectX11::recreateRenderTarget()
     {
-        if ((windowData != nullptr) && (windowData->windowID == getWindowID()))
-        {
-            changeProperties(windowData->properties.size, windowData->properties.samples);
-        }
-    }
-    void RenderTarget_DirectX11::onPropertiesChanged(const math::uvector2& prevSize, TextureSamples prevSamples)
-    {
-        Super::onPropertiesChanged(prevSize, prevSamples);
-
         clearRenderTarget();
-        initWindowRenderTarget();
+        return isWindowRenderTarget() ? initWindowRenderTarget() : initRenderTarget(nullptr);
     }
 
     bool RenderTarget_DirectX11::onStartRender(RenderOptions* renderOptions)
     {
+        if (!Super::onStartRender(renderOptions))
+        {
+            return false;
+        }
         if (m_ColorAttachmentView == nullptr)
         {
             JUMA_RENDER_LOG(error, JSTR("Invalid render target"));
-            return false;
-        }
-
-        if (!Super::onStartRender(renderOptions))
-        {
             return false;
         }
 

@@ -8,6 +8,7 @@
 #include "window_id.h"
 #include "jutils/jarray.h"
 #include "jutils/jdelegate_multicast.h"
+#include "jutils/jmap.h"
 #include "jutils/math/vector2.h"
 #include "renderEngine/texture/TextureSamples.h"
 
@@ -21,14 +22,14 @@ namespace JumaRenderEngine
         jstring title;
         math::uvector2 size;
         TextureSamples samples = TextureSamples::X1;
-
-        bool minimized = false;
     };
     struct WindowData
     {
         window_id windowID = window_id_INVALID;
         WindowProperties properties;
         RenderTarget* windowRenderTarget = nullptr;
+
+        bool minimized = false;
     };
 
     CREATE_JUTILS_MULTICAST_DELEGATE_TwoParams(OnWindowControllerWindowEvent, WindowController*, windowController, const WindowData*, windowData);
@@ -54,6 +55,8 @@ namespace JumaRenderEngine
         template<typename T, TEMPLATE_ENABLE(is_base<WindowData, T>)>
         const T* findWindowData(const window_id windowID) const { return reinterpret_cast<const T*>(findWindowData(windowID)); }
         virtual jarray<window_id> getWindowIDs() const = 0;
+        
+        virtual bool getActualWindowSize(window_id windowID, math::uvector2& outSize) const;
 
         virtual bool shouldCloseWindow(window_id windowID) const = 0;
 
@@ -61,9 +64,8 @@ namespace JumaRenderEngine
         virtual bool onStartWindowRender(const window_id windowID) { return !isWindowMinimized(windowID); }
         virtual void onFinishWindowRender(window_id windowID) {}
         virtual void onFinishRender() {}
-        virtual void updateWindows() {}
+        virtual void updateWindows();
 
-        virtual bool getActualWindowSize(window_id windowID, math::uvector2& outSize) const;
         bool isAllWindowsMinimized() const { return m_WindowsCount == m_MinimizedWindowsCount; }
         bool isWindowMinimized(window_id windowID) const;
 
@@ -81,10 +83,14 @@ namespace JumaRenderEngine
         template<typename T, TEMPLATE_ENABLE(is_base<WindowData, T>)>
         T* getWindowData(const window_id windowID) { return reinterpret_cast<T*>(getWindowData(windowID)); }
 
-        virtual void onWindowResized(window_id windowID, const math::uvector2& newSize);
+        void onWindowResized(window_id windowID, const math::uvector2& size);
+        virtual void updateWindowSize(WindowData* windowData, const math::uvector2& newSize);
+
         virtual void onWindowMinimized(window_id windowID, bool minimized);
 
     private:
+
+        jmap<window_id, math::uvector2> m_ChangedWindowSizes;
 
         uint8 m_WindowsCount = 0;
         uint8 m_MinimizedWindowsCount = 0;

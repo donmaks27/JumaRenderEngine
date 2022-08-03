@@ -217,7 +217,7 @@ namespace JumaRenderEngine
                 renderOptions->renderTarget = pipelineStage->renderTarget;
                 if (!pipelineStage->renderTarget->onStartRender(renderOptions))
                 {
-                    continue;
+                    break;
                 }
 
                 for (const auto& renderPrimitive : pipelineStage->renderPrimitives)

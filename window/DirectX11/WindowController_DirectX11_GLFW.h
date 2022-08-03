@@ -8,8 +8,6 @@
 
 #include "WindowController_DirectX11.h"
 
-#include "jutils/jmap.h"
-
 struct GLFWwindow;
 
 namespace JumaRenderEngine
@@ -38,7 +36,7 @@ namespace JumaRenderEngine
 
         virtual bool shouldCloseWindow(window_id windowID) const override;
 
-        virtual void onFinishRender() override;
+        virtual void updateWindows() override;
 
         virtual bool setWindowTitle(window_id windowID, const jstring& title) override;
 
@@ -54,11 +52,10 @@ namespace JumaRenderEngine
 
         jmap<window_id, WindowData_DirectX11_GLFW> m_Windows;
 
-        jmap<window_id, math::uvector2> m_ChangedWindowSizes;
-
         
         static void GLFW_ErrorCallback(int errorCode, const char* errorMessage);
         static void GLFW_FramebufferResizeCallback(GLFWwindow* windowGLFW, int width, int height);
+        static void GLFW_WindowMinimizationCallback(GLFWwindow* windowGLFW, int minimized);
 
         void clearGLFW();
 

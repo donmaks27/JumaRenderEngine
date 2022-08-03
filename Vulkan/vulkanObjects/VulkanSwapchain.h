@@ -32,7 +32,7 @@ namespace JumaRenderEngine
         VulkanSwapchain() = default;
         virtual ~VulkanSwapchain() override;
 
-        OnVulkanSwapchainEvent OnParentWindowPropertiesChanged;
+        OnVulkanSwapchainEvent OnSwapchainRecreated;
 
 
         VkSwapchainKHR get() const { return m_Swapchain; }
@@ -48,7 +48,7 @@ namespace JumaRenderEngine
         bool acquireNextImage(bool& availableForRender);
 
         void invalidate() { m_SwapchainInvalid = true; }
-        bool updateSwapchain();
+        bool update();
 
     private:
 
@@ -63,7 +63,6 @@ namespace JumaRenderEngine
         int8 m_AcquiredSwapchainImageIndex = -1;
         
         bool m_SwapchainInvalid = false;
-        bool m_WindowPropertiesChanged = false;
 
 
         bool init(window_id windowID);

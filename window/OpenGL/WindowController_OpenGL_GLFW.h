@@ -8,8 +8,6 @@
 
 #include "WindowController_OpenGL.h"
 
-#include "jutils/jmap.h"
-
 struct GLFWwindow;
 
 namespace JumaRenderEngine
@@ -57,8 +55,6 @@ namespace JumaRenderEngine
 
         GLFWwindow* m_DefaultWindow = nullptr;
         jmap<window_id, WindowData_OpenGL_GLFW> m_Windows;
-
-        jmap<window_id, math::uvector2> m_ChangedWindowSizes;
 
 
         static void GLFW_ErrorCallback(int errorCode, const char* errorMessage);

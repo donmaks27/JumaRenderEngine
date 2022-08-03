@@ -122,9 +122,10 @@ namespace JumaRenderEngine
     void VulkanSwapchain::clearVulkan()
     {
         const RenderEngine_Vulkan* renderEngine = getRenderEngine<RenderEngine_Vulkan>();
-        VkDevice device = renderEngine->getDevice();
+        WindowController* windowController = renderEngine->getWindowController();
+        windowController->OnWindowPropertiesChanged.unbind(this, &VulkanSwapchain::onWindowPropertiesChanged);
 
-        renderEngine->getWindowController()->OnWindowPropertiesChanged.unbind(this, &VulkanSwapchain::onWindowPropertiesChanged);
+        VkDevice device = renderEngine->getDevice();
 
         if (m_RenderAvailableSemaphore != nullptr)
         {
@@ -178,14 +179,13 @@ namespace JumaRenderEngine
     {
         if (windowData->windowID == getWindowID())
         {
-            m_WindowPropertiesChanged = true;
             if (windowData->properties.size != m_SwapchainImagesSize)
             {
                 invalidate();
             }
         }
     }
-    bool VulkanSwapchain::updateSwapchain()
+    bool VulkanSwapchain::update()
     {
         if (m_SwapchainInvalid)
         {
@@ -196,13 +196,7 @@ namespace JumaRenderEngine
             }
 
             m_SwapchainInvalid = false;
-            m_WindowPropertiesChanged = false;
-            OnParentWindowPropertiesChanged.call(this);
-        }
-        else if (m_WindowPropertiesChanged)
-        {
-            m_WindowPropertiesChanged = false;
-            OnParentWindowPropertiesChanged.call(this);
+            OnSwapchainRecreated.call(this);
         }
         return true;
     }

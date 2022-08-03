@@ -30,7 +30,7 @@ namespace JumaRenderEngine
     void WindowController::clearWindow(const window_id windowID, WindowData& windowData)
     {
         m_WindowsCount--;
-        if (windowData.properties.minimized)
+        if (windowData.minimized)
         {
             m_MinimizedWindowsCount--;
         }
@@ -98,30 +98,51 @@ namespace JumaRenderEngine
         return true;
     }
 
-    void WindowController::onWindowResized(const window_id windowID, const math::uvector2& newSize)
+    void WindowController::updateWindows()
     {
-        WindowData* windowData = getWindowData(windowID);
+        if (!m_ChangedWindowSizes.isEmpty())
+        {
+            for (const auto& changedWindowSize : m_ChangedWindowSizes)
+            {
+                WindowData* windowData = getWindowData(changedWindowSize.key);
+                if (windowData != nullptr)
+                {
+                    updateWindowSize(windowData, changedWindowSize.value);
+                    OnWindowPropertiesChanged.call(this, windowData);
+                }
+            }
+            m_ChangedWindowSizes.clear();
+        }
+    }
+
+    void WindowController::onWindowResized(const window_id windowID, const math::uvector2& size)
+    {
+        m_ChangedWindowSizes.add(windowID, size);
+    }
+    void WindowController::updateWindowSize(WindowData* windowData, const math::uvector2& newSize)
+    {
         windowData->properties.size = newSize;
-        OnWindowPropertiesChanged.call(this, windowData);
     }
 
     void WindowController::onWindowMinimized(const window_id windowID, const bool minimized)
     {
         WindowData* windowData = getWindowData(windowID);
-        windowData->properties.minimized = minimized;
-
-        if (minimized)
+        if (windowData->minimized != minimized)
         {
-            m_MinimizedWindowsCount++;
-        }
-        else
-        {
-            m_MinimizedWindowsCount--;
+            windowData->minimized = minimized;
+            if (minimized)
+            {
+                m_MinimizedWindowsCount++;
+            }
+            else
+            {
+                m_MinimizedWindowsCount--;
+            }
         }
     }
     bool WindowController::isWindowMinimized(const window_id windowID) const
     {
         const WindowData* windowData = findWindowData(windowID);
-        return windowData != nullptr ? windowData->properties.minimized : false;
+        return (windowData != nullptr) && windowData->minimized;
     }
 }

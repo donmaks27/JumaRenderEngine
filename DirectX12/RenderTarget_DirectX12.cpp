@@ -32,9 +32,6 @@ namespace JumaRenderEngine
                 JUMA_RENDER_LOG(error, JSTR("Failed to init DirectX12 window render target"));
                 return false;
             }
-
-            const WindowData_DirectX12* windowData = getRenderEngine()->getWindowController()->findWindowData<WindowData_DirectX12>(getWindowID());
-            windowData->swapchain->OnParentWindowPropertiesChanged.bind(this, &RenderTarget_DirectX12::onParentWindowPropertiesChanged);
         }
         else if (!initRenderTarget())
         {
@@ -250,12 +247,6 @@ namespace JumaRenderEngine
 
     void RenderTarget_DirectX12::clearDirectX()
     {
-        const WindowData_DirectX12* windowData = getRenderEngine()->getWindowController()->findWindowData<WindowData_DirectX12>(getWindowID());
-        if ((windowData != nullptr) && (windowData->swapchain != nullptr))
-        {
-            windowData->swapchain->OnParentWindowPropertiesChanged.unbind(this, &RenderTarget_DirectX12::onParentWindowPropertiesChanged);
-        }
-
         clearRenderTarget();
     }
     void RenderTarget_DirectX12::clearRenderTarget()
@@ -292,29 +283,16 @@ namespace JumaRenderEngine
         {
             for (const auto& texture : m_ResultTextures)
             {
-                delete texture;
+                delete texture; // TODO: Create texture object with RenderEngine
             }
         }
         m_ResultTextures.clear();
     }
 
-    void RenderTarget_DirectX12::onParentWindowPropertiesChanged(DirectX12Swapchain* swapchain)
+    bool RenderTarget_DirectX12::recreateRenderTarget()
     {
-        const WindowData* windowData = getRenderEngine()->getWindowController()->findWindowData(getWindowID());
-        if (windowData == nullptr)
-        {
-            JUMA_RENDER_LOG(error, JSTR("Failed to find window ") + TO_JSTR(getWindowID()));
-            return;
-        }
-
-        changeProperties(swapchain->getBuffersSize(), windowData->properties.samples);
-    }
-    void RenderTarget_DirectX12::onPropertiesChanged(const math::uvector2& prevSize, TextureSamples prevSamples)
-    {
-        Super::onPropertiesChanged(prevSize, prevSamples);
-
         clearRenderTarget();
-        initWindowRenderTarget();
+        return isWindowRenderTarget() ? initWindowRenderTarget() : initRenderTarget();
     }
 
     bool RenderTarget_DirectX12::onStartRender(RenderOptions* renderOptions)
@@ -354,6 +332,11 @@ namespace JumaRenderEngine
             size = getSize();
             rtvIndex = 0;
             renderTexture = m_ColorTexture;
+        }
+        if (renderTexture == nullptr)
+        {
+            JUMA_RENDER_LOG(error, JSTR("Invalid render target"));
+            return false;
         }
 
         DirectX12CommandList* commandListObject = reinterpret_cast<RenderOptions_DirectX12*>(renderOptions)->renderCommandList;

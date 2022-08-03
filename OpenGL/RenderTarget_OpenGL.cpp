@@ -24,10 +24,6 @@ namespace JumaRenderEngine
             return false;
         }
         createFramebuffers();
-        if (isWindowRenderTarget())
-        {
-            getRenderEngine()->getWindowController()->OnWindowPropertiesChanged.bind(this, &RenderTarget_OpenGL::onWindowPropertiesChanged);
-        }
         return true;
     }
     void RenderTarget_OpenGL::createFramebuffers()
@@ -149,26 +145,14 @@ namespace JumaRenderEngine
 
     void RenderTarget_OpenGL::clearOpenGL()
     {
-        if (isWindowRenderTarget())
-        {
-            getRenderEngine()->getWindowController()->OnWindowPropertiesChanged.unbind(this, &RenderTarget_OpenGL::onWindowPropertiesChanged);
-        }
         clearFramebuffers();
     }
 
-    void RenderTarget_OpenGL::onWindowPropertiesChanged(WindowController* windowController, const WindowData* windowData)
+    bool RenderTarget_OpenGL::recreateRenderTarget()
     {
-        if ((windowData != nullptr) && (windowData->windowID == getWindowID()))
-        {
-            changeProperties(windowData->properties.size, windowData->properties.samples);
-        }
-    }
-    void RenderTarget_OpenGL::onPropertiesChanged(const math::uvector2& prevSize, const TextureSamples prevSamples)
-    {
-        Super::onPropertiesChanged(prevSize, prevSamples);
-
         clearFramebuffers();
         createFramebuffers();
+        return true;
     }
 
     bool RenderTarget_OpenGL::onStartRender(RenderOptions* renderOptions)

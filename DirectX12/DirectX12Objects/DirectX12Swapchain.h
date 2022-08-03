@@ -22,8 +22,6 @@ namespace JumaRenderEngine
     class DirectX12Swapchain;
     class WindowController_DirectX12;
 
-    CREATE_JUTILS_MULTICAST_DELEGATE_OneParam(OnDirectX12SwapchainEvent, DirectX12Swapchain*, swapchain);
-
     class DirectX12Swapchain : public RenderEngineContextObjectBase
     {
         friend WindowController_DirectX12;
@@ -31,9 +29,6 @@ namespace JumaRenderEngine
     public:
         DirectX12Swapchain() = default;
         virtual ~DirectX12Swapchain() override;
-
-        OnDirectX12SwapchainEvent OnParentWindowPropertiesChanged;
-
 
         window_id getWindowID() const { return m_WindowID; }
 
@@ -60,7 +55,6 @@ namespace JumaRenderEngine
         uint8 m_CurrentBufferIndex = 0;
         
         bool m_SwapchainInvalid = true;
-        bool m_WindowPropertiesChanged = false;
 
 
         bool init(window_id windowID);

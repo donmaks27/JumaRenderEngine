@@ -92,7 +92,6 @@ namespace JumaRenderEngine
         }
 
         m_SwapchainInvalid = false;
-        m_WindowPropertiesChanged = false;
 
         windowController->OnWindowPropertiesChanged.bind(this, &DirectX12Swapchain::onWindowPropertiesChanged);
         return true;
@@ -134,7 +133,6 @@ namespace JumaRenderEngine
         m_SwapchainBuffersSize = { 0, 0 };
         m_CurrentBufferIndex = 0;
         m_SwapchainInvalid = true;
-        m_WindowPropertiesChanged = false;
     }
     void DirectX12Swapchain::clearSwapchainBuffers()
     {
@@ -167,7 +165,6 @@ namespace JumaRenderEngine
     {
         if (windowData->windowID == getWindowID())
         {
-            m_WindowPropertiesChanged = true;
             if (windowData->properties.size != m_SwapchainBuffersSize)
             {
                 invalidate();
@@ -189,10 +186,9 @@ namespace JumaRenderEngine
             }
             renderTarget->clearRenderTarget();
 
-            DXGI_SWAP_CHAIN_DESC swapchainDescription{};
-            m_Swapchain->GetDesc(&swapchainDescription);
-
             clearSwapchainBuffers();
+            DXGI_SWAP_CHAIN_DESC1 swapchainDescription{};
+            m_Swapchain->GetDesc1(&swapchainDescription);
             const HRESULT result = m_Swapchain->ResizeBuffers(0, windowData->properties.size.x, windowData->properties.size.y, DXGI_FORMAT_UNKNOWN, swapchainDescription.Flags);
             if (FAILED(result))
             {
@@ -208,14 +204,15 @@ namespace JumaRenderEngine
                 return false;
             }
 
+            renderTarget->invalidate();
+            if (!renderTarget->update())
+            {
+                JUMA_RENDER_LOG(error, JSTR("Failed to update window render target"));
+                clearDirectX();
+                return false;
+            }
+
             m_SwapchainInvalid = false;
-            m_WindowPropertiesChanged = false;
-            OnParentWindowPropertiesChanged.call(this);
-        }
-        else if (m_WindowPropertiesChanged)
-        {
-            m_WindowPropertiesChanged = false;
-            OnParentWindowPropertiesChanged.call(this);
         }
         return true;
     }

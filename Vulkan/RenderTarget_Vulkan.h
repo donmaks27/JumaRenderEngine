@@ -33,7 +33,7 @@ namespace JumaRenderEngine
 
         virtual bool initInternal() override;
 
-        virtual void onPropertiesChanged(const math::uvector2& prevSize, TextureSamples prevSamples) override;
+        virtual bool recreateRenderTarget() override;
 
     private:
 
@@ -42,8 +42,9 @@ namespace JumaRenderEngine
         bool m_FramebuffersValidForRender = false;
 
 
-        bool initRenderTarget();
+        bool initRenderTarget() { return createFramebuffers(); }
         bool initWindowRenderTarget();
+        bool createFramebuffers();
         bool createWindowFramebuffers(const VulkanSwapchain* swapchain = nullptr);
 
         void clearVulkan();
@@ -51,7 +52,7 @@ namespace JumaRenderEngine
 
         int32 getRequiredFramebufferIndex() const;
 
-        void onWindowPropertiesChanged(VulkanSwapchain* swapchain);
+        void onSwapchainRecreated(VulkanSwapchain* swapchain);
     };
 }
 
