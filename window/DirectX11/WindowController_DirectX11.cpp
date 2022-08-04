@@ -144,9 +144,9 @@ namespace JumaRenderEngine
         }
     }
 
-    void WindowController_DirectX11::updateWindowSize(WindowData* windowData, const math::uvector2& newSize)
+    void WindowController_DirectX11::onWindowResized(WindowData* windowData)
     {
-        Super::updateWindowSize(windowData, newSize);
+        Super::onWindowResized(windowData);
 
         RenderTarget_DirectX11* renderTarget = dynamic_cast<RenderTarget_DirectX11*>(windowData->windowRenderTarget);
         if (renderTarget != nullptr)
@@ -159,7 +159,7 @@ namespace JumaRenderEngine
         {
             DXGI_SWAP_CHAIN_DESC1 swapchainDescription{};
             swapchain->GetDesc1(&swapchainDescription);
-            swapchain->ResizeBuffers(0, newSize.x, newSize.y, DXGI_FORMAT_UNKNOWN, swapchainDescription.Flags);
+            swapchain->ResizeBuffers(0, windowData->properties.size.x, windowData->properties.size.y, DXGI_FORMAT_UNKNOWN, swapchainDescription.Flags);
         }
     }
 

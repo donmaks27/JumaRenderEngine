@@ -83,10 +83,11 @@ namespace JumaRenderEngine
         template<typename T, TEMPLATE_ENABLE(is_base<WindowData, T>)>
         T* getWindowData(const window_id windowID) { return reinterpret_cast<T*>(getWindowData(windowID)); }
 
-        void onWindowResized(window_id windowID, const math::uvector2& size);
-        virtual void updateWindowSize(WindowData* windowData, const math::uvector2& newSize);
+        void updateWindowSize(window_id windowID, const math::uvector2& size);
+        virtual void onWindowResized(WindowData* windowData) {}
 
-        virtual void onWindowMinimized(window_id windowID, bool minimized);
+        void updateWindowMinimization(window_id windowID, bool minimized);
+        virtual void onWindowMinimizationChanged(WindowData* windowData);
 
     private:
 

@@ -100,7 +100,7 @@ namespace JumaRenderEngine
         const WindowData_DirectX12_GLFW* windowData = static_cast<WindowData_DirectX12_GLFW*>(glfwGetWindowUserPointer(windowGLFW));
         if (windowData != nullptr)
         {
-            windowData->windowController->onWindowResized(windowData->windowID, { math::max<uint32>(width, 0), math::max<uint32>(height, 0) });
+            windowData->windowController->updateWindowSize(windowData->windowID, { math::max<uint32>(width, 0), math::max<uint32>(height, 0) });
         }
     }
     void WindowController_DirectX12_GLFW::GLFW_WindowMinimizationCallback(GLFWwindow* windowGLFW, int minimized)
@@ -108,7 +108,7 @@ namespace JumaRenderEngine
         const WindowData_DirectX12_GLFW* windowData = static_cast<WindowData_DirectX12_GLFW*>(glfwGetWindowUserPointer(windowGLFW));
         if (windowData != nullptr)
         {
-            windowData->windowController->onWindowMinimized(windowData->windowID, minimized == GLFW_TRUE);
+            windowData->windowController->updateWindowMinimization(windowData->windowID, minimized == GLFW_TRUE);
         }
     }
 

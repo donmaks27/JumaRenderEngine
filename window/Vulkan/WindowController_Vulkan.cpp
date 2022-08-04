@@ -91,16 +91,16 @@ namespace JumaRenderEngine
         return true;
     }
 
-    void WindowController_Vulkan::onWindowMinimized(const window_id windowID, const bool minimized)
+    void WindowController_Vulkan::onWindowMinimizationChanged(WindowData* windowData)
     {
-        Super::onWindowMinimized(windowID, minimized);
+        Super::onWindowMinimizationChanged(windowData);
 
-        if (minimized)
+        if (windowData->minimized)
         {
-            const WindowData_Vulkan* windowData = findWindowData<WindowData_Vulkan>(windowID);
-            if (windowData != nullptr)
+            const WindowData_Vulkan* windowDataVulkan = reinterpret_cast<const WindowData_Vulkan*>(windowData);
+            if (windowDataVulkan->vulkanSwapchain != nullptr)
             {
-                windowData->vulkanSwapchain->invalidate();
+                windowDataVulkan->vulkanSwapchain->invalidate();
             }
         }
     }

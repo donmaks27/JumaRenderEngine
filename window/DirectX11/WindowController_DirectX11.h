@@ -42,7 +42,7 @@ namespace JumaRenderEngine
 
         bool createWindowSwapchain(window_id windowID, WindowData_DirectX11& windowData);
 
-        virtual void updateWindowSize(WindowData* windowData, const math::uvector2& newSize) override;
+        virtual void onWindowResized(WindowData* windowData) override;
 
     private:
 

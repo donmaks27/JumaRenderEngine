@@ -41,7 +41,7 @@ namespace JumaRenderEngine
 
         bool createWindowSwapchain(window_id windowID, WindowData_Vulkan& windowData);
 
-        virtual void onWindowMinimized(window_id windowID, bool minimized) override;
+        virtual void onWindowMinimizationChanged(WindowData* windowData) override;
 
     private:
 
