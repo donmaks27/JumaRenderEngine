@@ -20,7 +20,7 @@ namespace JumaRenderEngine
         {
             if (!optional)
             {
-                JUMA_RENDER_LOG(error, JSTR("Failed to convert UTF-8 file name ") + fileName + JSTR(" to WCHAR"));
+                JUMA_RENDER_LOG(error, JSTR("Failed to convert UTF-8 file name {} to WCHAR"), fileName);
             }
             return nullptr;
         }
@@ -31,7 +31,7 @@ namespace JumaRenderEngine
         {
             if (!optional)
             {
-                JUMA_RENDER_ERROR_LOG(result, JSTR("Failed read shader file ") + fileName + JSTR(" into DirectX11 blob"));
+                JUMA_RENDER_ERROR_LOG(result, JSTR("Failed read shader file {} into DirectX11 blob"), fileName);
             }
             return nullptr;
         }
@@ -178,7 +178,7 @@ namespace JumaRenderEngine
         );
         if (FAILED(result))
         {
-            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 input layout for vertex ") + vertexName.toString());
+            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create DirectX11 input layout for vertex {}"), vertexName.toString());
             return nullptr;
         }
         return m_VertexInputLayouts[vertexName] = inputLayout;

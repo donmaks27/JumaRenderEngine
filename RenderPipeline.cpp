@@ -142,7 +142,7 @@ namespace JumaRenderEngine
         RenderPipelineStage* stage = m_PipelineStages.find(stageName);
         if (stage == nullptr)
         {
-            JUMA_RENDER_LOG(error, JSTR("There is no stage ") + stageName.toString());
+            JUMA_RENDER_LOG(error, JSTR("There is no stage {}"), stageName.toString());
             return false;
         }
         if (stage->dependencies.contains(dependencyStageName))
@@ -153,7 +153,7 @@ namespace JumaRenderEngine
         const RenderPipelineStage* dependencyStage = m_PipelineStages.find(dependencyStageName);
         if (dependencyStage == nullptr)
         {
-            JUMA_RENDER_LOG(error, JSTR("There is no dependency stage ") + dependencyStageName.toString());
+            JUMA_RENDER_LOG(error, JSTR("There is no dependency stage {}"), dependencyStageName.toString());
             return false;
         }
         if (dependencyStage->renderTarget->isWindowRenderTarget())

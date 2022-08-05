@@ -2,13 +2,9 @@
 
 #pragma once
 
-#ifndef JDEBUG
-    #define JUTILS_LOG_DISABLED
-#endif
-#include "jutils/jlog.h"
-
-#define JUMA_RENDER_LOG(type, message) JUTILS_LOG_WRITE(type, message)
-#define JUMA_RENDER_ERROR_LOG(errorCode, message) JUMA_RENDER_LOG(error, jutils::jstring(message) + JSTR(". Code ") + TO_JSTR(errorCode))
+#include <jutils/jlog.h>
+#define JUMA_RENDER_LOG(type, ...) JUTILS_LOG(type, __VA_ARGS__)
+#define JUMA_RENDER_ERROR_LOG(errorCode, ...) JUTILS_ERROR_LOG(errorCode, __VA_ARGS__)
 
 namespace JumaRenderEngine
 {

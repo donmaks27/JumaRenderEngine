@@ -25,7 +25,7 @@ namespace JumaRenderEngine
         const WindowData_DirectX12* windowData = windowController->findWindowData<WindowData_DirectX12>(windowID);
         if (windowData == nullptr)
         {
-            JUMA_RENDER_LOG(error, JSTR("Can't find window ") + TO_JSTR(windowID));
+            JUMA_RENDER_LOG(error, JSTR("Can't find window {}"), windowID);
             return false;
         }
 
@@ -180,7 +180,7 @@ namespace JumaRenderEngine
             RenderTarget_DirectX12* renderTarget = windowData != nullptr ? dynamic_cast<RenderTarget_DirectX12*>(windowData->windowRenderTarget) : nullptr;
             if (renderTarget == nullptr)
             {
-                JUMA_RENDER_LOG(error, JSTR("Can't find render target of window ") + TO_JSTR(getWindowID()));
+                JUMA_RENDER_LOG(error, JSTR("Can't find render target of window {}"), getWindowID());
                 clearDirectX();
                 return false;
             }

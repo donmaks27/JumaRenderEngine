@@ -155,7 +155,7 @@ namespace JumaRenderEngine
         const VertexDescription* vertexDescription = renderEngine->findVertexType(pipelineStateID.vertexName);
         if (vertexDescription == nullptr)
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to get description for vertex ") + pipelineStateID.vertexName.toString());
+            JUMA_RENDER_LOG(error, JSTR("Failed to get description for vertex {}"), pipelineStateID.vertexName.toString());
             return false;
         }
 
@@ -178,7 +178,7 @@ namespace JumaRenderEngine
                     case VertexComponentType::Vec3:  componentFormat = DXGI_FORMAT_R32G32B32_FLOAT; break;
                     case VertexComponentType::Vec4:  componentFormat = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
                     default: 
-                        JUMA_RENDER_LOG(error, JSTR("Unsupported type of vertex component ") + TO_JSTR(vertexComponent.shaderLocation) + JSTR(" in vertex ") + pipelineStateID.vertexName.toString());
+                        JUMA_RENDER_LOG(error, JSTR("Unsupported type of vertex component {} in vertex {}"), vertexComponent.shaderLocation, pipelineStateID.vertexName.toString());
                         return false;
                     }
                     inputLayouts.add({ 

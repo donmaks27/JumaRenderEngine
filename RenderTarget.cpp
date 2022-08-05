@@ -18,7 +18,7 @@ namespace JumaRenderEngine
         math::uvector2 windowSize;
         if (!windowController->getActualWindowSize(windowID, windowSize))
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to get size of window ") + TO_JSTR(windowID));
+            JUMA_RENDER_LOG(error, JSTR("Failed to get size of window {}"), windowID);
             return false;
         }
 

@@ -38,7 +38,7 @@ namespace JumaRenderEngine
         VulkanSwapchain* swapchain = windowData != nullptr ? windowData->vulkanSwapchain : nullptr;
         if (swapchain == nullptr)
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to find swapchain for window ") + TO_JSTR(getWindowID()));
+            JUMA_RENDER_LOG(error, JSTR("Failed to find swapchain for window {}"), getWindowID());
             return false;
         }
         if (!createWindowFramebuffers(swapchain))
@@ -84,7 +84,7 @@ namespace JumaRenderEngine
             swapchain = windowData != nullptr ? windowData->vulkanSwapchain : nullptr;
             if (swapchain == nullptr)
             {
-                JUMA_RENDER_LOG(error, JSTR("Failed to find swapchain for window ") + TO_JSTR(getWindowID()));
+                JUMA_RENDER_LOG(error, JSTR("Failed to find swapchain for window {}"), getWindowID());
                 return false;
             }
         }
@@ -109,7 +109,7 @@ namespace JumaRenderEngine
         {
             if (!m_RenderPass->createVulkanSwapchainFramebuffer(size, swapchainImages[index], m_Framebuffers[index]))
             {
-                JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan framebuffer for swapchain image ") + TO_JSTR(index));
+                JUMA_RENDER_LOG(error, JSTR("Failed to create vulkan framebuffer for swapchain image {}"), index);
                 return false;
             }
         }

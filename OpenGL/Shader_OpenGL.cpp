@@ -18,7 +18,7 @@ namespace JumaRenderEngine
         {
             if (shouldLogErrors)
             {
-                JUMA_RENDER_LOG(error, JSTR("Failed to open file ") + fileName);
+                JUMA_RENDER_LOG(error, JSTR("Failed to open file {}"), fileName);
             }
             return {};
         }
@@ -41,7 +41,7 @@ namespace JumaRenderEngine
         {
             if (!optionalShader)
             {
-                JUMA_RENDER_LOG(error, JSTR("Failed to load shader file ") + fileName);
+                JUMA_RENDER_LOG(error, JSTR("Failed to load shader file {}"), fileName);
             }
             return 0;
         }
@@ -66,7 +66,7 @@ namespace JumaRenderEngine
         {
             if (shouldLogErrors)
             {
-                JUMA_RENDER_LOG(error, JSTR("Failed to open file ") + fileName);
+                JUMA_RENDER_LOG(error, JSTR("Failed to open file {}"), fileName);
             }
             return {};
         }
@@ -88,7 +88,7 @@ namespace JumaRenderEngine
         {
             if (!optionalShader)
             {
-                JUMA_RENDER_LOG(error, JSTR("Failed to load shader file ") + fileName);
+                JUMA_RENDER_LOG(error, JSTR("Failed to load shader file {}"), fileName);
             }
             return 0;
         }
@@ -120,7 +120,7 @@ namespace JumaRenderEngine
             glGetShaderiv(shaderIndex, GL_INFO_LOG_LENGTH, &logLength);
             jstring message(logLength, ' ');
             glGetShaderInfoLog(shaderIndex, logLength, &logLength, *message);
-            JUMA_RENDER_LOG(error, JSTR("Failed to compile shader ") + fileName + JSTR(": ") + message);
+            JUMA_RENDER_LOG(error, JSTR("Failed to compile shader {}: {}"), fileName, message);
 #endif
             glDeleteShader(shaderIndex);
             return 0;
@@ -187,7 +187,7 @@ namespace JumaRenderEngine
 
                 jstring message(logLength, ' ');
                 glGetProgramInfoLog(shaderProgramIndex, logLength, &logLength, *message);
-                JUMA_RENDER_LOG(error, JSTR("Failed to compile shader program: ") + message);
+                JUMA_RENDER_LOG(error, JSTR("Failed to compile shader program: {}"), message);
 #endif
                 glDeleteProgram(shaderProgramIndex);
                 success = false;

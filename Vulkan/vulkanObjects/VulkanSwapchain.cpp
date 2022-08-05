@@ -45,7 +45,7 @@ namespace JumaRenderEngine
         const WindowData_Vulkan* windowData = renderEngine->getWindowController()->findWindowData<WindowData_Vulkan>(m_WindowID);
         if (windowData == nullptr)
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to get window ") + TO_JSTR(m_WindowID));
+            JUMA_RENDER_LOG(error, JSTR("Failed to get window {}"), m_WindowID);
             return false;
         }
 
@@ -54,7 +54,7 @@ namespace JumaRenderEngine
         vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, windowData->vulkanSurface, &surfaceFormatCount, nullptr);
         if (surfaceFormatCount == 0)
         {
-            JUMA_RENDER_LOG(error, JSTR("There is no vulkan surface formats for window ") + TO_JSTR(m_WindowID));
+            JUMA_RENDER_LOG(error, JSTR("There is no vulkan surface formats for window {}"), m_WindowID);
             return false;
         }
         jarray<VkSurfaceFormatKHR> surfaceFormats(static_cast<int32>(surfaceFormatCount));

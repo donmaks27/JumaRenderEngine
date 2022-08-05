@@ -105,7 +105,7 @@ namespace JumaRenderEngine
         DirectX12Swapchain* swapchain = renderEngine->createObject<DirectX12Swapchain>();
         if (!swapchain->init(windowID))
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to initialize swapchain for window ") + TO_JSTR(windowID));
+            JUMA_RENDER_LOG(error, JSTR("Failed to initialize swapchain for window {}"), windowID);
             delete swapchain;
             return false;
         }

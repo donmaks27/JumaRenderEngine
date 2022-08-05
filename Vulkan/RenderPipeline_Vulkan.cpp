@@ -99,7 +99,7 @@ namespace JumaRenderEngine
             VulkanSwapchain* swapchain = windowData != nullptr ? windowData->vulkanSwapchain : nullptr;
             if (swapchain == nullptr)
             {
-                JUMA_RENDER_LOG(error, JSTR("Failed to get data for window ") + TO_JSTR(windowID));
+                JUMA_RENDER_LOG(error, JSTR("Failed to get data for window {}"), windowID);
                 return false;
             }
 

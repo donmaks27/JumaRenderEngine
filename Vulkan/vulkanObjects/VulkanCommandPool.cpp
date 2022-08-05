@@ -24,7 +24,7 @@ namespace JumaRenderEngine
         const VkResult result = vkCreateCommandPool(renderEngine->getDevice(), &commandPoolInfo, nullptr, &m_CommandPool);
         if (result != VK_SUCCESS)
         {
-            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create vulkan command pool for queue family ") + TO_JSTR(queueDescription->familyIndex));
+            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create vulkan command pool for queue family {}"), queueDescription->familyIndex);
             return false;
         }
 

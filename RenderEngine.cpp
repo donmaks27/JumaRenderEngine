@@ -60,7 +60,7 @@ namespace JumaRenderEngine
         {
             if (!m_WindowController->createWindow(window.key, window.value))
             {
-                JUMA_RENDER_LOG(error, JSTR("Failed to create window ") + TO_JSTR(window.key));
+                JUMA_RENDER_LOG(error, JSTR("Failed to create window {}"), window.key);
                 return false;
             }
         }

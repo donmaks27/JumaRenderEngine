@@ -22,7 +22,7 @@ namespace JumaRenderEngine
         {
             if (!optional)
             {
-                JUMA_RENDER_LOG(error, JSTR("Failed to convert UTF-8 file name ") + fileName + JSTR(" to WCHAR"));
+                JUMA_RENDER_LOG(error, JSTR("Failed to convert UTF-8 file name {} to WCHAR"), fileName);
             }
             return nullptr;
         }
@@ -33,7 +33,7 @@ namespace JumaRenderEngine
         {
             if (!optional)
             {
-                JUMA_RENDER_ERROR_LOG(result, JSTR("Failed read shader file ") + fileName + JSTR(" into DirectX11 blob"));
+                JUMA_RENDER_ERROR_LOG(result, JSTR("Failed read shader file {} into DirectX12 blob"), fileName);
             }
             return nullptr;
         }

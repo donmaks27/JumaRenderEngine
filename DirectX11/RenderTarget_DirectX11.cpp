@@ -47,7 +47,7 @@ namespace JumaRenderEngine
         IDXGISwapChain1* swapchain = windowData != nullptr ? windowData->swapchain : nullptr;
         if (swapchain == nullptr)
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to get DirectX11 swapchain for window ") + TO_JSTR(windowID));
+            JUMA_RENDER_LOG(error, JSTR("Failed to get DirectX11 swapchain for window {}"), windowID);
             return false;
         }
 

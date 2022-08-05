@@ -43,12 +43,12 @@ namespace JumaRenderEngine
             DirectX12Swapchain* swapchain = windowData != nullptr ? windowData->swapchain : nullptr;
             if (swapchain == nullptr)
             {
-                JUMA_RENDER_LOG(warning, JSTR("Failed to get swapchain for window ") + TO_JSTR(windowID));
+                JUMA_RENDER_LOG(warning, JSTR("Failed to get swapchain for window {}"), windowID);
                 return false;
             }
             if (!swapchain->updateSwapchain())
             {
-                JUMA_RENDER_LOG(error, JSTR("Failed to update swapchain for window ") + TO_JSTR(windowID));
+                JUMA_RENDER_LOG(error, JSTR("Failed to update swapchain for window {}"), windowID);
                 return false;
             }
         }

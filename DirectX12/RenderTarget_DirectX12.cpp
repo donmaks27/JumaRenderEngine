@@ -54,7 +54,7 @@ namespace JumaRenderEngine
         const DirectX12Swapchain* swapchain = windowData != nullptr ? windowData->swapchain : nullptr;
         if (swapchain == nullptr)
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to find swapchain for window ") + TO_JSTR(windowID));
+            JUMA_RENDER_LOG(error, JSTR("Failed to find swapchain for window {}"), windowID);
             return false;
         }
 

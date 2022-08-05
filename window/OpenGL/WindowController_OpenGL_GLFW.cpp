@@ -25,7 +25,7 @@ namespace JumaRenderEngine
 #ifndef JUTILS_LOG_DISABLED
             const char* errorStr = nullptr;
             glfwGetError(&errorStr);
-            JUMA_RENDER_LOG(error, jstring(JSTR("Failed to initialize GLFW lib: ")) + errorStr);
+            JUMA_RENDER_LOG(error, JSTR("Failed to initialize GLFW lib: {}"), errorStr);
 #endif
             return false;
         }
@@ -40,7 +40,7 @@ namespace JumaRenderEngine
     }
     void WindowController_OpenGL_GLFW::GLFW_ErrorCallback(int errorCode, const char* errorMessage)
     {
-        JUMA_RENDER_LOG(error, JSTR("GLFW error. Code: ") + TO_JSTR(errorCode) + JSTR(". ") + errorMessage);
+        JUMA_RENDER_LOG(error, JSTR("GLFW error. Code: {}. {}"), errorCode, errorMessage);
     }
 
     void WindowController_OpenGL_GLFW::clearGLFW()
@@ -68,7 +68,7 @@ namespace JumaRenderEngine
         }
         if (m_Windows.contains(windowID))
         {
-            JUMA_RENDER_LOG(error, JSTR("Window ") + TO_JSTR(windowID) + JSTR(" already created"));
+            JUMA_RENDER_LOG(error, JSTR("Window {} already created"), windowID);
             return nullptr;
         }
 
@@ -88,7 +88,7 @@ namespace JumaRenderEngine
         );
         if (window == nullptr)
         {
-            JUMA_RENDER_LOG(error, JSTR("Failed to create window ") + TO_JSTR(windowID));
+            JUMA_RENDER_LOG(error, JSTR("Failed to create window {}"), windowID);
             return nullptr;
         }
 
@@ -160,7 +160,7 @@ namespace JumaRenderEngine
         const WindowData_OpenGL_GLFW* windowData = m_Windows.find(windowID);
         if (windowData == nullptr)
         {
-            JUMA_RENDER_LOG(warning, JSTR("Can't find window ") + TO_JSTR(windowID));
+            JUMA_RENDER_LOG(warning, JSTR("Can't find window {}"), windowID);
             return false;
         }
         return glfwWindowShouldClose(windowData->windowGLFW) != GLFW_FALSE;
@@ -188,7 +188,7 @@ namespace JumaRenderEngine
         const WindowData_OpenGL_GLFW* windowData = m_Windows.find(windowID);
         if (windowData == nullptr)
         {
-            JUMA_RENDER_LOG(warning, JSTR("Can't find window ") + TO_JSTR(windowID));
+            JUMA_RENDER_LOG(warning, JSTR("Can't find window {}"), windowID);
             return false;
         }
 

@@ -18,7 +18,7 @@ namespace JumaRenderEngine
         {
             if (!optional)
             {
-                JUMA_RENDER_LOG(error, JSTR("Can't open file ") + fileName);
+                JUMA_RENDER_LOG(error, JSTR("Can't open file {}"), fileName);
                 return false;
             }
             outShaderModule = nullptr;
@@ -34,7 +34,7 @@ namespace JumaRenderEngine
         file.close();
         if (data.isEmpty())
         {
-            JUMA_RENDER_LOG(error, JSTR("Empty shader file ") + fileName);
+            JUMA_RENDER_LOG(error, JSTR("Empty shader file {}"), fileName);
             return false;
         }
 
@@ -45,7 +45,7 @@ namespace JumaRenderEngine
         const VkResult result = vkCreateShaderModule(device, &shaderInfo, nullptr, &outShaderModule);
         if (result != VK_SUCCESS)
         {
-            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create shader module ") + fileName);
+            JUMA_RENDER_ERROR_LOG(result, JSTR("Failed to create shader module {}"), fileName);
             return false;
         }
         return true;

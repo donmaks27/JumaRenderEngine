@@ -73,7 +73,7 @@ namespace JumaRenderEngine
         {
             if (!createRenderTarget(windowID, *getWindowData(windowID)))
             {
-                JUMA_RENDER_LOG(error, JSTR("Failed to create DirectX11 render target for window ") + TO_JSTR(windowID));
+                JUMA_RENDER_LOG(error, JSTR("Failed to create DirectX11 render target for window {}"), windowID);
                 return false;
             }
         }

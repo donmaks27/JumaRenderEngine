@@ -29,7 +29,7 @@ namespace JumaRenderEngine
             }
             else
             {
-                JUMA_RENDER_LOG(warning, JSTR("Failed to set active window ID ") + TO_JSTR(windowID));
+                JUMA_RENDER_LOG(warning, JSTR("Failed to set active window ID {}"), windowID);
             }
         }
     }
